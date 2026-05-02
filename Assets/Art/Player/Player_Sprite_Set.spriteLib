@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &1
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5e6fedc2472449cead18ef23b5cb30d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.2D.Animation.Runtime::UnityEngine.U2D.Animation.SpriteLibrarySourceAsset
+  m_Library:
+  - m_Name: Player
+    m_Hash: 531988307
+    m_CategoryList: []
+    m_OverrideEntries:
+    - m_Name: Idle_3Q
+      m_Hash: 4674106
+      m_Sprite: {fileID: 21300000, guid: 2fefe9fb563389e4db777845e06a9332, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 21300000, guid: 2fefe9fb563389e4db777845e06a9332, type: 3}
+    - m_Name: Side_Right
+      m_Hash: 45594862
+      m_Sprite: {fileID: 21300000, guid: e84cce26e61927c4f8702dd49f843c1e, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 21300000, guid: e84cce26e61927c4f8702dd49f843c1e, type: 3}
+    - m_Name: Back
+      m_Hash: 234647049
+      m_Sprite: {fileID: 21300000, guid: 16326497372a0c54f83603c50de3eb5b, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 21300000, guid: 16326497372a0c54f83603c50de3eb5b, type: 3}
+    m_FromMain: 0
+    m_EntryOverrideCount: 3
+  m_PrimaryLibraryGUID: 
+  m_ModificationHash: 639114267330194365
+  m_Version: 1

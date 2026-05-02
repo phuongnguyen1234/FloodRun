@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 583d0f9ad0e1158449ac0760f00cd854, type: 3}
+  m_Name: Map_Making_Kit
+  m_EditorClassIdentifier: Core::Core.Achievements.MapWinAchievement
+  ID: map_making_kit
+  Title: 'Map Making Kit [Normal]'
+  Description: this is a test achievement
+  Icon: {fileID: -6189899963324806314, guid: 08a7b2cd91766374496cb2cebbefdf68, type: 3}
+  CoinReward: 50
+  TargetMap: {fileID: 11400000, guid: 67ed5aec827d9fb4091a6744fe6fc1db, type: 2}

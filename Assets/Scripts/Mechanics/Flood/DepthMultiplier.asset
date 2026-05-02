@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e389ab0c7c1b7a04cb89e2cc29971a1e, type: 3}
+  m_Name: DepthMultiplier
+  m_EditorClassIdentifier: Mechanics::FloodTypeData
+  Type: 0
+  FloodSprite: {fileID: -4544338722142618783, guid: f99b3a708926fd34b855386adfa90f2b, type: 3}
+  SplashSound: {fileID: 8300000, guid: dd3cbc5cd114717458f19cbb0e2c6fc0, type: 3}
+  AirDrainRate: 8
+  FloodColor: {r: 0, g: 0.10980392, b: 1, a: 0.6431373}
+  NoSwim: 0
+  ApplyDepthMultiplier: 1
+  DepthMultiplierFactor: 0.5
+  FadeAlphaOnSwim: 1
+  TargetSwimAlpha: 0.5
+  AlphaTransitionSpeed: 1.5
