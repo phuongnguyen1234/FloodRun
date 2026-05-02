@@ -74,4 +74,10 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
+# Ignore plastic SCM meta files
+# Plastic SCM
+.plastic/
+ignore.conf
+plastic.selector
+
 # End of https://www.toptal.com/developers/gitignore/api/unity
