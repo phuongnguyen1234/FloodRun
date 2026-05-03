@@ -13,12 +13,12 @@ public class GoalLocator : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private Material _locatorMaterial;
     [Tooltip("Khoảng cách hở từ Player tới điểm đầu của đường nối")]
-    [SerializeField] private float _locatorStartOffset = 0.8f;
+    [SerializeField] private float _locatorStartOffset = 1.2f;
     [Tooltip("Offset chiều dọc để nối vào ruột nút thay vì pivot")]
-    [SerializeField] private float _locatorTargetVerticalOffset = 0.5f;
+    [SerializeField] private float _locatorTargetVerticalOffset = 0.2f;
     [SerializeField] private string _locatorSortingLayer = "Locator";
     [SerializeField] private Sprite _locatorDotSprite;
-    [SerializeField] private float _locatorDotScale = 0.2f;
+    [SerializeField] private float _locatorDotScale = 0.8f;
 
     private LineRenderer _playerPathLine;
     private LineRenderer _sequencePathLine;
@@ -127,7 +127,7 @@ public class GoalLocator : MonoBehaviour
                 
                 if (wasFirstTarget) _smoothedTargetPos = realTargetPos;
 
-                _targetTweener = DOTween.To(() => _smoothedTargetPos, x => _smoothedTargetPos = x, realTargetPos, 0.4f)
+                _targetTweener = DOTween.To(() => _smoothedTargetPos, x => _smoothedTargetPos = x, realTargetPos, 0.3f)
                     .SetEase(Ease.OutQuad);
             }
             else if (_targetTweener == null || !_targetTweener.IsActive() || !_targetTweener.IsPlaying())
