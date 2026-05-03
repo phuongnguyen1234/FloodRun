@@ -68,14 +68,13 @@ namespace Core
 
         private void Update()
         {
-            // Bật hoặc tắt hiệu ứng low-pass filter dựa trên trạng thái bơi của người chơi.
-            // Lưu ý: Unity tự động kiểm tra null cho các object đã bị Destroy.
-            // Nếu Player chết/bị hủy, _currentPlayer sẽ tự về null.
-            if (_currentPlayer != null)
+            // FIX: Chỉ bật hiệu ứng LowPass khi có Player đang bơi VÀ AudioSource đang có nhạc.
+            // Nếu bật filter khi clip bị null, Unity sẽ báo warning "Only custom filters can be played".
+            if (_currentPlayer != null && _audioSource.clip != null)
             {
                 _lowPassFilter.enabled = _currentPlayer.IsSwimming;
             }
-            else if (_lowPassFilter.enabled)
+            else if (_lowPassFilter != null && _lowPassFilter.enabled)
             {
                 // Nếu không có player (Menu), đảm bảo filter luôn tắt
                 _lowPassFilter.enabled = false;
@@ -84,6 +83,9 @@ namespace Core
 
         private void HandlePause(bool paused)
         {
+            // Bảo vệ: Không gọi lệnh Audio nếu chưa có clip được gán
+            if (_audioSource.clip == null) return;
+
             if (paused) _audioSource.Pause();
             else _audioSource.UnPause();
         }

@@ -53,7 +53,7 @@ public class SlideSurface : MonoBehaviour
                 }
             }
         }
-        SyncSize();
+        // FIX: Bỏ gọi SyncSize() trong OnValidate để tránh warning SendMessage
     }
 
     void SyncSize()
@@ -61,7 +61,7 @@ public class SlideSurface : MonoBehaviour
         UpdateVisualProperties();
 
         // Collider size dựa trên kích thước của mainSurfaceRenderer (nền bề mặt)
-        if (mainSurfaceRenderer != null && col != null)
+        if (mainSurfaceRenderer != null && col != null && col.size != mainSurfaceRenderer.size)
         {
             col.size = mainSurfaceRenderer.size;
         }
@@ -73,8 +73,11 @@ public class SlideSurface : MonoBehaviour
         if (mainSurfaceRenderer != null && arrowVisualRenderer != null)
         {
             // Đồng bộ chế độ vẽ (Sliced/Tiled) và kích thước của mũi tên theo nền bề mặt
-            if (arrowVisualRenderer.drawMode != mainSurfaceRenderer.drawMode) arrowVisualRenderer.drawMode = mainSurfaceRenderer.drawMode;
-            arrowVisualRenderer.size = mainSurfaceRenderer.size;
+            if (arrowVisualRenderer.drawMode != mainSurfaceRenderer.drawMode) 
+                arrowVisualRenderer.drawMode = mainSurfaceRenderer.drawMode;
+
+            if (arrowVisualRenderer.size != mainSurfaceRenderer.size)
+                arrowVisualRenderer.size = mainSurfaceRenderer.size;
             
             // Đảm bảo arrowVisualRenderer nằm chính giữa cha (mainSurfaceRenderer)
             if (arrowVisualRenderer.transform.localPosition != Vector3.zero)

@@ -50,15 +50,15 @@ public class WalljumpZone : MonoBehaviour
                 }
             }
         }
-
-        SyncSize();
+        // FIX: Không gọi SyncSize() ở đây vì thay đổi SpriteRenderer.size 
+        // trong OnValidate sẽ gây lỗi SendMessage. Update() sẽ lo việc này.
     }
 
     void SyncSize()
     {
         UpdateVisualProperties();
         // Collider size dựa trên kích thước của mainWallRenderer (nền tường)
-        if (mainWallRenderer != null && col != null)
+        if (mainWallRenderer != null && col != null && col.size != mainWallRenderer.size)
         {
             col.size = mainWallRenderer.size;
         }
@@ -70,8 +70,11 @@ public class WalljumpZone : MonoBehaviour
         if (mainWallRenderer != null && arrowVisualRenderer != null)
         {
             // Đồng bộ chế độ vẽ (Sliced/Tiled) và kích thước của mũi tên theo nền tường
-            if (arrowVisualRenderer.drawMode != mainWallRenderer.drawMode) arrowVisualRenderer.drawMode = mainWallRenderer.drawMode;
-            arrowVisualRenderer.size = mainWallRenderer.size;
+            if (arrowVisualRenderer.drawMode != mainWallRenderer.drawMode) 
+                arrowVisualRenderer.drawMode = mainWallRenderer.drawMode;
+
+            if (arrowVisualRenderer.size != mainWallRenderer.size)
+                arrowVisualRenderer.size = mainWallRenderer.size;
             
             // Đảm bảo arrowVisualRenderer nằm chính giữa cha (mainWallRenderer)
             if (arrowVisualRenderer.transform.localPosition != Vector3.zero)
