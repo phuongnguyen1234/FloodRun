@@ -16,7 +16,6 @@ public class PlayerAnimator : MonoBehaviour
     private readonly int _animIDSpeed = Animator.StringToHash("Speed");
     private readonly int _animIDGrounded = Animator.StringToHash("IsGrounded");
     private readonly int _animIDVerticalVelocity = Animator.StringToHash("VerticalVelocity");
-    private readonly int _animIDLand = Animator.StringToHash("Land");
     private readonly int _animIDSwimming = Animator.StringToHash("IsSwimming");
     private readonly int _animIDDie = Animator.StringToHash("Die");
     private readonly int _animIDWallCling = Animator.StringToHash("IsClinging");
@@ -41,18 +40,6 @@ public class PlayerAnimator : MonoBehaviour
         // Đảm bảo animation không can thiệp vào vị trí thực tế của prefab
         // vì chúng ta đang điều khiển nhân vật bằng PlayerMotor (Physics)
         _animator.applyRootMotion = false;
-    }
-
-    private void OnEnable()
-    {
-        // Đăng ký lắng nghe sự kiện tiếp đất từ Motor
-        _motor.OnLandEvent.AddListener(OnLand);
-    }
-
-    private void OnDisable()
-    {
-        // Hủy đăng ký để tránh rò rỉ bộ nhớ
-        _motor.OnLandEvent.RemoveListener(OnLand);
     }
 
     void Update()
@@ -138,12 +125,6 @@ public class PlayerAnimator : MonoBehaviour
         {
             _animator.SetFloat(_animIDClimbSpeed, Mathf.Abs(_rb.linearVelocity.y));
         }
-    }
-
-    private void OnLand()
-    {
-        // Kích hoạt trigger "Land" khi nhân vật tiếp đất
-        _animator.SetTrigger(_animIDLand);
     }
 
     public void TriggerDeath()
