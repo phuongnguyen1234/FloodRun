@@ -4420,11 +4420,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mechanics::GoalLocator
   _locatorMaterial: {fileID: 0}
-  _locatorStartOffset: 0.8
-  _locatorTargetVerticalOffset: 0.5
+  _locatorStartOffset: 1.2
+  _locatorTargetVerticalOffset: 0.2
   _locatorSortingLayer: Locator
   _locatorDotSprite: {fileID: 207069757823298235, guid: d157f275de9dc6a4f880d6fcac8f1017, type: 3}
-  _locatorDotScale: 0.2
+  _locatorDotScale: 0.8
 --- !u!4 &1010484663
 Transform:
   m_ObjectHideFlags: 0
