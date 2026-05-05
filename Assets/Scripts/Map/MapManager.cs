@@ -78,6 +78,12 @@ public class MapManager : MonoBehaviour, IMapManager
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
 
+        // Đảm bảo MapManager luôn dùng đúng dữ liệu đã được chọn từ LevelManager
+        if (LevelManager.SelectedMap != null)
+        {
+            _mapData = LevelManager.SelectedMap;
+        }
+
         // Lấy component thông qua interface từ các GameObject đã gán
         if (_floodManagerObjects != null)
         {
