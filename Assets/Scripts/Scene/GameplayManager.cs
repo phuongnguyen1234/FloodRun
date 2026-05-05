@@ -328,6 +328,10 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
 
     public void BackToMainMenu()
     {
+        // Reset các trạng thái toàn cục trước khi rời khỏi Gameplay
+        AudioListener.pause = false;
+        Time.timeScale = 1f;
+
         StartCoroutine(BackToMainMenuRoutine());
     }
 
