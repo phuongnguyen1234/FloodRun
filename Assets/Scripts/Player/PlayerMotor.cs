@@ -11,7 +11,7 @@ using UnityEngine.U2D.Animation;
 public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
 {
     [SerializeField] private float _speed = 8f;
-    [SerializeField] private float _exitFloodForce = 10f;                       // Lực đẩy khi thoát khỏi nước
+    [SerializeField] private float _exitFloodForce = 12f;                       // Lực đẩy khi thoát khỏi nước
     [Tooltip("Collider chính cho thân người chơi. Nên dùng BoxCollider2D.")]
     [SerializeField] private BoxCollider2D _bodyCollider;
     public BoxCollider2D BodyCollider => _bodyCollider;
@@ -20,7 +20,7 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     public CircleCollider2D FeetCollider => _feetCollider;
     [Tooltip("Collider dùng để xác định khi nào bắt đầu bơi (thường đặt ở ngực/đầu). Nếu để trống sẽ dùng Body Collider.")]
     [SerializeField] private Collider2D _swimTriggerCollider;
-    [SerializeField] private float _jumpForce = 15f;
+    [SerializeField] private float _jumpForce = 11.5f;
     [Header("Visuals Root")]
     [Tooltip("Transform chứa toàn bộ Sprite/Xương của nhân vật. Chúng ta sẽ xoay cái này thay vì xoay Rigidbody khi bơi.")]
     [SerializeField] private Transform _visualsRoot;
