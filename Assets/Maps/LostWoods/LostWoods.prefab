@@ -2443,7 +2443,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5cbc733e8daa7374a8da4d1895e61ec7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Map::MapManager
-  _mapData: {fileID: 11400000, guid: 67ed5aec827d9fb4091a6744fe6fc1db, type: 2}
+  _mapData: {fileID: 11400000, guid: 109572de057195748b4d1274698735ad, type: 2}
   _playerSpawn: {fileID: 7399147346020674260}
   _floodManagerObjects:
   - {fileID: 3690872310846471732}
@@ -3696,7 +3696,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4661875012935879166, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_Volume
-      value: 0.8
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5519823438946658717, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_Size.x
