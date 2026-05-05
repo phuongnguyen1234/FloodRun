@@ -10,7 +10,16 @@ TrueTypeFontImporter:
   includeFontData: 1
   fontNames:
   - Lexend
-  fallbackFontReferences: []
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: 6faea7044f8f62b488225439e62c0cb6, type: 3}
+  - {fileID: 12800000, guid: 0cc263a421603ef409875c66ed92f810, type: 3}
+  - {fileID: 12800000, guid: 422a0c09b3897e048b7e4ccc5dae3e65, type: 3}
+  - {fileID: 12800000, guid: 11e812447adaf5442b3ea6edc05931d1, type: 3}
+  - {fileID: 12800000, guid: fd71f278fbd36864ca1b43f33072d823, type: 3}
+  - {fileID: 12800000, guid: 3a85e43571bbdb445a7ea5f29cd26641, type: 3}
+  - {fileID: 12800000, guid: 048fe3f247dcfbe409a0a504bab3b055, type: 3}
+  - {fileID: 12800000, guid: 70ab699df17cb724d9743ba7c1a50aa7, type: 3}
+  - {fileID: 12800000, guid: e4ede2705847d514181db8e901ac6363, type: 3}
   customCharacters: 
   fontRenderingMode: 0
   ascentCalculationMode: 1
