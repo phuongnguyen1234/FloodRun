@@ -164,7 +164,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 97397561
-  m_SortingLayer: 4
+  m_SortingLayer: 5
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: 2fefe9fb563389e4db777845e06a9332, type: 3}
@@ -475,12 +475,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Player::PlayerMotor
   _speed: 8
-  _swimSpeed: 6
   _exitFloodForce: 12
   _bodyCollider: {fileID: 2450440764590350937}
   _feetCollider: {fileID: 7323944146424705785}
   _swimTriggerCollider: {fileID: 5396163637574246052}
-  _jumpForce: 10
+  _jumpForce: 11.5
   _visualsRoot: {fileID: 8507364654961222875}
   _infJumpForce: 12
   _slideWidth: 0.8
@@ -1012,7 +1011,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -4878415542670356981, guid: bf2c01cb1b0c34f479a144f8eba67b82, type: 2}
+  - {fileID: -3090036126112049867, guid: 0763c80469420bb45ac3ae6bd32d68d0, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1032,7 +1031,7 @@ MeshRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 97397561
-  m_SortingLayer: 4
+  m_SortingLayer: 5
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
@@ -1058,8 +1057,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: PlayerName
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: bf2c01cb1b0c34f479a144f8eba67b82, type: 2}
-  m_sharedMaterial: {fileID: -4878415542670356981, guid: bf2c01cb1b0c34f479a144f8eba67b82, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 0763c80469420bb45ac3ae6bd32d68d0, type: 2}
+  m_sharedMaterial: {fileID: -3090036126112049867, guid: 0763c80469420bb45ac3ae6bd32d68d0, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
