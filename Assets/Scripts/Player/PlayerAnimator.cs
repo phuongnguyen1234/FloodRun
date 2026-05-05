@@ -75,8 +75,12 @@ public class PlayerAnimator : MonoBehaviour
 
         // 3. CẢI TIẾN QUAN TRỌNG: Nếu đang nhảy lên (vY dương), hủy ngay lập tức các buffer mặt đất
         // Hạ thấp ngưỡng từ 0.5 xuống 0.1 để nhạy hơn với cú nhảy.
+        // Chỉ coi là đang nhảy thực sự nếu vận tốc Y đủ lớn (ví dụ > 2f)
+        // Điều này giúp việc nảy nhẹ khi lên dốc (vY nhỏ) không làm mất trạng thái Grounded
+        bool isJumpingUpward = _rb.linearVelocity.y > 2.0f;
         bool isMovingUpward = _rb.linearVelocity.y > 0.1f;
-        if (isMovingUpward)
+
+        if (isJumpingUpward && !_motor.IsGrounded)
         {
             _stableStateGraceTimer = 0;
             _landedBufferTimer = 0;
@@ -102,7 +106,10 @@ public class PlayerAnimator : MonoBehaviour
 
         // 5. Xác định trạng thái tiếp đất cho Animator
         bool animatorGrounded = _stableStateGraceTimer > 0 && _landedBufferTimer <= 0;
-        if (isMovingUpward) animatorGrounded = false; // Tuyệt đối không Grounded khi đang bay lên
+        
+        // FIX: Chỉ hủy trạng thái Grounded khi đang bay lên MÀ KHÔNG chạm đất.
+        // Nếu đang chạm đất (_motor.IsGrounded == true) mà vY > 0, nghĩa là ta đang chạy lên dốc.
+        if (isJumpingUpward && !_motor.IsGrounded) animatorGrounded = false;
 
         // Khi đang bơi hoặc leo thang, ta coi như "Grounded" để không chạy animation ngã (Fall)
         _animator.SetBool(_animIDGrounded, animatorGrounded || _motor.IsSwimming || _motor.IsClimbing);
