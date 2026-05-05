@@ -37,6 +37,10 @@ public class HomeManager : MonoBehaviour, ILevelLoader
 
     private void Start()
     {
+        // Reset trạng thái âm thanh và thời gian khi quay về Home (đề phòng thoát khi đang Pause)
+        AudioListener.pause = false;
+        Time.timeScale = 1f;
+
         // Tìm UI Manager thông qua Interface để tránh lỗi khác Assembly
         if (_uiManager == null)
         {
