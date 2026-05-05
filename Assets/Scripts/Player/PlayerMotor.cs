@@ -43,6 +43,8 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     [Header("Slope Handling")]
     [SerializeField] private PhysicsMaterial2D _grippyMaterial;                 // Material with high friction
     [SerializeField] private PhysicsMaterial2D _slipperyMaterial;               // Material with zero friction
+    private const float MAX_SLOPE_ANGLE = 60f;                                  // Độ dốc tối đa cho phép di chuyển bình thường
+    private float _currentSlopeAngle = 0f;                                       // Lưu angle hiện tại
     
     [Header("Collision Checks")]
     [SerializeField] private Transform _groundCheck;
@@ -234,16 +236,18 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
             // để đảm bảo nếu chân bị lún sâu vào sàn (do Snap), BoxCast vẫn phát hiện được mặt sàn.
             Vector2 castOrigin = (Vector2)_groundCheck.position + Vector2.up * 0.1f;
             
-            // CẢI TIẾN: Tăng nhẹ baseDist từ 0.35f lên 0.4f để bù đắp sai số khi Snap từ thang lên sàn
+            // Tăng nhẹ khoảng cách quét khi không bơi để bám dốc tốt hơn
             float baseDist = IsClimbing ? 0.45f : (IsSwimming ? 0.15f : 0.4f);
-            float totalCheckDist = baseDist + 0.1f;
+            float totalCheckDist = baseDist + 0.05f; // Giảm từ 0.15 xuống 0.05 để tránh tiếp đất hụt
 
-            RaycastHit2D hit = Physics2D.BoxCast(castOrigin, _groundCheckSize, _rb.rotation, Vector2.down, totalCheckDist, _groundLayer);
+            // FIX: Sử dụng 0f thay vì _rb.rotation để hộp kiểm tra luôn thẳng đứng so với thế giới.
+            // Điều này giúp việc phát hiện mặt đất ổn định hơn khi nhân vật bị nghiêng theo dốc.
+            RaycastHit2D hit = Physics2D.BoxCast(castOrigin, _groundCheckSize, 0f, Vector2.down, totalCheckDist, _groundLayer);
 
             // FIX: Ngoài việc chạm collider, phải kiểm tra xem bề mặt đó có đủ "phẳng" không.
             // hit.normal.y > 0.7f tương đương với góc nghiêng khoảng 45 độ. 
             // Nếu chạm vào tường đứng, normal.y sẽ gần bằng 0 và bị loại bỏ -> Sửa lỗi Infinity Jump.
-            bool isGroundedThisFrame = hit.collider != null && !hit.collider.isTrigger && hit.normal.y > 0.7f;
+            bool isGroundedThisFrame = hit.collider != null && !hit.collider.isTrigger && hit.normal.y > 0.6f;
 
             IsGrounded = isGroundedThisFrame;
 
@@ -340,27 +344,39 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
         if (hit.collider != null)
         {
             _groundNormal = hit.normal;
+            // Tính angle: 0° = flat, 90° = vertical wall
+            _currentSlopeAngle = Vector2.Angle(_groundNormal, Vector2.up);
         }
         else
         {
             _groundNormal = Vector2.up;
+            _currentSlopeAngle = 0f;
         }
     }
 
-    // Xoay Rigidbody để khớp với độ nghiêng của dốc
+    /// <summary>
+    /// Lấy góc độ dốc hiện tại (0° = mặt phẳng, 90° = tường đứng)
+    /// </summary>
+    public float GetCurrentSlopeAngle() => _currentSlopeAngle;
+
+    /// <summary>
+    /// Lấy vector pháp tuyến của sàn hiện tại
+    /// </summary>
+    public Vector2 GetCurrentSlopeNormal() => _groundNormal;
+
+    // Xoay Rigidbody để khớp với độ nghiêng của dốc (chỉ nếu slope <= 60°)
     private void HandleSlopeRotation()
     {
+        // FIX: Nếu dốc > 60°, không xoay và không cho phép di chuyển bình thường
+        if (_currentSlopeAngle > MAX_SLOPE_ANGLE)
+        {
+            // Khóa rigidbody tại 0 độ
+            _rb.SetRotation(0f);
+            return;
+        }
+
         // Tính góc xoay từ vector pháp tuyến (Normal) so với vector lên (Up)
         float angle = Vector2.SignedAngle(Vector2.up, _groundNormal);
-        
-        // Smooth rotation để tránh giật cục khi chuyển tiếp giữa các đoạn dốc
-        // Lerp từ góc hiện tại sang góc mới (Lưu ý: Unity rotation ngược chiều kim đồng hồ là dương, nhưng check slope thì tùy hướng)
-        // SignedAngle trả về: nghiêng phải (normal hướng phải) -> góc âm.
-        // Rotation Z của 2D: nghiêng phải (ngược chiều KĐH) -> góc dương? Cần test.
-        // Thực tế: Rotate Z > 0 là nghiêng trái. Rotate Z < 0 là nghiêng phải.
-        // SignedAngle(Up, Normal): Normal nghiêng phải -> Angle < 0.
-        // Muốn Box nghiêng phải theo dốc -> Rotate Z cũng phải < 0.
-        // => Dùng trực tiếp angle.
         
         float targetRotation = angle;
         if (Mathf.Abs(targetRotation) > 1f) // Chỉ xoay nếu dốc đủ lớn
@@ -483,6 +499,9 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
 
         float moveInput = input.x; // Khi đi bộ chỉ lấy trục X
 
+        // FIX: Kiểm tra slope angle - quyết định cách xử lý di chuyển
+        bool isSlopeTooDrastic = IsGrounded && _currentSlopeAngle > MAX_SLOPE_ANGLE;
+
         // Chỉ cho phép điều khiển khi đang ở trên mặt đất hoặc khi bật _airControl
         if (IsGrounded || _airControl)
         {
@@ -533,16 +552,47 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
                 _velocity.x = 0f;
             }
 
-            // FIX: Triệt tiêu hiện tượng giật Y (Jitter) khi chạy.
-            // Nếu đang Grounded và không có vận tốc nhảy lên đáng kể (> 0.5f), 
-            // ta ép vận tốc Y về 0 để tránh CircleCollider nảy trên các khe Tilemap.
+            // FIX: Chỉ triệt tiêu vận tốc khi vận tốc dọc (Y) đã thực sự gần bằng 0 (đã chạm sàn vật lý)
+            // Điều này ngăn việc nhân vật bị "khựng" giữa không trung khi BoxCast chạm đất sớm.
             float verticalVel = _rb.linearVelocity.y;
-            if (IsGrounded && verticalVel > 0.001f && verticalVel < 0.5f)
+            if (IsGrounded)
             {
-                verticalVel = 0f;
+            // CẢI TIẾN: Nếu đứng yên trên dốc, ta triệt tiêu trọng lực để chống trượt (Creep).
+            // Với Gravity = 3, lực kéo xuống rất mạnh nên friction alone không đủ để giữ Dynamic Body.
+            // Tăng ngưỡng vận tốc Y từ 0.2 lên 0.5 để bù đắp cho gia tốc rơi lớn (Gravity = 3).
+            if (moveInput == 0 && Mathf.Abs(_rb.linearVelocity.x) < 0.05f && Mathf.Abs(verticalVel) < 0.1f)
+                {
+                    // FIX: Khóa vận tốc và gravity khi đứng yên để tuyệt đối không trượt
+                    _rb.linearVelocity = Vector2.zero;
+                    verticalVel = 0f;
+                    _rb.gravityScale = 0f; // Khóa trọng lực khi đứng yên để không bị trượt dốc
+                }
+            else 
+            {
+                // Khôi phục trọng lực khi bắt đầu di chuyển hoặc nhảy
+                if (!IsSwimming && !IsClinging && !IsZiplining)
+                    _rb.gravityScale = _originalGravityScale;
+
+                if (verticalVel > 0.01f && verticalVel < 1.0f) verticalVel = 0f;
+            }
+        }
+        else if (!IsSwimming && !IsClinging && !IsZiplining)
+        {
+            // Đảm bảo trọng lực được trả lại khi đang ở trên không
+            _rb.gravityScale = _originalGravityScale;
             }
 
             _rb.linearVelocity = new Vector2(smoothedX, verticalVel);
+        }
+        else if (isSlopeTooDrastic)
+        {
+            // Slope > 60°: Dùng slippery material và gravity bình thường để player trượt xuống
+            if (_bodyCollider != null) _bodyCollider.sharedMaterial = _slipperyMaterial;
+            if (_feetCollider != null) _feetCollider.sharedMaterial = _slipperyMaterial;
+            
+            // Khôi phục gravity bình thường để trượt xuống
+            if (!IsSwimming && !IsClinging && !IsZiplining)
+                _rb.gravityScale = _originalGravityScale;
         }
     }
 
