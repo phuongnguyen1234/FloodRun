@@ -119,9 +119,12 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
 	[Space]
 	public UnityEvent OnLandEvent;
     public UnityEvent OnExitWaterEvent;
+    public event System.Action OnJumpTriggered; // Sự kiện báo hiệu cú nhảy
 
     private Vector2 _inputMoveDirection;
     public Vector2 InputMoveDirection => _inputMoveDirection;
+
+    public bool JumpInput { get; set; } // Lưu trữ trạng thái nút nhảy
 
     /// <summary>
     /// Cập nhật nhãn (Label) cho toàn bộ các bộ phận cơ thể dựa trên trạng thái.
@@ -238,16 +241,15 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
             
             // Tăng nhẹ khoảng cách quét khi không bơi để bám dốc tốt hơn
             float baseDist = IsClimbing ? 0.45f : (IsSwimming ? 0.15f : 0.4f);
-            float totalCheckDist = baseDist + 0.05f; // Giảm từ 0.15 xuống 0.05 để tránh tiếp đất hụt
+            float totalCheckDist = baseDist + 0.1f; // Tăng thêm một chút để nhận diện mặt đất tốt hơn khi lên dốc
 
             // FIX: Sử dụng 0f thay vì _rb.rotation để hộp kiểm tra luôn thẳng đứng so với thế giới.
             // Điều này giúp việc phát hiện mặt đất ổn định hơn khi nhân vật bị nghiêng theo dốc.
             RaycastHit2D hit = Physics2D.BoxCast(castOrigin, _groundCheckSize, 0f, Vector2.down, totalCheckDist, _groundLayer);
 
-            // FIX: Ngoài việc chạm collider, phải kiểm tra xem bề mặt đó có đủ "phẳng" không.
-            // hit.normal.y > 0.7f tương đương với góc nghiêng khoảng 45 độ. 
-            // Nếu chạm vào tường đứng, normal.y sẽ gần bằng 0 và bị loại bỏ -> Sửa lỗi Infinity Jump.
-            bool isGroundedThisFrame = hit.collider != null && !hit.collider.isTrigger && hit.normal.y > 0.6f;
+            // CẢI TIẾN: Nới lỏng ngưỡng normal.y xuống 0.45f để hỗ trợ dốc lên đến 60 độ (cos 60 = 0.5)
+            // Điều này đảm bảo khi lên dốc gắt IsGrounded vẫn true.
+            bool isGroundedThisFrame = hit.collider != null && !hit.collider.isTrigger && hit.normal.y > 0.45f;
 
             IsGrounded = isGroundedThisFrame;
 
@@ -420,10 +422,21 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
             return;
         }
 
-        // XỬ LÝ FLIP: Chỉ tự động quay mặt theo phím nhấn khi không ở các trạng thái đặc biệt bên trên
-        // (Trạng thái đặc biệt sẽ tự quản lý hướng nhìn của riêng chúng)
-        if (input.x > 0 && !_facingRight) Flip();
-        else if (input.x < 0 && _facingRight) Flip();
+        // XỬ LÝ FLIP:
+        if (IsSwimming)
+        {
+            // CẢI TIẾN: Khi bơi, ưu tiên Flip theo vận tốc thực tế của Rigidbody.
+            // Nếu bơi chạm dốc và bị đẩy lùi, nhân vật sẽ tự động quay mặt về hướng trượt.
+            float flipReference = Mathf.Abs(_rb.linearVelocity.x) > 0.5f ? _rb.linearVelocity.x : input.x;
+            if (flipReference > 0.01f && !_facingRight) Flip();
+            else if (flipReference < -0.01f && _facingRight) Flip();
+        }
+        else
+        {
+            // Trên cạn: Quay mặt theo phím nhấn để phản hồi tức thì.
+            if (input.x > 0 && !_facingRight) Flip();
+            else if (input.x < 0 && _facingRight) Flip();
+        }
         
         // Nếu đang bị khóa di chuyển (do WallJump, Slide), giảm timer và bỏ qua logic di chuyển
         if (_movementLockTimer > 0)
@@ -573,7 +586,13 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
                 if (!IsSwimming && !IsClinging && !IsZiplining)
                     _rb.gravityScale = _originalGravityScale;
 
-                if (verticalVel > 0.01f && verticalVel < 1.0f) verticalVel = 0f;
+                // FIX: Chỉ triệt tiêu vận tốc Y khi đang ở trên mặt phẳng (slope < 5 độ).
+                // Khi lên dốc, verticalVel > 0 là cần thiết để Rigidbody trượt mượt mà theo bề mặt dốc.
+                // Nếu ép về 0, nhân vật sẽ bị khựng và nảy khỏi mặt đất (làm IsGrounded = false).
+                if (_currentSlopeAngle < 5f)
+                {
+                    if (verticalVel > 0.01f && verticalVel < 1.0f) verticalVel = 0f;
+                }
             }
         }
         else if (!IsSwimming && !IsClinging && !IsZiplining)
@@ -623,6 +642,12 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     public void ResetGravityScale() => SetGravityScale(_originalGravityScale);
     #endregion
 
+    /// <summary>
+    /// Thông báo cho Animator và các hệ thống khác rằng một cú nhảy đã xảy ra.
+    /// Dùng cho các Ability tự áp dụng lực nhảy riêng (như WallJump).
+    /// </summary>
+    public void NotifyJumpTriggered() => OnJumpTriggered?.Invoke();
+
     public void SetAttemptingToJumpOutOfWater(bool isAttempting)
     {
         _isAttemptingToJumpOutOfWater = isAttempting;
@@ -641,6 +666,12 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
             // Điều này đảm bảo cú nhảy luôn có độ cao ổn định.
             _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, 0f);
             _rb.AddForce(Vector2.up * forceToApply, ForceMode2D.Impulse);
+
+            // CẢI TIẾN: Ép IsGrounded về false ngay lập tức để đồng bộ trạng thái
+            IsGrounded = false;
+
+            // Kích hoạt sự kiện để Animator lắng nghe
+            OnJumpTriggered?.Invoke();
         }
     }
 
@@ -1113,6 +1144,9 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
         // Việc reset vận tốc Y về 0 đảm bảo lực đẩy luôn có độ mạnh đồng nhất bất kể vận tốc bơi trước đó
         _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, 0f);
         _rb.AddForce(Vector2.up * _exitFloodForce, ForceMode2D.Impulse);
+
+        // Kích hoạt sự kiện nhảy để Animator có thể chuyển sang animation Jump/Fall
+        OnJumpTriggered?.Invoke();
 
         // Kích hoạt sự kiện để báo cho Controller biết
         OnExitWaterEvent?.Invoke();
