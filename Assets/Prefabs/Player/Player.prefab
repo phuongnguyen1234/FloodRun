@@ -490,7 +490,7 @@ MonoBehaviour:
   _grippyMaterial: {fileID: 6200000, guid: 73c4ffb7af2fa8343b2b77069ae83634, type: 2}
   _slipperyMaterial: {fileID: 6200000, guid: 08f5a5b90b7b44c4fb207abfadbd87e4, type: 2}
   _groundCheck: {fileID: 2027343975220429271}
-  _groundCheckSize: {x: 0.655, y: 0.4}
+  _groundCheckSize: {x: 0.44, y: 0.4}
   _groundLayer:
     serializedVersion: 2
     m_Bits: 71

@@ -149,9 +149,14 @@ public class LadderClimbAbilityNew : MonoBehaviour, IPlayerAbility
         if (_isClimbing)
         {
             ExitClimbing();
-            // Nhảy thoát khỏi thang
-            _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, 0);
-            _rb.AddForce(Vector2.up * _jumpOffForce, ForceMode2D.Impulse);
+
+            // FIX: Nếu đang ngập nước hoặc đang bơi, ta chỉ thoát trạng thái leo để chuyển sang bơi,
+            // không thực hiện cú nhảy thoát thang để tránh nhân vật bị "bắn" lên không trung.
+            if (!_motor.IsSubmerged && !_motor.IsSwimming)
+            {
+                // CẢI TIẾN: Sử dụng hàm Jump của Motor để kích hoạt đồng bộ Animation và State
+                _motor.Jump(_jumpOffForce);
+            }
             
             // Reset cooldown để tránh double jump lỗi
             _controller?.ResetJumpCooldown();

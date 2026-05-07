@@ -188,6 +188,9 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
         // Giảm cooldown nhảy
         if (_jumpCooldown > 0) _jumpCooldown -= Time.deltaTime;
 
+        // Đồng bộ trạng thái nhấn phím nhảy sang Motor để Animator có thể sử dụng
+        _motor.JumpInput = _input.JumpInput;
+
         Vector2 input = _input.MoveInput;
         _isTryingToJumpOutOfWater = false;
 
