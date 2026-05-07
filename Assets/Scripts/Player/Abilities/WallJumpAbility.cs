@@ -191,6 +191,14 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
     {
         if (!_isClinging) return; // Guard clause để tránh nhảy nhiều lần
 
+        // FIX: Nếu nước đã dâng lên đến người (Submerged) hoặc đã bắt đầu bơi,
+        // ta chỉ nhả tường ra để bắt đầu trạng thái bơi luôn thay vì thực hiện cú nhảy bật tường.
+        if (_motor.IsSubmerged || _motor.IsSwimming)
+        {
+            ExitCling();
+            return;
+        }
+
         // Ghi nhớ bức tường này để áp dụng cooldown riêng cho nó
         _lastWall = _currentWall;
 
@@ -205,6 +213,10 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
         Vector2 rotatedForce = Quaternion.Euler(0, 0, _rb.rotation) * localJumpForce;
         
         _rb.AddForce(rotatedForce, ForceMode2D.Impulse);
+
+        // FIX: Thông báo cho Motor rằng một cú nhảy đã xảy ra để Animator 
+        // chuyển sang trạng thái Jump ngay lập tức thay vì Idle.
+        _motor.NotifyJumpTriggered();
 
         // Phát âm thanh nhảy tường
         _motor.PlaySound(_wallJumpSound);
