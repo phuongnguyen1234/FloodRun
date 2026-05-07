@@ -23,6 +23,8 @@ public class PlayerAnimator : MonoBehaviour
     private readonly int _animIDClimbing = Animator.StringToHash("IsClimbing");
     private readonly int _animIDClimbSpeed = Animator.StringToHash("ClimbSpeed");
     private readonly int _animIDZiplining = Animator.StringToHash("IsZiplining");
+    private readonly int _animIDJumpInput = Animator.StringToHash("JumpInput");
+    private readonly int _animIDDoJump = Animator.StringToHash("DoJump");
 
     private float _stableStateGraceTimer; // Buffer để tránh nháy animation Fall
     private float _landedBufferTimer; // Buffer để tránh nháy animation Idle sau khi tiếp đất
@@ -40,6 +42,26 @@ public class PlayerAnimator : MonoBehaviour
         // Đảm bảo animation không can thiệp vào vị trí thực tế của prefab
         // vì chúng ta đang điều khiển nhân vật bằng PlayerMotor (Physics)
         _animator.applyRootMotion = false;
+    }
+
+    private void OnEnable()
+    {
+        if (_motor != null) _motor.OnJumpTriggered += HandleJumpTriggered;
+    }
+
+    private void OnDisable()
+    {
+        if (_motor != null) _motor.OnJumpTriggered -= HandleJumpTriggered;
+    }
+
+    private void HandleJumpTriggered()
+    {
+        _animator.SetTrigger(_animIDDoJump);
+        
+        // CỰC KỲ QUAN TRỌNG: Ép các biến đệm mặt đất về 0 ngay lập tức
+        // Điều này chặn việc Animator tự động chuyển ngược về Idle/Run ngay trong frame đầu tiên
+        _stableStateGraceTimer = 0;
+        _landedBufferTimer = 0;
     }
 
     void Update()
@@ -107,9 +129,12 @@ public class PlayerAnimator : MonoBehaviour
         // 5. Xác định trạng thái tiếp đất cho Animator
         bool animatorGrounded = _stableStateGraceTimer > 0 && _landedBufferTimer <= 0;
         
-        // FIX: Chỉ hủy trạng thái Grounded khi đang bay lên MÀ KHÔNG chạm đất.
-        // Nếu đang chạm đất (_motor.IsGrounded == true) mà vY > 0, nghĩa là ta đang chạy lên dốc.
+        // CẢI TIẾN: Nếu đang nhảy lên mạnh (vY > 2), ép Grounded về false ngay lập tức.
+        // Điều này ngăn việc Animator bị "kẹt" ở trạng thái Grounded trong frame đầu tiên của cú nhảy.
+        // CẢI TIẾN: Chỉ ép grounded về false nếu nhân vật thực sự KHÔNG chạm đất.
+        // Khi chạy lên dốc, vY > 2 là bình thường, không nên chuyển sang animation Jump.
         if (isJumpingUpward && !_motor.IsGrounded) animatorGrounded = false;
+        else if (isMovingUpward && !_motor.IsGrounded) animatorGrounded = false;
 
         // Khi đang bơi hoặc leo thang, ta coi như "Grounded" để không chạy animation ngã (Fall)
         _animator.SetBool(_animIDGrounded, animatorGrounded || _motor.IsSwimming || _motor.IsClimbing);
@@ -124,6 +149,7 @@ public class PlayerAnimator : MonoBehaviour
         _animator.SetBool(_animIDWallCling, _motor.IsClinging);
         _animator.SetBool(_animIDSliding, _motor.IsSliding);
         _animator.SetBool(_animIDZiplining, _motor.IsZiplining);
+        _animator.SetBool(_animIDJumpInput, _motor.JumpInput);
         
         // 5. Climbing đặc thù
         _animator.SetBool(_animIDClimbing, _motor.IsClimbing);
@@ -132,10 +158,5 @@ public class PlayerAnimator : MonoBehaviour
         {
             _animator.SetFloat(_animIDClimbSpeed, Mathf.Abs(_rb.linearVelocity.y));
         }
-    }
-
-    public void TriggerDeath()
-    {
-        _animator.SetTrigger(_animIDDie);
     }
 }
