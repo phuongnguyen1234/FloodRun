@@ -27,13 +27,7 @@ public class MapAction_TeleportPlayer : MapAction
         {
             if (player == null) continue;
 
-            GameObject playerObject = player.gameObject;
-            if (playerObject.TryGetComponent<Rigidbody2D>(out var rb))
-            {
-                rb.linearVelocity = Vector2.zero;
-            }
-
-            playerObject.transform.position = Destination.position;
+            player.Teleport(Destination.position);
         }
         Debug.Log($"[Timeline] Teleported {(TeleportAllPlayers ? "all" : "local")} players to {Destination.name}.");
     }
