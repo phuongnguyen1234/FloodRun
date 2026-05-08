@@ -70,6 +70,8 @@ public class ZiplineAbility : MonoBehaviour, IPlayerAbility
 
     private void OnEnable()
     {
+        if (_motor != null) _motor.OnTeleported += HandleTeleport;
+
         // Đăng ký lắng nghe sự kiện thay đổi cài đặt để cập nhật âm lượng looping SFX
         if (SettingsManager.Instance != null) SettingsManager.Instance.OnSettingsApplied += UpdateLoopingSfxVolume;
         UpdateLoopingSfxVolume(); // Cập nhật ngay khi bật
@@ -77,8 +79,12 @@ public class ZiplineAbility : MonoBehaviour, IPlayerAbility
 
     private void OnDisable()
     {
+        if (_motor != null) _motor.OnTeleported -= HandleTeleport;
+
         if (SettingsManager.Instance != null) SettingsManager.Instance.OnSettingsApplied -= UpdateLoopingSfxVolume;
     }
+
+    private void HandleTeleport() => DetachZipline(false);
 
     private void Update()
     {
@@ -372,6 +378,9 @@ public class ZiplineAbility : MonoBehaviour, IPlayerAbility
                 if (isLauncher)
                 {
                     _rb.linearVelocity = direction * exitSpeed;
+
+                    // THÊM: Thông báo cú nhảy để Animator thoát trạng thái Idle/Run lập tức
+                    _motor.NotifyJumpTriggered();
                 }
                 // Nếu là dây thường, không làm gì cả, để player rơi tự do sau khi DetachZipline() khôi phục trọng lực.
             }
