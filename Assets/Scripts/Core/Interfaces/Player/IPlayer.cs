@@ -16,6 +16,7 @@ namespace Core.Interfaces
         bool IsClinging { get; }
         bool IsSwimming { get; } // Thêm thuộc tính này để BackgroundMusicManager có thể kiểm tra trạng thái bơi của player
         bool IsSubmerged { get; } // Thêm thuộc tính này để FloodController có thể kiểm tra trạng thái ngập trong nước của player
+        bool IsClimbing { get; }
         GameObject gameObject { get; } // Cho phép truy cập GameObject của player
         void Die(); // Hàm để các manager bên ngoài (như MapManager) có thể ép player chết
         void SetInvincible(bool isInvincible); // Set trạng thái bất tử (không trừ khí/không chết do môi trường)

@@ -1,19 +1,10 @@
 fileFormatVersion: 2
-guid: ae05a1ffc3e378f4888a119297d9119b
+guid: df5e520ac63f06e42a394baf86dc2b29
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 5874289779188080873
-    second: marker-ring_0
-  - first:
-      213: 7572680826487790129
-    second: marker-ring_1
-  - first:
-      213: 2597131053554200608
-    second: marker-ring_2
-  - first:
-      213: 7383982047389701841
-    second: marker-ring_3
+      213: 8344324037188607793
+    second: Background3_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -49,18 +40,18 @@ TextureImporter:
     filterMode: 0
     aniso: 1
     mipBias: 0
-    wrapU: 1
-    wrapV: 1
-    wrapW: 1
+    wrapU: 0
+    wrapV: 0
+    wrapW: 0
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
   spriteMode: 1
   spriteExtrude: 1
-  spriteMeshType: 1
+  spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 32
+  spritePixelsToUnits: 16
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -109,57 +100,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: marker-ring_0
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 18
-        width: 14
-        height: 14
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 9e0a63c4e6ba58150800000000000000
-      internalID: 5874289779188080873
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: marker-ring_1
-      rect:
-        serializedVersion: 2
-        x: 18
-        y: 18
-        width: 14
-        height: 14
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 13a57340711971960800000000000000
-      internalID: 7572680826487790129
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: marker-ring_2
+      name: Background3_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 14
-        height: 14
+        width: 256
+        height: 188
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -168,30 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 020fb3adeecda0420800000000000000
-      internalID: 2597131053554200608
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: marker-ring_3
-      rect:
-        serializedVersion: 2
-        x: 18
-        y: 0
-        width: 14
-        height: 14
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 1d65682dc8c297660800000000000000
-      internalID: 7383982047389701841
+      spriteID: 13f516f608efcc370800000000000000
+      internalID: 8344324037188607793
       vertices: []
       indices: 
       edges: []
@@ -210,10 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      marker-ring_0: 5874289779188080873
-      marker-ring_1: 7572680826487790129
-      marker-ring_2: 2597131053554200608
-      marker-ring_3: 7383982047389701841
+      Background3_0: 8344324037188607793
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
