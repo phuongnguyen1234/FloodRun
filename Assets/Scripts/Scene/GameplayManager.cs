@@ -376,9 +376,9 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
     private void HandleManualTeleport()
     {
         // Chỉ cho phép Local Player (hoặc Admin) Teleport chính mình
-        if (LocalPlayer == null || LocalPlayer.IsClinging || LocalPlayer.IsZiplining)
+        if (LocalPlayer == null || LocalPlayer.IsClinging || LocalPlayer.IsZiplining || LocalPlayer.IsClimbing)
         {
-            if (LocalPlayer != null && (LocalPlayer.IsClinging || LocalPlayer.IsZiplining))
+            if (LocalPlayer != null && (LocalPlayer.IsClinging || LocalPlayer.IsZiplining || LocalPlayer.IsClimbing))
                 Debug.Log("[DevTool] Teleport blocked: Player is currently clinging or ziplining.");
             return;
         }
