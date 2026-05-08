@@ -26,7 +26,6 @@ public class LadderClimbAbilityNew : MonoBehaviour, IPlayerAbility
     private bool _isClimbing = false;
     private ILadder _activeLadder;
     private ILadder _hoveredLadder; // Thang đang chạm vào trigger
-
     private void Awake()
     {
         _motor = GetComponent<PlayerMotor>();
@@ -40,8 +39,19 @@ public class LadderClimbAbilityNew : MonoBehaviour, IPlayerAbility
         _allPlayerColliders = GetComponents<Collider2D>();
     }
 
-    private void OnEnable() => _input.OnJump += HandleJump;
-    private void OnDisable() => _input.OnJump -= HandleJump;
+    private void OnEnable() 
+    {
+        _input.OnJump += HandleJump;
+        if (_motor != null) _motor.OnTeleported += HandleTeleport;
+    }
+
+    private void OnDisable() 
+    {
+        _input.OnJump -= HandleJump;
+        if (_motor != null) _motor.OnTeleported -= HandleTeleport;
+    }
+
+    private void HandleTeleport() => ExitClimbing();
 
     public void EnableAbility() => _isAbilityEnabled = true;
     public void DisableAbility()
@@ -78,6 +88,15 @@ public class LadderClimbAbilityNew : MonoBehaviour, IPlayerAbility
         // --- LOGIC KHI ĐANG LEO ---
         if (_isClimbing)
         {
+            // KIỂM TRA AN TOÀN: Nếu Player bị dịch chuyển (teleport) khỏi thang mà không qua TriggerExit.
+            // Ta thực hiện quét lại vùng hiện tại của Player để xác nhận còn đang chạm thang hay không.
+            Collider2D currentLadderCol = Physics2D.OverlapBox(_bodyCollider.bounds.center, _bodyCollider.size, 0, _ladderLayer);
+            if (currentLadderCol == null)
+            {
+                ExitClimbing();
+                return;
+            }
+
             float playerPivotY = transform.position.y;
             float ladderTopY = _activeLadder.GetTopY();
 
