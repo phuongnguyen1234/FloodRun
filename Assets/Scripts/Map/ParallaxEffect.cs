@@ -49,10 +49,10 @@ public class ParallaxEffect : MonoBehaviour
         Sprite sprite = GetComponent<SpriteRenderer>()?.sprite;
         if (sprite != null)
         {
-            Texture2D texture = sprite.texture;
-            // FIX: Sử dụng bounds.size để tính toán đúng kích thước ngay cả khi dùng DrawMode = Tiled hoặc Scale
-            _textureUnitSizeX = GetComponent<SpriteRenderer>().bounds.size.x;
-            _textureUnitSizeY = GetComponent<SpriteRenderer>().bounds.size.y;
+            // CẢI TIẾN: Lấy kích thước thực tế của 1 vòng lặp (Sprite size * Scale)
+            // Không dùng renderer.bounds vì nó sẽ lấy tổng kích thước vùng Tiled
+            _textureUnitSizeX = (sprite.rect.width / sprite.pixelsPerUnit) * transform.localScale.x;
+            _textureUnitSizeY = (sprite.rect.height / sprite.pixelsPerUnit) * transform.localScale.y;
         }
     }
 
@@ -69,18 +69,23 @@ public class ParallaxEffect : MonoBehaviour
         // Cập nhật lại vị trí camera cho frame tiếp theo
         _lastCameraPosition = _cameraTransform.position;
 
-        // Xử lý lặp lại background theo chiều ngang
-        if (_infiniteHorizontal && Mathf.Abs(_cameraTransform.position.x - transform.position.x) >= _textureUnitSizeX)
+        // Xử lý lặp lại background theo chiều ngang (Snapping logic)
+        if (_infiniteHorizontal)
         {
-            float offsetPositionX = (_cameraTransform.position.x - transform.position.x) % _textureUnitSizeX;
-            transform.position = new Vector3(_cameraTransform.position.x - offsetPositionX, transform.position.y);
+            if (Mathf.Abs(_cameraTransform.position.x - transform.position.x) >= _textureUnitSizeX)
+            {
+                float offsetPositionX = (_cameraTransform.position.x - transform.position.x) % _textureUnitSizeX;
+                transform.position = new Vector3(_cameraTransform.position.x - offsetPositionX, transform.position.y);
+            }
         }
 
-        // Xử lý lặp lại background theo chiều dọc
-        if (_infiniteVertical && Mathf.Abs(_cameraTransform.position.y - transform.position.y) >= _textureUnitSizeY)
+        if (_infiniteVertical)
         {
-            float offsetPositionY = (_cameraTransform.position.y - transform.position.y) % _textureUnitSizeY;
-            transform.position = new Vector3(transform.position.x, _cameraTransform.position.y - offsetPositionY);
+            if (Mathf.Abs(_cameraTransform.position.y - transform.position.y) >= _textureUnitSizeY)
+            {
+                float offsetPositionY = (_cameraTransform.position.y - transform.position.y) % _textureUnitSizeY;
+                transform.position = new Vector3(transform.position.x, _cameraTransform.position.y - offsetPositionY);
+            }
         }
     }
 }
