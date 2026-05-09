@@ -68,11 +68,11 @@ namespace Core
 
         private void Update()
         {
-            // FIX: Chỉ bật hiệu ứng LowPass khi có Player đang bơi VÀ AudioSource đang có nhạc.
+            // FIX: Chỉ bật hiệu ứng LowPass khi có Player đang ngập dưới nước (Submerged) VÀ AudioSource đang có nhạc.
             // Nếu bật filter khi clip bị null, Unity sẽ báo warning "Only custom filters can be played".
             if (_currentPlayer != null && _audioSource.clip != null)
             {
-                _lowPassFilter.enabled = _currentPlayer.IsSwimming;
+                _lowPassFilter.enabled = _currentPlayer.IsSubmerged;
             }
             else if (_lowPassFilter != null && _lowPassFilter.enabled)
             {
