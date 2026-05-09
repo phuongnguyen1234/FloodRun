@@ -474,7 +474,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f8ac8abd382d924c90b523f4e540d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Player::PlayerMotor
-  _speed: 8
+  _speed: 6
   _exitFloodForce: 12
   _bodyCollider: {fileID: 2450440764590350937}
   _feetCollider: {fileID: 7323944146424705785}
@@ -642,8 +642,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2d582d6301ae7141a200bbd777aacbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Player::LadderClimbAbilityNew
-  _climbSpeed: 6
-  _jumpOffForce: 12
+  _climbSpeed: 5
+  _jumpOffForce: 11.5
   _ladderLayer:
     serializedVersion: 2
     m_Bits: 4096
