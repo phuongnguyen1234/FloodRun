@@ -14,6 +14,15 @@ public class MapAction_PlaySound : MapAction
     public float VolumeScale = 1.0f;
     public bool PlayAtCameraPosition = true;
 
+    [Header("Filter Settings")]
+    [Tooltip("Nếu gán Filter có sẵn, Action sẽ dùng Source của nó thay vì tạo mới. Để trống để dùng chế độ Fire-and-Forget.")]
+    public AudioLowPassFilter TargetFilter;
+
+    public bool UseLowPassFilter = false;
+    [Range(20, 22000)]
+    [Tooltip("Tần số cắt. Giá trị càng thấp âm thanh càng 'bí' (muffled).")]
+    public float LowPassCutoff = 5000f;
+
     public override void Execute(IMapManager manager)
     {
         if (Clip == null) return;
@@ -22,14 +31,44 @@ public class MapAction_PlaySound : MapAction
         float masterSfxVolume = (SettingsManager.Instance != null) ? SettingsManager.Instance.SfxVolume : 1f;
         float finalVolume = VolumeScale * masterSfxVolume;
 
-        if (PlayAtCameraPosition)
+        Vector3 playPos = Vector3.zero;
+        if (PlayAtCameraPosition && Camera.main != null)
         {
-            AudioSource.PlayClipAtPoint(Clip, Camera.main.transform.position, finalVolume);
+            playPos = Camera.main.transform.position;
         }
+
+        // Ưu tiên 1: Sử dụng Filter/Source được gán sẵn trong Inspector
+        if (TargetFilter != null)
+        {
+            AudioSource source = TargetFilter.GetComponent<AudioSource>();
+            if (source != null)
+            {
+                TargetFilter.cutoffFrequency = LowPassCutoff;
+                source.PlayOneShot(Clip, finalVolume);
+            }
+        }
+        // Ưu tiên 2: Tự tạo Object tạm thời nếu bật UseLowPassFilter
+        else if (UseLowPassFilter)
+        {
+            // Nếu dùng Filter, ta phải tạo thủ công AudioSource thay vì dùng PlayClipAtPoint
+            GameObject tempGO = new GameObject("MapAction_TempAudio_Filtered");
+            tempGO.transform.position = playPos;
+
+            AudioSource source = tempGO.AddComponent<AudioSource>();
+            source.clip = Clip;
+            source.volume = finalVolume;
+            source.spatialBlend = 1.0f; // Giả lập hành vi 3D của PlayClipAtPoint
+
+            AudioLowPassFilter filter = tempGO.AddComponent<AudioLowPassFilter>();
+            filter.cutoffFrequency = LowPassCutoff;
+
+            source.Play();
+            Object.Destroy(tempGO, Clip.length);
+        }
+        // Ưu tiên 3: Phát âm thanh 3D mặc định
         else
         {
-            // Có thể mở rộng để phát tại vị trí của một object cụ thể
-            AudioSource.PlayClipAtPoint(Clip, Vector3.zero, finalVolume);
+            AudioSource.PlayClipAtPoint(Clip, playPos, finalVolume);
         }
     }
 }
