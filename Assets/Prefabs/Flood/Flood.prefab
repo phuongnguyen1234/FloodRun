@@ -186,7 +186,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mechanics::FloodSurface
   visual: {fileID: 3586424971873970939}
-  background: {fileID: 0}
   col: {fileID: 5519823438946658717}
 --- !u!82 &4661875012935879166
 AudioSource:
