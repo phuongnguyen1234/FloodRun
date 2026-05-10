@@ -13,4 +13,5 @@ MonoBehaviour:
   m_Name: MapDatabase
   m_EditorClassIdentifier: Map::MapDatabase
   AllMaps:
+  - {fileID: 11400000, guid: 109572de057195748b4d1274698735ad, type: 2}
   - {fileID: 11400000, guid: 67ed5aec827d9fb4091a6744fe6fc1db, type: 2}

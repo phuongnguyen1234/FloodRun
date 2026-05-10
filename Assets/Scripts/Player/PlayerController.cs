@@ -58,6 +58,7 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
     private bool _isInfiniteJump = false;
     private bool _isInvincible = false;
     private float _jumpCooldown = 0f; // Cooldown để ngăn spam lệnh nhảy khi giữ phím
+    private DeathReason _lastDeathReason = DeathReason.Drowned; // Mặc định là chết đuối
     private float _currentAirChangeRate = 0f; // Biến lưu tốc độ thay đổi khí hiện tại
 
     private Vector2 _currentMoveInput;
@@ -67,6 +68,7 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
     public bool IsDead => _isDead;
 
     public bool IsZiplining => _motor != null && _motor.IsZiplining;
+    public DeathReason LastDeathReason => _lastDeathReason;
     public bool IsClinging => _motor != null && _motor.IsClinging;
     public bool IsSwimming => _motor != null && _motor.IsSwimming; // Trạng thái bơi được lấy từ PlayerMotor
     public bool IsSubmerged => _motor != null && _motor.IsSubmerged; // Trạng thái ngập trong nước
@@ -403,9 +405,10 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
         
     }
 
-    public void Die()
+    public void Die(DeathReason reason = DeathReason.Drowned)
     {
         if (_isDead) return;
+        _lastDeathReason = reason;
         _isDead = true;
 
         // 1. Lưu vận tốc cuối cùng để tạo quán tính (đang chạy mà chết thì xác phải văng đi)
