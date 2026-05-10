@@ -340,7 +340,7 @@ public class ButtonController : MonoBehaviour, IInteractable, IButtonController
             // Tìm Interface IPlayer để gọi hàm Die (hoặc IPlayerAbility nếu muốn đảm bảo trúng Player)
             if (hit.TryGetComponent(out IPlayer player))
             {
-                player.Die();
+                player.Die(DeathReason.Explosion);
             }
         }
 
