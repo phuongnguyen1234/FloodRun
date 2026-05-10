@@ -427,8 +427,8 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
         
         // CẢI TIẾN: Nếu đang ở các trạng thái tự động điều khiển vận tốc, 
         // thoát sớm để tránh xung đột gây khựng (stutter).
-        // FIX: Thêm IsClinging để Motor không tự di chuyển khi đang bám tường
-        if (IsZiplining || IsSliding || IsDiving || IsClimbing || IsClinging)
+        // CẢI TIẾN: Loại bỏ IsDiving khỏi danh sách chặn để cho phép Air Control (di chuyển ngang) khi đang lao xuống.
+        if (IsZiplining || IsSliding || IsClimbing || IsClinging)
         {
             return;
         }
@@ -872,8 +872,8 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     public void StartAirDive(float speed)
     {
         IsDiving = true;
-        // Set vận tốc X = 0 để lao thẳng xuống, Y = tốc độ âm
-        _rb.linearVelocity = new Vector2(0f, -speed);
+        // CẢI TIẾN: Giữ nguyên vận tốc X hiện tại thay vì ép về 0 để không bị khựng ngang đột ngột khi bắt đầu Dive
+        _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, -speed);
     }
 
     /// <summary>
