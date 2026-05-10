@@ -143,8 +143,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 2.0
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: bf2c01cb1b0c34f479a144f8eba67b82, type: 2}
-  m_sharedMaterial: {fileID: -4878415542670356981, guid: bf2c01cb1b0c34f479a144f8eba67b82, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 0763c80469420bb45ac3ae6bd32d68d0, type: 2}
+  m_sharedMaterial: {fileID: -3090036126112049867, guid: 0763c80469420bb45ac3ae6bd32d68d0, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -280,8 +280,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Map Name
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: bf2c01cb1b0c34f479a144f8eba67b82, type: 2}
-  m_sharedMaterial: {fileID: -4878415542670356981, guid: bf2c01cb1b0c34f479a144f8eba67b82, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 0763c80469420bb45ac3ae6bd32d68d0, type: 2}
+  m_sharedMaterial: {fileID: -3090036126112049867, guid: 0763c80469420bb45ac3ae6bd32d68d0, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -736,7 +736,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.78431374}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

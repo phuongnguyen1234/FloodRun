@@ -185,7 +185,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
             // Check Thua: Hết giờ dựa trên thời gian thực tế của màn chơi
             if (_levelProgressTime >= _maxLevelTime)
             {
-                GameOver("Exceeded Max Time!");
+                GameOver("Exceeded Max Time!", DeathReason.TimeOut);
             }
         }
 
@@ -212,19 +212,19 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         // 4. Check Thua: Player chết
         if (LocalPlayer != null && LocalPlayer.IsDead)
         {
-            GameOver("You're Drowned!");
+            GameOver("You're Drowned!", LocalPlayer.LastDeathReason);
         }
 
         // 4.5. Check Thua: Player rơi xuống vực (Void Death)
         if (LocalPlayer != null && !LocalPlayer.IsDead && _mapManager != null)
         {
             if (((Component)LocalPlayer).transform.position.y < _mapManager.GetKillYThreshold())
-            {
-                GameOver("You fell off the world!");
+            {   
+                GameOver("You fell off the world!", DeathReason.FellOffWorld);
             }
         }
     }
-
+    
     private void ToggleInfiniteAir()
     {
         _isInfAirOn = !_isInfAirOn; // Đảo trạng thái (Toggle)
@@ -470,14 +470,15 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
     {
         if (_playerPrefab != null && _mapManager != null)
         {
-            Transform spawnPoint = _mapManager.GetPlayerSpawnPoint();
-            if (spawnPoint != null)
+            // 1. Lấy vị trí sàn từ Map (điểm ngẫu nhiên trên line spawn)
+            Vector3 spawnPos = _mapManager.GetPlayerSpawnPosition();
+
+            // 2. Tính toán offset để chân chạm đất (thay vì Pivot nằm giữa sàn)
+            float footOffset = GetPivotToFeetOffset(_playerPrefab);
+            Vector3 adjustedSpawnPos = spawnPos + new Vector3(0, footOffset, 0);
+
+            GameObject playerObj = Instantiate(_playerPrefab, adjustedSpawnPos, Quaternion.identity);
             {
-                // LƯU Ý MULTIPLAYER: 
-                // 1. Host sẽ gọi Instantiate qua Network (ví dụ: NetworkServer.Spawn)
-                // 2. Logic dưới đây nên được gọi khi Network Identity báo hiệu LocalPlayer đã sẵn sàng
-                
-                GameObject playerObj = Instantiate(_playerPrefab, spawnPoint.position, Quaternion.identity);
                 IPlayer player = playerObj.GetComponent<IPlayer>();
                 
                 // Trong Multiplayer, mỗi Client chỉ gán LocalPlayer cho Object mà họ sở hữu
@@ -502,6 +503,44 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         {
             Debug.LogError("[GameplayManager] Missing Player Prefab or MapManager!");
         }
+    }
+
+    /// <summary>
+    /// Tính toán khoảng cách từ Pivot (tâm) của Prefab đến điểm thấp nhất của Collider.
+    /// Giúp Player spawn 'đứng trên mặt đất' thay vì bị lún Pivot xuống sàn.
+    /// </summary>
+    private float GetPivotToFeetOffset(GameObject prefab)
+    {
+        // Lấy tất cả collider trên prefab (bao gồm cả các object con như chân, tay...)
+        Collider2D[] colliders = prefab.GetComponentsInChildren<Collider2D>();
+        float minLocalY = 0f;
+        bool foundValidCollider = false;
+
+        foreach (var col in colliders)
+        {
+            // Bỏ qua các trigger (như vùng check bơi, vùng tương tác) vì chúng không đại diện cho "chân"
+            if (col.isTrigger) continue;
+
+            float localYOffset = col.transform.localPosition.y;
+            float currentBottom = 0f;
+
+            if (col is BoxCollider2D box)
+                currentBottom = localYOffset + box.offset.y - (box.size.y / 2f);
+            else if (col is CircleCollider2D circle)
+                currentBottom = localYOffset + circle.offset.y - circle.radius;
+            else if (col is CapsuleCollider2D capsule)
+                currentBottom = localYOffset + capsule.offset.y - (capsule.size.y / 2f);
+            else continue;
+
+            if (!foundValidCollider || currentBottom < minLocalY)
+            {
+                minLocalY = currentBottom;
+                foundValidCollider = true;
+            }
+        }
+
+        // Trả về giá trị dương để đẩy Player lên (ví dụ đáy ở -1.2 thì đẩy lên 1.2)
+        return -minLocalY;
     }
 
     private void UpdateLocalPlayerAirUI()
@@ -614,35 +653,51 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         }
     }
 
-    public void GameOver(string reason)
+    public void GameOver(string reason, DeathReason deathReason)
     {
         if (!IsGameActive) return;
         IsGameActive = false;
         Time.timeScale = 1f; // Tránh treo game ở màn hình Game Over
 
         Debug.Log($"GAME OVER: {reason}");
-        
+
         // Kill player visuals
         foreach (var p in AllPlayers)
         {
-            if (!p.IsDead) p.Die();
+            if (!p.IsDead) p.Die(deathReason); // Ensure all players are marked as dead with the correct reason
         }
 
-        StartCoroutine(GameOverRoutine(reason));
+        StartCoroutine(GameOverRoutine(reason, deathReason));
     }
 
-    private IEnumerator GameOverRoutine(string reason)
+    private IEnumerator GameOverRoutine(string reason, DeathReason deathReason)
     {
         // 1. Thu thập dữ liệu ngay tại thời điểm thua
         MapData data = _mapManager != null ? _mapManager.GetMapData() : null;
         float finalTime = CurrentLevelTime;
         int currentButtons = _mapManager != null ? _mapManager.GetButtonsActivatedCount() : 0;
 
-        // 2. Đợi 1 giây trước khi xử lý tiếp
-        // Hiển thị thông báo Lose màu đỏ
-        _uiManager?.ShowNotification("You're Drowned!", Color.red, 2f);
+        // Determine notification color and if it should be shown
+        Color notificationColor = Color.red; // Default to red
+        bool showNotification = true;
 
-        yield return new WaitForSeconds(1f);
+        if (deathReason == DeathReason.Explosion)
+        {
+            showNotification = false; // No notification for explosion
+        }
+        else if (deathReason == DeathReason.TimeOut)
+        {
+            notificationColor = Color.yellow;
+        }
+
+        // 2. Đợi 2 giây trước khi xử lý tiếp
+        // Hiển thị thông báo Lose màu đỏ
+        if (showNotification)
+        {
+            _uiManager?.ShowNotification(reason, notificationColor, 2f);
+        }
+
+        yield return new WaitForSeconds(2f);
 
         // 3. Hiện UI hoặc Auto Restart
         if (_uiManager != null) 
@@ -654,7 +709,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
             }
             else
             {
-                _uiManager.ShowEndGame(false, reason, data, finalTime, currentButtons, false, 0);
+                _uiManager.ShowEndGame(false, reason, data, finalTime, currentButtons, false, 0); // No coins for losing
             }
         }
     }

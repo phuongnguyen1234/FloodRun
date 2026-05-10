@@ -17,7 +17,6 @@ public class PlayerAnimator : MonoBehaviour
     private readonly int _animIDGrounded = Animator.StringToHash("IsGrounded");
     private readonly int _animIDVerticalVelocity = Animator.StringToHash("VerticalVelocity");
     private readonly int _animIDSwimming = Animator.StringToHash("IsSwimming");
-    private readonly int _animIDDie = Animator.StringToHash("Die");
     private readonly int _animIDWallCling = Animator.StringToHash("IsClinging");
     private readonly int _animIDSliding = Animator.StringToHash("IsSliding");
     private readonly int _animIDClimbing = Animator.StringToHash("IsClimbing");

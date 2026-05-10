@@ -6,7 +6,7 @@ using UnityEngine;
 public class PlayerSpawn : MonoBehaviour
 {
     [Header("Spawn Settings")]
-    [Tooltip("Độ dài đoạn thẳng spawn tính từ tâm object sang hai bên (trục X).")]
+    [Tooltip("Độ dài đoạn thẳng spawn (trục X). Vị trí Y của object này được coi là mặt sàn (nơi chân Player chạm đất).")]
     [SerializeField] private float _spawnWidth = 2f;
     
     [Header("Visuals")]
