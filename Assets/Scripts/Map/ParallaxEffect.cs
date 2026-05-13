@@ -12,18 +12,18 @@ public class ParallaxEffect : MonoBehaviour
     [SerializeField] private Transform _cameraTransform;
 
     [Header("Parallax Settings")]
-    [Tooltip("Hệ số di chuyển theo camera. 0 = đứng yên, 1 = di chuyển cùng camera. Giá trị nhỏ hơn cho cảm giác xa hơn.")]
-    [SerializeField] private Vector2 _parallaxEffectMultiplier = new Vector2(0.5f, 0.2f);
+    [Range(0f, 1f)]
+    [Tooltip("Hệ số Parallax X: 0 = Gần cam (chạy nhanh trên màn hình), 1 = Xa vô tận (đứng yên trên màn hình).")]
+    [SerializeField] private float _parallaxMultiplierX = 0.5f;
 
     [Header("Infinite Tiling")]
     [Tooltip("Bật nếu muốn background lặp lại vô tận theo chiều ngang.")]
     [SerializeField] private bool _infiniteHorizontal = true;
-    [Tooltip("Bật nếu muốn background lặp lại vô tận theo chiều dọc.")]
-    [SerializeField] private bool _infiniteVertical = false;
 
-    private Vector3 _lastCameraPosition;
+    private Vector2 _startCameraPosition;
+    private Vector3 _startPosition;
     private float _textureUnitSizeX;
-    private float _textureUnitSizeY;
+    private bool _isInitialized = false;
 
     private void Start()
     {
@@ -43,16 +43,13 @@ public class ParallaxEffect : MonoBehaviour
             }
         }
 
-        _lastCameraPosition = _cameraTransform.position;
-
         // Tính toán kích thước của sprite để lặp lại
         Sprite sprite = GetComponent<SpriteRenderer>()?.sprite;
         if (sprite != null)
         {
-            Texture2D texture = sprite.texture;
-            // FIX: Sử dụng bounds.size để tính toán đúng kích thước ngay cả khi dùng DrawMode = Tiled hoặc Scale
-            _textureUnitSizeX = GetComponent<SpriteRenderer>().bounds.size.x;
-            _textureUnitSizeY = GetComponent<SpriteRenderer>().bounds.size.y;
+            // CẢI TIẾN: Lấy pixelsPerUnit từ sprite gốc để tính toán chuẩn xác 
+            // kích thước của 1 mẫu texture trước khi nó được Tiled.
+            _textureUnitSizeX = sprite.rect.width / sprite.pixelsPerUnit;
         }
     }
 
@@ -60,27 +57,37 @@ public class ParallaxEffect : MonoBehaviour
     {
         if (_cameraTransform == null) return;
 
-        // Tính toán khoảng cách camera đã di chuyển kể từ frame trước
-        Vector3 deltaMovement = _cameraTransform.position - _lastCameraPosition;
+        Vector3 currentCameraPos = _cameraTransform.position;
 
-        // Di chuyển background một khoảng tương ứng với hệ số parallax
-        transform.position += new Vector3(deltaMovement.x * _parallaxEffectMultiplier.x, deltaMovement.y * _parallaxEffectMultiplier.y);
-
-        // Cập nhật lại vị trí camera cho frame tiếp theo
-        _lastCameraPosition = _cameraTransform.position;
-
-        // Xử lý lặp lại background theo chiều ngang
-        if (_infiniteHorizontal && Mathf.Abs(_cameraTransform.position.x - transform.position.x) >= _textureUnitSizeX)
+        // Khởi tạo ngay trong frame đầu tiên có camera
+        if (!_isInitialized)
         {
-            float offsetPositionX = (_cameraTransform.position.x - transform.position.x) % _textureUnitSizeX;
-            transform.position = new Vector3(_cameraTransform.position.x - offsetPositionX, transform.position.y);
+            _startCameraPosition = new Vector2(currentCameraPos.x, currentCameraPos.y);
+            _startPosition = transform.position;
+            _isInitialized = true;
         }
 
-        // Xử lý lặp lại background theo chiều dọc
-        if (_infiniteVertical && Mathf.Abs(_cameraTransform.position.y - transform.position.y) >= _textureUnitSizeY)
+        // Tính toán độ dời của camera so với lúc bắt đầu
+        float deltaX = currentCameraPos.x - _startCameraPosition.x;
+        float deltaY = currentCameraPos.y - _startCameraPosition.y;
+
+        // Vị trí mục tiêu: 
+        // X di chuyển chậm hơn camera tùy theo hệ số
+        // Y di chuyển 1:1 cùng camera (giữ nguyên khoảng cách tương đối)
+        float targetX = _startPosition.x + (deltaX * _parallaxMultiplierX);
+        float targetY = _startPosition.y + deltaY;
+
+        // XỬ LÝ LẶP LẠI (SMOOTH INFINITE TILING)
+        if (_infiniteHorizontal && _parallaxMultiplierX != 1 && _textureUnitSizeX > 0)
         {
-            float offsetPositionY = (_cameraTransform.position.y - transform.position.y) % _textureUnitSizeY;
-            transform.position = new Vector3(transform.position.x, _cameraTransform.position.y - offsetPositionY);
+            // Tính toán khoảng cách mà Camera đã "vượt qua" texture này
+            // (1 - multiplier) chính là tốc độ trôi tương đối của texture trên màn hình
+            float relativeOffset = (currentCameraPos.x * (1 - _parallaxMultiplierX)) % _textureUnitSizeX;
+            
+            // Ép vị trí X của background luôn nằm trong tầm nhìn của Camera dựa trên offset lặp lại
+            targetX = currentCameraPos.x - relativeOffset;
         }
+
+        transform.position = new Vector3(targetX, targetY, transform.position.z);
     }
 }

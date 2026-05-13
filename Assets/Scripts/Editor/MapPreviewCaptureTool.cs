@@ -158,9 +158,10 @@ namespace EditorTools
             MapManager mapManager = _spawnedMap.GetComponentInChildren<MapManager>();
             Vector3 camPos = Vector3.zero;
 
-            if (mapManager != null && mapManager.GetPlayerSpawnPoint() != null)
+            if (mapManager != null)
             {
-                camPos = mapManager.GetPlayerSpawnPoint().position;
+                // Sử dụng vị trí Center để camera luôn căn giữa vùng spawn
+                camPos = mapManager.GetPlayerSpawnCenter();
             }
             else
             {

@@ -85,6 +85,7 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     private bool _isAbilityEnabled = true;
     private float _movementLockTimer = 0f; // Timer khóa di chuyển
     private Vector2 _groundNormal = Vector2.up; // Vector pháp tuyến của mặt đất hiện tại
+    private float _groundingCooldown = 0f; // Cooldown ngăn chặn nhận diện mặt đất ngay sau khi nhảy/phóng
 
     // FIX: Hỗ trợ nhiều vùng flood chồng nhau
     private readonly System.Collections.Generic.List<IFloodZone> _activeFloodZones = new System.Collections.Generic.List<IFloodZone>();
@@ -120,6 +121,7 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
 	public UnityEvent OnLandEvent;
     public UnityEvent OnExitWaterEvent;
     public event System.Action OnJumpTriggered; // Sự kiện báo hiệu cú nhảy
+    public event System.Action OnTeleported;   // Sự kiện báo hiệu dịch chuyển tức thời
 
     private Vector2 _inputMoveDirection;
     public Vector2 InputMoveDirection => _inputMoveDirection;
@@ -229,33 +231,42 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
 
         UpdateGroundNormal(); // Cập nhật pháp tuyến mặt đất mỗi frame vật lý
 
+        // Giảm cooldown chặn mặt đất
+        if (_groundingCooldown > 0) _groundingCooldown -= Time.fixedDeltaTime;
+
         bool wasGrounded = IsGrounded;
         IsGrounded = false;
 
-        // Kiểm tra mặt đất mỗi khung hình
-        if (_groundCheck != null)
+        // CẢI TIẾN: Nếu đang bám tường, leo thang, bơi hoặc đu dây, 
+        // ta mặc định là không chạm đất để tránh xung đột logic.
+        if (IsClinging || IsClimbing || IsSwimming || IsZiplining)
+        {
+            IsGrounded = false;
+        }
+        // CẢI TIẾN: Disable hoàn toàn việc quét mặt đất khi đang bơi để tiết kiệm hiệu năng
+        // và tránh các logic đáp đất nhầm lẫn khi đang ở trong nước.
+        else if (_groundCheck != null && !IsSwimming)
         {
             // CẢI TIẾN QUAN TRỌNG: Bắt đầu quét từ một điểm cao hơn _groundCheck (0.1f) 
             // để đảm bảo nếu chân bị lún sâu vào sàn (do Snap), BoxCast vẫn phát hiện được mặt sàn.
             Vector2 castOrigin = (Vector2)_groundCheck.position + Vector2.up * 0.1f;
             
-            // Tăng nhẹ khoảng cách quét khi không bơi để bám dốc tốt hơn
-            float baseDist = IsClimbing ? 0.45f : (IsSwimming ? 0.15f : 0.4f);
+            float baseDist = 0.4f;
             float totalCheckDist = baseDist + 0.1f; // Tăng thêm một chút để nhận diện mặt đất tốt hơn khi lên dốc
 
             // FIX: Sử dụng 0f thay vì _rb.rotation để hộp kiểm tra luôn thẳng đứng so với thế giới.
             // Điều này giúp việc phát hiện mặt đất ổn định hơn khi nhân vật bị nghiêng theo dốc.
             RaycastHit2D hit = Physics2D.BoxCast(castOrigin, _groundCheckSize, 0f, Vector2.down, totalCheckDist, _groundLayer);
 
-            // CẢI TIẾN: Nới lỏng ngưỡng normal.y xuống 0.45f để hỗ trợ dốc lên đến 60 độ (cos 60 = 0.5)
-            // Điều này đảm bảo khi lên dốc gắt IsGrounded vẫn true.
-            bool isGroundedThisFrame = hit.collider != null && !hit.collider.isTrigger && hit.normal.y > 0.45f;
+            // CẢI TIẾN: Chỉ cho phép IsGrounded = true nếu không trong thời gian cooldown nhảy/phóng (_groundingCooldown).
+            // Điều này thay thế hoàn toàn việc kiểm tra vận tốc Y, giúp nhân vật lên dốc (vY > 0) vẫn Grounded bình thường.
+            bool isGroundedThisFrame = hit.collider != null && !hit.collider.isTrigger && hit.normal.y > 0.45f && _groundingCooldown <= 0;
 
             IsGrounded = isGroundedThisFrame;
-
-            if (IsGrounded && !wasGrounded)
-                OnLandEvent.Invoke();
         }
+
+        if (IsGrounded && !wasGrounded)
+            OnLandEvent.Invoke();
 
         // Xử lý xoay người theo dốc khi đang trượt (Slide)
         // Chỉ xoay khi đang ở dưới đất để tránh xoay loạn xạ trên không
@@ -416,8 +427,8 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
         
         // CẢI TIẾN: Nếu đang ở các trạng thái tự động điều khiển vận tốc, 
         // thoát sớm để tránh xung đột gây khựng (stutter).
-        // FIX: Thêm IsClinging để Motor không tự di chuyển khi đang bám tường
-        if (IsZiplining || IsSliding || IsDiving || IsClimbing || IsClinging)
+        // CẢI TIẾN: Loại bỏ IsDiving khỏi danh sách chặn để cho phép Air Control (di chuyển ngang) khi đang lao xuống.
+        if (IsZiplining || IsSliding || IsClimbing || IsClinging)
         {
             return;
         }
@@ -487,25 +498,8 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
                 _velocity = Vector3.zero; // Reset biến tham chiếu vận tốc của SmoothDamp
             }
 
-            // TỰ ĐỘNG RESIZE KHI BƠI NGANG (Giống FE2)
-            if (Mathf.Abs(input.x) > 0.1f)
-            {
-                if (!_isSwimHorizontal)
-                {
-                    ResizeCollider(0f, false); // Bơi: Thực hiện phép xoay 90 độ quanh tâm
-                    _isSwimHorizontal = true;
-                }
-            }
-            else
-            {
-                // Khi đứng yên trong nước (đứng bơi), trả lại collider đứng thẳng
-                // Cần kiểm tra cả trần và sàn vì bơi ngang xoay quanh tâm (nở ra 2 đầu)
-                if (_isSwimHorizontal && !CheckForCeiling() && !CheckForGroundExpansion())
-                {
-                    ResetCollider();
-                    _isSwimHorizontal = false;
-                }
-            }
+            // Bơi: Luôn giữ Collider hình vuông, không cần check input để thay đổi trạng thái bơi ngang/đứng nữa.
+            // Logic resize đã được đưa vào StartSwimming().
 
             return; // Kết thúc hàm Move, bỏ qua logic đi bộ
         }
@@ -639,6 +633,16 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
         if (_rb != null) _rb.gravityScale = newGravityScale;
     }
 
+    /// <summary>
+    /// Gọi khi Player bị dịch chuyển bởi Dev Tool hoặc Event để các Ability tự hủy trạng thái.
+    /// </summary>
+    public void NotifyTeleported()
+    {
+        _groundingCooldown = 0.15f;
+        OnJumpTriggered?.Invoke(); // Reset animator buffer
+        OnTeleported?.Invoke();    // Thông báo cho các Ability thoát trạng thái (Climb, Cling, Zipline)
+    }
+
     public void ResetGravityScale() => SetGravityScale(_originalGravityScale);
     #endregion
 
@@ -646,7 +650,11 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     /// Thông báo cho Animator và các hệ thống khác rằng một cú nhảy đã xảy ra.
     /// Dùng cho các Ability tự áp dụng lực nhảy riêng (như WallJump).
     /// </summary>
-    public void NotifyJumpTriggered() => OnJumpTriggered?.Invoke();
+    public void NotifyJumpTriggered() 
+    {
+        _groundingCooldown = 0.15f; // Khóa nhận diện mặt đất trong 0.15s
+        OnJumpTriggered?.Invoke();
+    }
 
     public void SetAttemptingToJumpOutOfWater(bool isAttempting)
     {
@@ -667,8 +675,12 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
             _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, 0f);
             _rb.AddForce(Vector2.up * forceToApply, ForceMode2D.Impulse);
 
-            // CẢI TIẾN: Ép IsGrounded về false ngay lập tức để đồng bộ trạng thái
-            IsGrounded = false;
+            _groundingCooldown = 0.15f; // Khóa nhận diện mặt đất khi nhảy
+
+            // FIX: Không gán IsGrounded = false ở đây nữa. 
+            // Hãy để IsGrounded duy trì trạng thái 'true' cho đến hết frame này 
+            // để các hệ thống khác (như SlideAbility) có thể nhận diện được lần chạm đất này.
+            // IsGrounded sẽ tự động về false ở FixedUpdate tiếp theo nhờ _groundingCooldown.
 
             // Kích hoạt sự kiện để Animator lắng nghe
             OnJumpTriggered?.Invoke();
@@ -706,9 +718,8 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
 
             if (keepBottomFixed)
             {
-                // LOGIC TRƯỢT: Giảm chiều cao theo tỉ lệ, phình ngang và giữ đáy sát đất
+                // LOGIC TRƯỢT (Slide): Giảm chiều cao theo tỉ lệ, phình ngang và giữ đáy sát đất
                 newHeight = _originalColliderSize.y * heightRatio;
-                // FIX: Không lấy chiều cao cũ làm chiều rộng, sử dụng thông số cố định để tránh kẹt khe 1 grid
                 newWidth = _slideWidth; 
 
                 float oldBottomY = _originalColliderOffset.y - (_originalColliderSize.y / 2f);
@@ -718,68 +729,41 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
                     if (feetBottom < oldBottomY) oldBottomY = feetBottom;
                 }
                 newOffsetY = oldBottomY + (newHeight / 2f);
+
+                // TRƯỢT: Cần cập nhật vị trí Ceiling Check để kiểm tra việc đứng dậy an toàn
+                if (_ceilingCheck != null)
+                {
+                    float newTopY = newOffsetY + (newHeight / 2f);
+                    float originalTopY = _originalColliderOffset.y + (_originalColliderSize.y / 2f);
+                    float gap = _originalCeilingCheckPos.y - originalTopY;
+                    _ceilingCheck.localPosition = new Vector3(_originalCeilingCheckPos.x, newTopY + gap, _originalCeilingCheckPos.z);
+                }
+                
+                if (_groundCheck != null)
+                {
+                    _groundCheck.localPosition = _originalGroundCheckPos;
+                    _groundCheckSize = _originalGroundCheckSize;
+                }
             }
             else
             {
-                // LOGIC BƠI (FE2): Xoay 90 độ chuẩn quanh Pivot (Tâm)
-                // Chiều rộng mới = Chiều cao cũ
-                // Chiều cao mới = Chiều rộng cũ
-                newWidth = _originalColliderSize.y;
+                newWidth = _originalColliderSize.x;
                 newHeight = _originalColliderSize.x;
-                
-                // Giữ nguyên Offset gốc vì xoay quanh tâm
                 newOffsetY = _originalColliderOffset.y;
+                 // BƠI: KHÔNG thay đổi vị trí Ceiling/Ground Check. 
+                // Chúng giữ nguyên ở vị trí "Đầu" và "Chân" gốc để check xem có thể đứng thẳng dậy không.
+                if (_ceilingCheck != null) _ceilingCheck.localPosition = _originalCeilingCheckPos;
+                if (_groundCheck != null) _groundCheck.localPosition = _originalGroundCheckPos;
             }
 
             _bodyCollider.size = new Vector2(newWidth, newHeight);
             _bodyCollider.offset = new Vector2(_originalColliderOffset.x, newOffsetY);
 
-            // Tính toán sự thay đổi vị trí theo chiều dọc của collider chính
-            float deltaY = _bodyCollider.offset.y - _originalColliderOffset.y;
-
-            // Cập nhật vị trí của điểm check trần nhà tương ứng
-            if (_ceilingCheck != null)
-            {
-                float newTopY = newOffsetY + (newHeight / 2f);
-                float gap = 0f;
-                
-                // Khi bơi ngang (keepBottomFixed = false)
-                if (keepBottomFixed)
-                {
-                    // Khi trượt: Khôi phục khoảng cách (gap) gốc để check việc đứng dậy an toàn
-                    float originalTopY = _originalColliderOffset.y + (_originalColliderSize.y / 2f);
-                    gap = _originalCeilingCheckPos.y - originalTopY;
-                    _ceilingCheckSize = _originalCeilingCheckSize;
-                }
-                else
-                {
-                    // Khi bơi ngang: Đặt tâm sát biên trên và resize theo chiều ngang mới
-                    _ceilingCheckSize = new Vector2(newWidth, _originalCeilingCheckSize.y);
-                }
-
-                _ceilingCheck.localPosition = new Vector3(_originalCeilingCheckPos.x, newTopY + gap, _originalCeilingCheckPos.z);
-            }
-
-            if (_groundCheck != null)
-            {
-                if (keepBottomFixed)
-                {
-                    // 1. Khi slide: Giữ nguyên vị trí Y và kích thước Ground Check như ban đầu
-                    _groundCheck.localPosition = _originalGroundCheckPos;
-                    _groundCheckSize = _originalGroundCheckSize;
-                }
-                else
-                {
-                    // 2. Khi bơi ngang: Đặt tâm sát biên dưới collider và resize rộng bằng chiều dài cơ thể
-                    float newBottomY = newOffsetY - (newHeight / 2f);
-                    _groundCheck.localPosition = new Vector3(_originalGroundCheckPos.x, newBottomY, _originalGroundCheckPos.z);
-                    _groundCheckSize = new Vector2(newWidth, _originalGroundCheckSize.y);
-                }
-            }
-
             // Cập nhật vị trí của swim trigger để nó di chuyển cùng với thân người
             if (_swimTriggerCollider != null)
             {
+                float deltaY = newOffsetY - _originalColliderOffset.y;
+
                 // Chỉ di chuyển theo DeltaY của thân, không cần Offset thủ công
                 _swimTriggerCollider.transform.localPosition = new Vector3(
                     _originalSwimTriggerPos.x,
@@ -789,9 +773,10 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
                 // Đồng bộ xoay cho Swim Trigger nếu nó là Box
                 if (_swimTriggerCollider is BoxCollider2D box)
                 {
-                    box.size = !keepBottomFixed 
-                        ? new Vector2(_originalSwimTriggerSize.y, _originalSwimTriggerSize.x) // Xoay 90 độ
-                        : new Vector2(_originalSwimTriggerSize.x, _originalSwimTriggerSize.y * heightRatio); // Thu tỉ lệ
+                    // Bơi Square: Giữ Trigger hình vuông đồng nhất với Body để check ngập nước ổn định
+                    box.size = !keepBottomFixed
+                        ? new Vector2(newWidth, _originalSwimTriggerSize.y) 
+                        : new Vector2(_originalSwimTriggerSize.x, _originalSwimTriggerSize.y * heightRatio);
                 }
             }
         }
@@ -810,13 +795,13 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
         
         // Đảm bảo xoay người về thẳng đứng ngay lập tức khi dừng trượt
         _rb.rotation = 0f;
-        
+
         if (_ceilingCheck != null)
         {
             _ceilingCheck.localPosition = _originalCeilingCheckPos;
             _ceilingCheckSize = _originalCeilingCheckSize; // Khôi phục kích thước gốc của ceiling check
         }
-
+        
         // Khôi phục Ground Check
         if (_groundCheck != null)
         {
@@ -840,27 +825,35 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     public bool CheckForCeiling()
     {
         if (_ceilingCheck == null) return false;
+        if (_bodyCollider == null) return false;
 
-        // FIX: Khi đang Slide hoặc Bơi ngang (Collider bị thu nhỏ), vị trí _ceilingCheck thực tế đã bị hạ thấp.
+        // Slide: Vị trí _ceilingCheck thực tế đã bị hạ thấp.
         // Để kiểm tra xem có thể ĐỨNG DẬY được không, ta cần quét (Sweep) từ vị trí thấp lên vị trí cao (Gốc).
-        // Nếu chỉ check tại điểm đích, ta có thể bỏ qua các chướng ngại vật lơ lửng ở giữa (như platform mỏng).
-        if (IsSliding || _isSwimHorizontal)
+        if (IsSliding)
         {
-            Vector2 currentPos = (Vector2)_ceilingCheck.position + (Vector2)(transform.up * -0.05f);
-            // Tính toán vị trí gốc trong không gian World (bao gồm cả xoay/scale)
-            Vector2 targetPos = transform.TransformPoint(_originalCeilingCheckPos);
+            // 1. Tính toán đỉnh của body collider hiện tại (khi đang slide/bơi ngang)
+            Vector2 currentBodyTopWorld = (Vector2)transform.position + _bodyCollider.offset + Vector2.up * (_bodyCollider.size.y / 2f);
+
+            // 2. Tính toán đỉnh của body collider khi đứng thẳng (original)
+            Vector2 originalBodyTopWorld = (Vector2)transform.position + _originalColliderOffset + Vector2.up * (_originalColliderSize.y / 2f);
+
+            // 3. Khoảng cách cần quét là từ đỉnh body hiện tại đến đỉnh body gốc
+            float sweepDistance = originalBodyTopWorld.y - currentBodyTopWorld.y;
+
+            // Nếu khoảng cách quá nhỏ hoặc âm, không cần quét (đã đứng thẳng hoặc cao hơn)
+            if (sweepDistance <= 0.01f) return false;
             
-            float distance = Vector2.Distance(currentPos, targetPos);
-            
-            // Dùng CircleCast để quét dọc theo đường đứng dậy
-            Vector2 direction = (targetPos - currentPos).normalized;
-            RaycastHit2D hit = Physics2D.BoxCast(currentPos, _ceilingCheckSize, _rb.rotation, direction, distance, _groundLayer);
+            // 4. Kích thước hộp quét: Chiều rộng bằng body collider, chiều cao rất nhỏ (làm sensor)
+            Vector2 sweepBoxSize = new Vector2(_bodyCollider.size.x * 0.8f, 0.05f); // Hơi hẹp hơn body để tránh kẹt cạnh
+
+            // 5. Thực hiện BoxCast từ đỉnh body hiện tại, hướng lên trên, với khoảng cách sweepDistance
+            RaycastHit2D hit = Physics2D.BoxCast(currentBodyTopWorld, sweepBoxSize, _rb.rotation, Vector2.up, sweepDistance, _groundLayer);
             
             return hit.collider != null;
         }
 
         // Trường hợp bình thường: Check tại chỗ
-        return Physics2D.OverlapBox(_ceilingCheck.position, _ceilingCheckSize, _rb.rotation, _groundLayer);
+        return Physics2D.OverlapBox(_ceilingCheck.position, _originalCeilingCheckSize, _rb.rotation, _groundLayer); // Luôn dùng kích thước gốc cho check bình thường
     }
 
     /// <summary>
@@ -869,26 +862,8 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     public bool CheckForGroundExpansion()
     {
         if (_groundCheck == null) return false;
-
-        // Chỉ cần kiểm tra khi đang bơi ngang (vì slide giữ chân cố định rồi)
-        if (_isSwimHorizontal)
-        {
-            // Lùi điểm bắt đầu quét vào trong (lên trên) 0.05f để tránh kẹt biên
-            Vector2 currentPos = (Vector2)_groundCheck.position + (Vector2)(transform.up * 0.05f);
-            Vector2 targetPos = transform.TransformPoint(_originalGroundCheckPos);
-            
-            float distance = Vector2.Distance(currentPos, targetPos);
-            
-            // Nếu khoảng cách quá nhỏ, check tại chỗ
-            if (distance < 0.01f) return Physics2D.OverlapBox(currentPos, _groundCheckSize, _rb.rotation, _groundLayer);
-
-            Vector2 direction = (targetPos - currentPos).normalized;
-            RaycastHit2D hit = Physics2D.BoxCast(currentPos, _groundCheckSize, _rb.rotation, direction, distance, _groundLayer);
-            
-            return hit.collider != null;
-        }
-
-        return false;
+        // Vì khi bơi điểm check không đổi, chỉ cần kiểm tra tại vị trí gốc xem có bị chặn không
+        return Physics2D.OverlapBox(_groundCheck.position, _originalGroundCheckSize, _rb.rotation, _groundLayer);
     }
 
     /// <summary>
@@ -897,8 +872,8 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     public void StartAirDive(float speed)
     {
         IsDiving = true;
-        // Set vận tốc X = 0 để lao thẳng xuống, Y = tốc độ âm
-        _rb.linearVelocity = new Vector2(0f, -speed);
+        // CẢI TIẾN: Giữ nguyên vận tốc X hiện tại thay vì ép về 0 để không bị khựng ngang đột ngột khi bắt đầu Dive
+        _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, -speed);
     }
 
     /// <summary>
@@ -1123,12 +1098,10 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     {
         StopSwimming();
         
-        // Nếu đang bơi ngang mà thoát nước, xử lý collider.
-        // CHỈ khôi phục nếu không đang trượt. Nếu đang trượt, SlideAbility sẽ lo việc khôi phục.
-        if (_isSwimHorizontal && !IsSliding)
-        {
+        // Khôi phục collider về trạng thái đứng thẳng nếu không đang trượt
+        if (!IsSliding)
             ResetCollider();
-        }
+
         // Dù có reset collider hay không, trạng thái bơi ngang phải được tắt khi ra khỏi nước.
         _isSwimHorizontal = false;
 
@@ -1145,8 +1118,9 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
         _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, 0f);
         _rb.AddForce(Vector2.up * _exitFloodForce, ForceMode2D.Impulse);
 
-        // Kích hoạt sự kiện nhảy để Animator có thể chuyển sang animation Jump/Fall
-        OnJumpTriggered?.Invoke();
+        // FIX: Sử dụng NotifyJumpTriggered thay vì invoke trực tiếp để kích hoạt groundingCooldown (0.15s).
+        // Điều này ngăn việc BoxCast quét trúng mặt nước ngay khi vừa "pop" lên.
+        NotifyJumpTriggered();
 
         // Kích hoạt sự kiện để báo cho Controller biết
         OnExitWaterEvent?.Invoke();
@@ -1187,6 +1161,9 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
             PlaySound(CurrentFlood.SplashSound);
         }
         _rb.gravityScale = 0f; // Tắt trọng lực để đứng yên tại chỗ
+
+        // Chuyển Collider sang hình vuông ngay khi bắt đầu bơi
+        ResizeCollider(0f, false);
     }
 
     private void StopSwimming()
@@ -1228,11 +1205,9 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
         // Khôi phục collider chân khi buộc phải thoát bơi (ví dụ: bám thang)
         if (_feetCollider != null) _feetCollider.enabled = true;
 
-        // Khôi phục collider nếu đang ở trạng thái bơi ngang, trừ khi đang trượt.
-        if (_isSwimHorizontal && !IsSliding && !CheckForCeiling())
-        {
-            ResetCollider();
-            _isSwimHorizontal = false;
-        }
+        // Khôi phục collider đứng thẳng
+        if (!IsSliding) ResetCollider();
+        
+        _isSwimHorizontal = false;
     }
 }

@@ -58,6 +58,7 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
     private bool _isInfiniteJump = false;
     private bool _isInvincible = false;
     private float _jumpCooldown = 0f; // Cooldown để ngăn spam lệnh nhảy khi giữ phím
+    private DeathReason _lastDeathReason = DeathReason.Drowned; // Mặc định là chết đuối
     private float _currentAirChangeRate = 0f; // Biến lưu tốc độ thay đổi khí hiện tại
 
     private Vector2 _currentMoveInput;
@@ -67,9 +68,11 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
     public bool IsDead => _isDead;
 
     public bool IsZiplining => _motor != null && _motor.IsZiplining;
+    public DeathReason LastDeathReason => _lastDeathReason;
     public bool IsClinging => _motor != null && _motor.IsClinging;
     public bool IsSwimming => _motor != null && _motor.IsSwimming; // Trạng thái bơi được lấy từ PlayerMotor
     public bool IsSubmerged => _motor != null && _motor.IsSubmerged; // Trạng thái ngập trong nước
+    public bool IsClimbing => _motor != null && _motor.IsClimbing; // Trạng thái leo thang
 
     // Triển khai CurrentFlood từ IPlayer: Trả về vùng nước mà Motor đang ghi nhận
     public IFloodZone CurrentFlood => _motor != null ? _motor.CurrentFlood : null;
@@ -158,9 +161,12 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
         // 2. Dịch chuyển vị trí
         // Ta thêm một khoảng Offset nhẹ (ví dụ 0.5f lên trên) để tránh việc chân player bị kẹt vào collider của nút
         transform.position = position + Vector3.up * 0.5f;
+        
+        // 3. Reset các trạng thái vận tốc và thông báo Teleport
         _rb.linearVelocity = Vector2.zero; // Triệt tiêu hoàn toàn vận tốc cũ
+        _motor.NotifyTeleported();
 
-        // 3. Reset các timer nội bộ
+        // 4. Reset các timer nội bộ
         _jumpCooldown = 0f;
         
         // 4. Bật lại Ability
@@ -399,9 +405,10 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
         
     }
 
-    public void Die()
+    public void Die(DeathReason reason = DeathReason.Drowned)
     {
         if (_isDead) return;
+        _lastDeathReason = reason;
         _isDead = true;
 
         // 1. Lưu vận tốc cuối cùng để tạo quán tính (đang chạy mà chết thì xác phải văng đi)
