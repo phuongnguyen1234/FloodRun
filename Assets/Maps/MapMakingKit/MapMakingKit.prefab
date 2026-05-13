@@ -10510,7 +10510,14 @@ MonoBehaviour:
   - {fileID: 3690872310846471732}
   _buttonSequenceManagerObject: {fileID: 6665127746608799719}
   _killYThreshold: -1000
-  _mapTimelineEvents: []
+  _mapTimelineEvents:
+  - EventName: 
+    TriggerTime: 0
+    OnTimeReached:
+      m_PersistentCalls:
+        m_Calls: []
+    HasTriggered: 0
+    Actions: []
   references:
     version: 2
     RefIds: []
