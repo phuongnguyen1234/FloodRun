@@ -17,7 +17,6 @@ public class PlayerAnimator : MonoBehaviour
     private readonly int _animIDGrounded = Animator.StringToHash("IsGrounded");
     private readonly int _animIDVerticalVelocity = Animator.StringToHash("VerticalVelocity");
     private readonly int _animIDSwimming = Animator.StringToHash("IsSwimming");
-    private readonly int _animIDDie = Animator.StringToHash("Die");
     private readonly int _animIDWallCling = Animator.StringToHash("IsClinging");
     private readonly int _animIDSliding = Animator.StringToHash("IsSliding");
     private readonly int _animIDClimbing = Animator.StringToHash("IsClimbing");
@@ -57,6 +56,11 @@ public class PlayerAnimator : MonoBehaviour
     private void HandleJumpTriggered()
     {
         _animator.SetTrigger(_animIDDoJump);
+
+        // FIX: Ép trực tiếp tham số để Animator "nhảy" state ngay trong frame này,
+        // tránh việc đi qua Entry -> Idle của Sub-machine Locomotion.
+        _animator.SetBool(_animIDGrounded, false);
+        _animator.SetFloat(_animIDVerticalVelocity, 10f);
         
         // CỰC KỲ QUAN TRỌNG: Ép các biến đệm mặt đất về 0 ngay lập tức
         // Điều này chặn việc Animator tự động chuyển ngược về Idle/Run ngay trong frame đầu tiên
@@ -97,9 +101,9 @@ public class PlayerAnimator : MonoBehaviour
 
         // 3. CẢI TIẾN QUAN TRỌNG: Nếu đang nhảy lên (vY dương), hủy ngay lập tức các buffer mặt đất
         // Hạ thấp ngưỡng từ 0.5 xuống 0.1 để nhạy hơn với cú nhảy.
-        // Chỉ coi là đang nhảy thực sự nếu vận tốc Y đủ lớn (ví dụ > 2f)
-        // Điều này giúp việc nảy nhẹ khi lên dốc (vY nhỏ) không làm mất trạng thái Grounded
-        bool isJumpingUpward = _rb.linearVelocity.y > 2.0f;
+        // CẢI TIẾN: Hạ thấp ngưỡng nhận diện từ 2.0f xuống 0.5f.
+        // Điều này giúp Animator nhận ra nhân vật đang "bay" nhanh hơn khi được phóng đi từ Zipline/Nước.
+        bool isJumpingUpward = _rb.linearVelocity.y > 0.5f;
         bool isMovingUpward = _rb.linearVelocity.y > 0.1f;
 
         if (isJumpingUpward && !_motor.IsGrounded)

@@ -36,6 +36,7 @@ public class SlideAbility : MonoBehaviour, IPlayerAbility
     private float _slideTimer;
     private float _cooldownTimer;
     private bool _isAbilityEnabled = true;
+    private bool _hasDivedInAir = false; // Cờ đánh dấu đã sử dụng Air Dive trong lần ở trên không này
     private bool _waitForSlideRelease = false; // Cờ chặn trượt liên tục khi giữ phím
     
     // Trạng thái chờ trượt sau khi dive
@@ -59,6 +60,7 @@ public class SlideAbility : MonoBehaviour, IPlayerAbility
         _isAbilityEnabled = false;
         if (_isSliding) StopSlide();
         if (_isDiving) StopDive();
+        _hasDivedInAir = false;
         _isWaitingToSlide = false;
     }
 
@@ -72,6 +74,12 @@ public class SlideAbility : MonoBehaviour, IPlayerAbility
             _waitForSlideRelease = false;
         }
 
+        // Reset cờ Air Dive khi chạm đất, bơi, hoặc thực hiện các trạng thái đặc biệt khác (leo thang, đu dây, bám tường)
+        if (_motor.IsGrounded || _motor.IsSwimming || _motor.IsClimbing || _motor.IsZiplining || _motor.IsClinging)
+        {
+            _hasDivedInAir = false;
+        }
+
         // Luôn đồng bộ hướng của Particle theo hướng nhìn của Player mọi lúc
         SyncParticleRotation();
 
@@ -80,15 +88,15 @@ public class SlideAbility : MonoBehaviour, IPlayerAbility
 
         // Logic Input: Nhấn Q -> Chỉ kích hoạt nếu không trong trạng thái chờ thả phím
         // FIX: Thêm điều kiện !_motor.IsClinging để chặn slide/dive khi đang bám tường
-        if (_input.SlideInput && !_motor.IsSwimming && !_motor.IsZiplining && !_motor.IsClimbing && !_motor.IsClinging && _cooldownTimer <= 0 && !_waitForSlideRelease && !_isWaitingToSlide)
+        if (_input.SlideInput && !_motor.IsSwimming && !_motor.IsZiplining && !_motor.IsClimbing && !_motor.IsClinging && _cooldownTimer <= 0 && !_isWaitingToSlide)
         {
             // 1. Nếu đang ở dưới đất -> Slide
-            if (_motor.IsGrounded && !_isSliding && !_isDiving)
+            if (_motor.IsGrounded && !_isSliding && !_isDiving && !_waitForSlideRelease) // _waitForSlideRelease vẫn áp dụng cho Ground Slide
             {
                 StartSlide();
             }
             // 2. Nếu đang ở trên không -> Air Dive
-            else if (!_motor.IsGrounded && !_isDiving && !_isSliding)
+            else if (!_motor.IsGrounded && !_isDiving && !_isSliding && !_hasDivedInAir) // Chỉ cho phép nếu chưa dive lần nào trên không
             {
                 StartDive();
             }
@@ -234,6 +242,7 @@ public class SlideAbility : MonoBehaviour, IPlayerAbility
 
     private void StartDive()
     {
+        _hasDivedInAir = true; // Đánh dấu đã sử dụng
         _isDiving = true;
         _motor.StartAirDive(_diveSpeed);
         _motor.PlaySound(_diveSound);

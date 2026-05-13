@@ -21,5 +21,5 @@ MonoBehaviour:
   ApplyDepthMultiplier: 0
   DepthMultiplierFactor: 0.5
   FadeAlphaOnSwim: 1
-  TargetSwimAlpha: 0.5
+  TargetSwimAlpha: 0.25
   AlphaTransitionSpeed: 1.5

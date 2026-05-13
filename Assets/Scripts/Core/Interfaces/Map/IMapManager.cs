@@ -8,7 +8,8 @@ namespace Core.Interfaces
     {
         MapData GetMapData();
         float GetMaxMapTime();
-        Transform GetPlayerSpawnPoint();
+        Vector3 GetPlayerSpawnPosition();
+        Vector3 GetPlayerSpawnCenter();
         void StartMapMechanics();
         
         // Cho UI hiển thị nút bấm

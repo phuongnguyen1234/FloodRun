@@ -40,8 +40,19 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
         _rb = GetComponent<Rigidbody2D>();
     }
 
-    private void OnEnable() => _input.OnJump += HandleJump;
-    private void OnDisable() => _input.OnJump -= HandleJump;
+    private void OnEnable() 
+    {
+        _input.OnJump += HandleJump;
+        if (_motor != null) _motor.OnTeleported += HandleTeleport;
+    }
+
+    private void OnDisable() 
+    {
+        _input.OnJump -= HandleJump;
+        if (_motor != null) _motor.OnTeleported -= HandleTeleport;
+    }
+
+    private void HandleTeleport() => ExitCling();
 
     public void EnableAbility() => _isAbilityEnabled = true;
     public void DisableAbility() {
@@ -58,10 +69,13 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
             return;
         }
 
+        // Luôn giảm thời gian cooldown/grace period
+        if (_reClingCooldown > 0) _reClingCooldown -= Time.deltaTime;
+
         // Nếu đang leo thang, bơi, hoặc ở dưới đất, không cho phép bám tường
         // FIX: Không cho phép bám tường khi đang Slide để tránh kẹt trong khe hẹp
-        // FIX: Nếu Player bị ngập nước (IsSubmerged), phải thoát Cling ngay để chuyển sang bơi
-        if (!_isAbilityEnabled || _motor.IsGrounded || _motor.IsClimbing || _motor.IsSwimming || _motor.IsSliding || _motor.IsSubmerged)
+        // LƯU Ý: _motor.IsGrounded bây giờ sẽ luôn false khi đang Cling, trừ khi ta chủ động nhả ra.
+        if (!_isAbilityEnabled || _motor.IsClimbing || _motor.IsSwimming || _motor.IsSliding || _motor.IsSubmerged)
         {
             if (_isClinging) ExitCling();
             return;
@@ -89,12 +103,6 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
         }
         else // Nếu không đang bám tường
         {
-            // Giảm thời gian cooldown bám tường
-            if (_reClingCooldown > 0)
-            {
-                _reClingCooldown -= Time.deltaTime;
-            }
-            
             CheckForWall();
         }
     }
@@ -107,6 +115,10 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
 
     private void CheckForWall()
     {
+        // FIX: Chỉ cho phép tìm tường để bám nếu nhân vật đang ở trên không.
+        // Điều này ngăn việc bám tường ngay khi đang đứng trên mặt đất.
+        if (_motor.IsGrounded) return;
+
         // Raycast về phía trước mặt nhân vật để tìm tường
         Vector2 raycastOrigin = (Vector2)transform.position + Vector2.up * _wallCheckVerticalOffset;
         Vector2 direction = _motor.IsFacingRight ? Vector2.right : Vector2.left; // Hướng Raycast
@@ -151,6 +163,9 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
         // Chúng ta cộng thêm một khoảng offset theo hướng của Normal để tránh Player bị lún vào trong tường.
         float targetX = hit.point.x + (hit.normal.x * _clingOffset);
         transform.position = new Vector3(targetX, transform.position.y, transform.position.z);
+
+        // Đặt thời gian ân hạn ngắn để tránh việc bị đẩy ra ngay lập tức nếu bám gần sàn
+        _reClingCooldown = 0.15f;
 
         // Kiểm tra xem tường này có setup timer không
         // Chúng ta lấy component WallJumpSurface từ transform của tường

@@ -201,17 +201,27 @@ public class MapManager : MonoBehaviour, IMapManager
     /// <summary>
     /// Cung cấp vị trí spawn cho GameplayManager
     /// </summary>
-    public Transform GetPlayerSpawnPoint()
+    public Vector3 GetPlayerSpawnPosition()
     {
         if (_playerSpawn != null)
         {
-            // Nếu PlayerSpawn có logic random spawn, ta cần sửa lại PlayerSpawn để trả về Transform hoặc Vector3
-            // Ở đây tạm thời trả về transform của object chứa script PlayerSpawn nếu script đó không có hàm Get
-            return _playerSpawn.transform; 
-            // Lưu ý: Nếu PlayerSpawn.cs có hàm GetRandomSpawnPosition(), bạn nên dùng nó trong GameplayManager 
-            // hoặc sửa hàm này trả về Vector3. Hiện tại tôi trả về Transform để đơn giản hóa.
+            // Gọi hàm lấy vị trí ngẫu nhiên đã được định nghĩa trong PlayerSpawn
+            return _playerSpawn.GetRandomSpawnPosition();
         }
-        return transform; // Fallback
+        return transform.position; // Fallback về tâm MapManager
+    }
+
+    /// <summary>
+    /// Trả về vị trí tâm của vùng spawn (không ngẫu nhiên).
+    /// Dùng cho các công cụ Editor như Tool chụp ảnh preview.
+    /// </summary>
+    public Vector3 GetPlayerSpawnCenter()
+    {
+        if (_playerSpawn != null)
+        {
+            return _playerSpawn.transform.position;
+        }
+        return transform.position;
     }
 
     /// <summary>
