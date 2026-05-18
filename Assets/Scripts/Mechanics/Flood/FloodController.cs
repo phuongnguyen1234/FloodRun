@@ -134,7 +134,7 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
         if (_gameplayManager == null)
         {
             // Tìm kiếm đối tượng thực thi IGameplayManager
-            _gameplayManager = FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<IGameplayManager>().FirstOrDefault();
+            _gameplayManager = FindObjectsByType<Component>().OfType<IGameplayManager>().FirstOrDefault();
         }
 
         UpdateVisuals();

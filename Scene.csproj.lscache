@@ -53,6 +53,7 @@ TemporaryDependencyNodeTargetIdentifier=netstandard2.1
 Assets/Scripts/Scene/
  GameplayManager.cs
  HomeManager.cs
+ MultiplayerManager.cs
 Temp/obj/Scene/.NETStandard,Version=v2.1.AssemblyAttributes.cs
 
 [metadataReferences]
@@ -346,6 +347,7 @@ Library/PackageCache/
 Library/ScriptAssemblies/
  Unity.Cinemachine.dll
  Unity.InputSystem.dll
+ Unity.Netcode.Runtime.dll
  UnityEditor.UI.dll
  UnityEngine.UI.dll
 Temp/bin/Debug/Core.dll

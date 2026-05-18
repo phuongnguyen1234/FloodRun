@@ -41,7 +41,7 @@ public class KeyRebindButton : MonoBehaviour
 
         // 1. Sửa lỗi Obsolete: Sử dụng FindObjectsInactive.Include để tìm cả các object bị ẩn
         // 2. Fix lỗi Null ở màn hình Home: Nếu không thấy Player, ta tạo một instance Action tạm thời
-        IInputProvider inputProvider = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+        IInputProvider inputProvider = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
             .OfType<IInputProvider>()
             .FirstOrDefault();
         

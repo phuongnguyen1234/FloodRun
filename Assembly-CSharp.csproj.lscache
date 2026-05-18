@@ -329,6 +329,7 @@ Library/PackageCache/
  com.unity.nuget.mono-cecil@ecb9724e46ff/Mono.Cecil.dll
  com.unity.visualscripting@eb6004dcc707/Runtime/VisualScripting.Flow/Dependencies/NCalc/Unity.VisualScripting.Antlr3.Runtime.dll
 Library/ScriptAssemblies/
+ ParrelSync.dll
  PsdPlugin.dll
  Unity.2D.Animation.Editor.dll
  Unity.2D.Animation.Runtime.dll

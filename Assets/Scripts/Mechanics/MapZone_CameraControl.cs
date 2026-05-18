@@ -17,7 +17,7 @@ public class MapZone_CameraControl : MonoBehaviour
 
     private void Awake()
     {
-        _gameplayManager = FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<IGameplayManager>().FirstOrDefault();
+        _gameplayManager = FindObjectsByType<Component>().OfType<IGameplayManager>().FirstOrDefault();
         if (_gameplayManager == null)
         {
             Debug.LogError("[MapZone_CameraControl] IGameplayManager not found in scene!");

@@ -27,7 +27,7 @@ public class MapAction_PlayerAttribute : MapAction
     public override void Execute(IMapManager manager)
     {
         // Tìm GameplayManager thông qua Interface để lấy LocalPlayer
-        var gameplay = Object.FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<IGameplayManager>().FirstOrDefault();
+        var gameplay = Object.FindObjectsByType<Component>().OfType<IGameplayManager>().FirstOrDefault();
         IPlayer targetPlayer = gameplay?.LocalPlayer;
 
         if (targetPlayer == null)

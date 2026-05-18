@@ -16,7 +16,7 @@ public class UIButtonSound : MonoBehaviour
         // Tìm bất kỳ Component nào thực thi IUISfxPlayer (có thể là HomeUIManager hoặc GameplayUIManager)
         if (_sfxPlayer == null)
         {
-            _sfxPlayer = FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<IUISfxPlayer>().FirstOrDefault();
+            _sfxPlayer = FindObjectsByType<Component>().OfType<IUISfxPlayer>().FirstOrDefault();
         }
 
         // Đăng ký sự kiện Click

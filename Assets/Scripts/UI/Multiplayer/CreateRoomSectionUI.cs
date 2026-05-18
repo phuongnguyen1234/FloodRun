@@ -1,6 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Unity.Netcode;
+using System.Collections;
+using Core;
+using Core.Interfaces;
+using System.Linq;
 
 namespace UI
 {
@@ -12,7 +17,9 @@ namespace UI
     {
         [Header("UI Components")]
         [SerializeField] private TMP_Dropdown _maxPlayersDropdown;
+        [SerializeField] private Toggle _usePasscodeToggle;
         [SerializeField] private TMP_InputField _passcodeInput;
+        [SerializeField] private Button _createButton; // Gán nút Create trong Inspector
 
         private void Start()
         {
@@ -22,37 +29,115 @@ namespace UI
                 _passcodeInput.characterLimit = 6;
                 _passcodeInput.contentType = TMP_InputField.ContentType.IntegerNumber;
             }
+
+            // Lắng nghe sự kiện Checkbox để ẩn/hiện Input Passcode
+            if (_usePasscodeToggle != null)
+            {
+                _usePasscodeToggle.onValueChanged.AddListener(OnPasscodeToggleChanged);
+                OnPasscodeToggleChanged(_usePasscodeToggle.isOn);
+            }
+
+            // Lắng nghe sự kiện shutdown để bật lại nút nếu host thất bại
+            if (NetworkManager.Singleton != null) {
+                NetworkManager.Singleton.OnClientDisconnectCallback += (id) => SetInteractions(true);
+            }
+        }
+
+        private void OnPasscodeToggleChanged(bool isOn)
+        {
+            if (_passcodeInput != null)
+                _passcodeInput.interactable = isOn;
         }
 
         /// <summary>
         /// Xử lý logic khi người chơi nhấn tạo phòng.
-        /// Hiện tại chỉ kiểm tra tính hợp lệ của dữ liệu và log ra console.
         /// </summary>
         public void CreateRoom()
         {
+            SetInteractions(false);
+
             // 1. Lấy số lượng người chơi từ Dropdown
-            int maxPlayers = 1; // Giá trị mặc định, cho trường hợp player muốn chơi đơn nhưng độ khó động
+            int maxPlayers = 1;
             if (_maxPlayersDropdown != null)
             {
                 string selectedOption = _maxPlayersDropdown.options[_maxPlayersDropdown.value].text;
                 int.TryParse(selectedOption, out maxPlayers);
             }
 
-            // 2. Lấy Passcode
-            string passcode = _passcodeInput != null ? _passcodeInput.text : "";
-
-            // 3. Kiểm tra tính hợp lệ cơ bản
-            if (passcode.Length < 6)
+            // 2. Xử lý Passcode
+            string passcode = "";
+            if (_usePasscodeToggle != null && _usePasscodeToggle.isOn)
             {
-                Debug.LogWarning("[CreateRoom] Passcode must be exactly 6 digits.");
-                // Bạn có thể thêm UI thông báo lỗi tại đây giống như StatsSectionUI
-                return;
+                passcode = _passcodeInput != null ? _passcodeInput.text : "";
+                if (passcode.Length < 4 || passcode.Length > 6)
+                {
+                    Debug.LogWarning("[CreateRoom] Passcode must be between 4 and 6 digits.");
+                    HomeUIManager.Instance.ShowNotification("Passcode must be 4 to 6 digits.");
+                    SetInteractions(true); // Enable lại UI khi validation fail
+                    return;
+                }
             }
 
-            // 4. Thực hiện logic Create Room
-            Debug.Log($"[CreateRoom] Creating room... | Max Players: {maxPlayers} | Passcode: {passcode}");
-            
-            // TODO: Gọi NetworkManager.CreateRoom(maxPlayers, passcode) tại đây khi tích hợp Multiplayer backend
+            // 3. Tạo ID phòng ngẫu nhiên (6 chữ số)
+            string roomId = Random.Range(100000, 999999).ToString();
+
+            // 4. Lấy thông tin Host
+            string hostName = DataManager.Instance != null ? DataManager.Instance.Profile.PlayerName : "Player";
+
+            Debug.Log($"[CreateRoom] Room Created by {hostName} | ID: {roomId} | Max Players: {maxPlayers} | Passcode: {(string.IsNullOrEmpty(passcode) ? "None" : passcode)}");
+
+            // Đảm bảo dừng Listening của LANDiscovery nếu Host trước đó từng nhấn Tab "Join"
+            LANDiscovery.Instance.StopListening();
+
+            // Sử dụng Coroutine để khởi động Host an toàn
+            StartCoroutine(StartHostRoutine(roomId, hostName, passcode, maxPlayers));
+        }
+
+        private void SetInteractions(bool state)
+        {
+            if (_createButton != null) _createButton.interactable = state;
+            if (_maxPlayersDropdown != null) _maxPlayersDropdown.interactable = state;
+            if (_usePasscodeToggle != null) _usePasscodeToggle.interactable = state;
+            if (_passcodeInput != null) _passcodeInput.interactable = state && _usePasscodeToggle.isOn;
+        }
+
+        private IEnumerator StartHostRoutine(string roomId, string hostName, string passcode, int maxPlayers)
+        {
+            // 1. Tắt session cũ nếu đang chạy
+            if (NetworkManager.Singleton.IsListening)
+            {
+                NetworkManager.Singleton.Shutdown();
+                // Đợi cho đến khi IsListening về false
+                while (NetworkManager.Singleton.IsListening) yield return null;
+                // Đợi thêm 1 frame nữa để đảm bảo socket đã giải phóng hoàn toàn
+                yield return null;
+            }
+
+            // 2. Khởi động Host
+            if (NetworkManager.Singleton.StartHost())
+            {
+                // Hiển thị loading screen khi bắt đầu chuyển scene
+                if (HomeUIManager.Instance != null) HomeUIManager.Instance.ShowJoiningGameLoadingScreen(true);
+
+                Debug.Log("<color=green>[CreateRoom]</color> Host started successfully. Port 7777 is now occupied.");
+
+                // FIX: Chờ 1 frame để NetworkSceneManager kịp khởi tạo các handler nội bộ sau khi StartHost.
+                // Nếu gọi LoadScene ngay lập tức, Netcode có thể bị NullReference khi tính toán các scene cần Unload.
+                yield return null;
+
+                if (!NetworkManager.Singleton.IsServer) yield break;
+
+                MultiplayerRoomInfoCache.PendingRoomId = roomId;
+                MultiplayerRoomInfoCache.PendingPasscode = passcode;
+
+                LANDiscovery.Instance.StartBroadcasting(roomId, hostName, passcode, maxPlayers);
+                NetworkManager.Singleton.SceneManager.LoadScene("Multiplayer", UnityEngine.SceneManagement.LoadSceneMode.Single);
+            }
+            else
+            {
+                Debug.LogError("<color=red>[CreateRoom]</color> Failed to start Host. Port 7777 might be already in use!");
+                SetInteractions(true);
+            }
         }
     }
 }

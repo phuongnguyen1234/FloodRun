@@ -1,11 +1,11 @@
 # 1. Tại Home Scene
 
-## 1.1. Multiplayer Tab
+## 1.1. Multiplayer Tab (DONE)
 
 - Nút Multiplayer mở màn hình MultiplayerUI
 - 2 tab chính: **Create Room** (CreateRoomSectionUI) và **Join Room** (JoinRoomSectionUI)
 
-## 1.2. CreateRoomSectionUI
+## 1.2. CreateRoomSectionUI (DONE)
 
 - **Tạo phòng:**
   - Chọn số người chơi tối đa từ dropdown
@@ -15,7 +15,7 @@
   - Tạo phòng với thông tin Host từ PlayerData (avatar, tên)
   - Đưa host vào Multiplayer scene (mục 2)
 
-## 1.3. JoinRoomSectionUI
+## 1.3. JoinRoomSectionUI (DONE)
 
 - **Danh sách phòng:**
   - Text: "Rooms on this network (Last updated: X seconds ago)" + nút Refresh
@@ -46,6 +46,9 @@
 - Loại: World Persistence (chứa cả Lobby + Gameplay)
 - **Lobby:** Vị trí (0, 0)
 - **Gameplay:** Vị trí (~1000, 1000)
+- Lobby có object LobbySpawn, giống PlayerSpawn. Đây là nơi player mới vào phòng hay player respawn từ gameplay về đây
+- Lobby cũng có 1 object Sprite và Text (World, không phải UI), Sprite hiển thị ảnh map đang chơi, text tên map, sprite màu độ khó làm background cho text độ khó, text "{Số player còn sống/Số player vào map ban đầu} Players", text độ khó "Easy: 1.0"
+- Text số player có thể trở thành Waiting for players khi ở thời gian vote map
 
 ## 2.2. Giao Diện Chung (Common UI)
 
@@ -190,6 +193,7 @@
   - Group button: +10 xu
 - **Pause:** Multiplayer không thể pause game (chỉ pause gameloop khi không ai active)
 - **Host disconnect:** Kick tất cả clients, quay về Home/Multiplayer + thông báo "Sorry, the host has left the room"
+- **Kiến trúc phụ thuộc** Logic manager (GameplayManager, MultiplayerManager) có trách nhiệm điều khiển dữ liệu, logic và ra lệnh cho UI manager (GameplayUIManager, MultiplayerUIManager). Khi sử dụng, gọi interface của chúng, không được gọi trực tiếp class thực thi (Vì Manager logic thuộc assembly Scene, UI manager thuộc assembly UI). Các UI con (sub modal, màn hình con cần truy cập qua UI manager)
 
 # 5. Scripts Bổ Sung
 
@@ -357,10 +361,11 @@
 # 7. Clarification Summary
 
 ## Fully Resolved (Phần 1-3) ✅
+
 - ✅ 6.1 - Room creation, passcode, expiry, race condition → Host authority
 - ✅ 6.2 - Reconnect (join lại), disconnect (Leave room), host (kick all), timeout = 10-15s
 - ✅ 6.3 - Vote joining, tie logic (3+ random), empty lobby → skip + keep difficulty
-- ✅ 6.4 - Difficulty: clamp [1.0-4.99], 2 decimals, survivors% * 0.4 formula
+- ✅ 6.4 - Difficulty: clamp [1.0-4.99], 2 decimals, survivors% \* 0.4 formula
 - ✅ 6.5 - Respawn (async), spectate (LobbyHUD), rejoin = active
 - ✅ 6.6 - Chat persistence (host), all players see, **need spam limit (1msg/s per player)**
 - ✅ 6.7 - Currency: commit last failure, button presses show +5 temp → summarize in modal
@@ -371,6 +376,7 @@
 - ⏳ 6.12 - Performance: untested (max players, concurrent rooms), spectate rendering OK
 
 ## To-Do (Implementation)
+
 1. **6.6 - Chat spam prevention:** Implement 1 msg/1s rate limit per player
 2. **6.12 - Load testing:** Test max 6 players + stress test concurrent rooms
 3. **UI button states:** Clarify which buttons need cross-client sync (if any)

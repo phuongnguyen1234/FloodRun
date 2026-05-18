@@ -3,12 +3,14 @@ using UnityEngine.Events;
 using Core.Interfaces;
 using Core;
 using UnityEngine.U2D.Animation;
+using Unity.Netcode;
+using Core.Events;
 
 /// <summary>
 /// PlayerMotor chịu trách nhiệm quản lý tất cả logic liên quan đến di chuyển
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
-public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
+public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttributes
 {
     [SerializeField] private float _speed = 8f;
     [SerializeField] private float _exitFloodForce = 12f;                       // Lực đẩy khi thoát khỏi nước
@@ -183,6 +185,9 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     {
         _rb = GetComponent<Rigidbody2D>();
         
+        // Đảm bảo ban đầu luôn là Dynamic để Singleplayer hoạt động bình thường
+        _rb.bodyType = RigidbodyType2D.Dynamic;
+        
         // Lưu lại thông số ban đầu của Collider
         if (_bodyCollider != null)
         {
@@ -225,8 +230,26 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
             OnExitWaterEvent = new UnityEvent();
     }
 
+    public override void OnNetworkSpawn()
+    {
+        // Nếu là chủ sở hữu (hoặc Singleplayer): Dynamic để tính vật lý
+        // Nếu là máy khách khác: Kinematic để máy đó không tự tính vật lý cho nhân vật của mình
+        _rb.bodyType = IsOwner ? RigidbodyType2D.Dynamic : RigidbodyType2D.Kinematic;
+        
+        if (IsOwner) _rb.gravityScale = _originalGravityScale;
+
+        // Thông báo cho MultiplayerManager biết Local Player đã được spawn thành công
+        if (IsOwner && TryGetComponent<IPlayer>(out var player))
+        {
+            GameplayEvents.TriggerLocalPlayerSpawned(player);
+        }
+    }
+
     void FixedUpdate()
     {
+        // Tránh việc các máy khách (Proxy) tự tính toán va chạm/mặt đất cho nhân vật của người khác
+        if (IsSpawned && !IsOwner) return;
+
         if (!_isAbilityEnabled) return;
 
         UpdateGroundNormal(); // Cập nhật pháp tuyến mặt đất mỗi frame vật lý

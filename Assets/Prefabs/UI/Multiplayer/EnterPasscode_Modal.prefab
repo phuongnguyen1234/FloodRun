@@ -851,6 +851,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: EnterPasscode_Modal
       objectReference: {fileID: 0}
+    - target: {fileID: 9049946006361217378, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -864,6 +868,9 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 2394879537973834574}
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 9049946006361217378, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 253135799422824456}
     - targetCorrespondingSourceObject: {fileID: 4235813400385173504, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       insertIndex: -1
       addedObject: {fileID: 440415955891830020}
@@ -904,6 +911,26 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 2849524232687119173, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
   m_PrefabInstance: {fileID: 3901724757000790754}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &5454536513301855104 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9049946006361217378, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+  m_PrefabInstance: {fileID: 3901724757000790754}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &253135799422824456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5454536513301855104}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2a527332111ebc4f83004a7a0f27684, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UI::UI.EnterPasscodeModalUI
+  _passcodeInput: {fileID: 8134666752317734031}
+  _confirmButton: {fileID: 8544817603818748212}
+  _cancelButton: {fileID: 0}
 --- !u!1001 &7413091519441946114
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1054,3 +1081,14 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: 0
   m_LayoutPriority: 1
+--- !u!114 &8544817603818748212 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1186097221252333366, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
+  m_PrefabInstance: {fileID: 7413091519441946114}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2519649132968370151}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button

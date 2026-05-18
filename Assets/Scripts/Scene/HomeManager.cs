@@ -33,6 +33,12 @@ public class HomeManager : MonoBehaviour, ILevelLoader
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
+
+        // Chuyển việc tìm UI Manager từ Start sang Awake để nhất quán với GameplayManager
+        if (_uiManager == null)
+        {
+            _uiManager = FindObjectsByType<Component>().OfType<IHomeUIManager>().FirstOrDefault();
+        }
     }
 
     private void Start()
@@ -40,12 +46,6 @@ public class HomeManager : MonoBehaviour, ILevelLoader
         // Reset trạng thái âm thanh và thời gian khi quay về Home (đề phòng thoát khi đang Pause)
         AudioListener.pause = false;
         Time.timeScale = 1f;
-
-        // Tìm UI Manager thông qua Interface để tránh lỗi khác Assembly
-        if (_uiManager == null)
-        {
-            _uiManager = FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<IHomeUIManager>().FirstOrDefault();
-        }
 
         PlayMenuMusic();
     }

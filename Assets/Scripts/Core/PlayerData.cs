@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace Core
 {
@@ -34,6 +33,7 @@ namespace Core
     [Serializable]
     public class PlayerProfile
     {
+        public string PlayerID = Guid.NewGuid().ToString(); // ID duy nhất cho profile, tạo mới nếu chưa có
         public string PlayerName = "Noob";
         public int TotalWinsCount = 0; // Tổng số trận thắng (bao gồm chơi lại)
         public int TotalCoins = 0; // Tổng số xu hiện có
