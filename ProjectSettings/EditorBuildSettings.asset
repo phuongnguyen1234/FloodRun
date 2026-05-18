@@ -9,10 +9,13 @@ EditorBuildSettings:
     path: Assets/Scenes/SampleScene.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
   - enabled: 1
+    path: Assets/Scenes/Home.unity
+    guid: 41dc82e1f8813b74dbb4e32d86a99e10
+  - enabled: 1
     path: Assets/Scenes/Gameplay.unity
     guid: afaa2b5758b81e348b4cc614648526e9
   - enabled: 1
-    path: Assets/Scenes/Home.unity
-    guid: 41dc82e1f8813b74dbb4e32d86a99e10
+    path: Assets/Scenes/Multiplayer.unity
+    guid: 48e064c43042ff341b847b76cdd6eb98
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: b9570a951d0387a4289862a99066e252, type: 3}

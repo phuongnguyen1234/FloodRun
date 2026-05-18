@@ -285,6 +285,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3982478230738422792, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+      propertyPath: _destroyOnClose
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7033455777062008747, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_text
       value: Notification
@@ -303,8 +307,41 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2849524232687119173, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8124757139282501606}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 9049946006361217378, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3612582668160611098}
   m_SourcePrefab: {fileID: 100100000, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+--- !u!114 &658913034514799581 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7539544450332047793, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+  m_PrefabInstance: {fileID: 7027086920839471724}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+--- !u!1 &2022933871985572622 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9049946006361217378, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+  m_PrefabInstance: {fileID: 7027086920839471724}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3612582668160611098
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2022933871985572622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f07e55921f8a3d42b9cb4cbf58e338b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UI::UI.NotificationModalUI
+  _contentText: {fileID: 2581655723879294464}
+  _closeButton: {fileID: 658913034514799581}
 --- !u!224 &5048167275354442025 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 2849524232687119173, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}

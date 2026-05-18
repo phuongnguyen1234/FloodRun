@@ -1240,13 +1240,17 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3982478230738422792, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+      propertyPath: _destroyOnClose
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7033455777062008747, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_text
       value: Room Settings
       objectReference: {fileID: 0}
     - target: {fileID: 9049946006361217378, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_Name
-      value: RoomSettings_Modal
+      value: RoomInfo_Modal
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1261,10 +1265,35 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 3010458493630698238}
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 9049946006361217378, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5342953834788232444}
     - targetCorrespondingSourceObject: {fileID: 4235813400385173504, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5691907720130985527}
   m_SourcePrefab: {fileID: 100100000, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+--- !u!1 &1836551151686519341 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9049946006361217378, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+  m_PrefabInstance: {fileID: 7272012106625192783}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5342953834788232444
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1836551151686519341}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 912fe40d8239a6343a71678efbb45a0d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UI::UI.RoomInfoModalUI
+  _roomIdText: {fileID: 1128820061264860285}
+  _passcodeText: {fileID: 1079804700355874824}
+  _playerListContent: {fileID: 8930345723030051951}
+  _playerItemPrefab: {fileID: 7400385961621505274, guid: 6ba4673ca456cb14187f2c8bfe132937, type: 3}
+  _leaveRoomButton: {fileID: 9110311567219267716}
 --- !u!224 &4855139102532761610 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 2849524232687119173, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
@@ -1453,3 +1482,14 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &9110311567219267716 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1186097221252333366, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
+  m_PrefabInstance: {fileID: 7934086048075622322}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3029948132374953559}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button

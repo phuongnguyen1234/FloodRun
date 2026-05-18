@@ -238,6 +238,10 @@ PrefabInstance:
       propertyPath: m_ChildForceExpandWidth
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 406475154633514777, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+      propertyPath: m_ChildForceExpandHeight
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 581391624902971959, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -324,27 +328,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1553360564740719094, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1553360564740719094, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1553360564740719094, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 418
       objectReference: {fileID: 0}
     - target: {fileID: 1553360564740719094, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 1553360564740719094, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 225
       objectReference: {fileID: 0}
     - target: {fileID: 1553360564740719094, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -46
       objectReference: {fileID: 0}
     - target: {fileID: 1699176509425438628, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_SizeDelta.y
@@ -374,13 +378,29 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3982478230738422792, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+      propertyPath: _destroyOnClose
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5533744810100374264, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5802317246390265331, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8897007582807837384, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+      propertyPath: m_MinHeight
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 8897007582807837384, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+      propertyPath: m_FlexibleHeight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8897007582807837384, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_PreferredHeight
-      value: 150
+      value: -1
       objectReference: {fileID: 0}
     - target: {fileID: 9049946006361217378, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_Name
@@ -395,7 +415,10 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2849524232687119173, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8520109711131620593}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 9049946006361217378, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 881054997562005754}
   m_SourcePrefab: {fileID: 100100000, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
 --- !u!224 &1598941888489475261 stripped
 RectTransform:
@@ -407,6 +430,26 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 2849524232687119173, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
   m_PrefabInstance: {fileID: 118260332422857497}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &8949770477702060667 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9049946006361217378, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+  m_PrefabInstance: {fileID: 118260332422857497}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &881054997562005754
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8949770477702060667}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6630d2b1d4d93045bcf9998ea350b3f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UI::UI.ConfirmationModalUI
+  _promptText: {fileID: 7290096174961644336}
+  _yesButton: {fileID: 6118732289205091245}
+  _noButton: {fileID: 7678430397153827468}
 --- !u!1001 &4944890518763635867
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -529,6 +572,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 5178230505728144716, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
   m_PrefabInstance: {fileID: 4944890518763635867}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &6118732289205091245 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1186097221252333366, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
+  m_PrefabInstance: {fileID: 4944890518763635867}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &8861569905661109690
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -651,3 +705,14 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 5178230505728144716, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
   m_PrefabInstance: {fileID: 8861569905661109690}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &7678430397153827468 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1186097221252333366, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
+  m_PrefabInstance: {fileID: 8861569905661109690}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button

@@ -4,13 +4,14 @@ using System.Linq;
 using Core.Events;
 using Core;
 using TMPro;
+using Unity.Netcode;
 
 /// <summary>
 /// PlayerController là script trung tâm quản lý tất cả các khía cạnh của Player: Di chuyển, Air System, Trạng thái (chết, bơi, leo thang), và tương tác với các Ability khác (Ladder, Zipline, v.v.).
 /// Nó kết hợp dữ liệu từ PlayerMotor (vật lý và trạng thái) và Player
 /// </summary>
 [RequireComponent(typeof(PlayerInputHandler), typeof(PlayerMotor))]
-public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerControllerAttributes
+public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlayerControllerAttributes
 {
     [System.Serializable]
     public struct GibMapping
@@ -23,10 +24,12 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
     private PlayerMotor _motor;
     private PlayerAnimator _playerAnimator;
     private Rigidbody2D _rb;
-    private Collider2D _collider;
     private IPlayerAbility[] _abilities;
 
     [Header("UI & Name Tag")]
+    // Biến đồng bộ tên qua mạng, đảm bảo Client nhìn thấy đúng tên của Host và ngược lại
+    public NetworkVariable<Unity.Collections.FixedString32Bytes> NetworkPlayerName = new(
+        "", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     [SerializeField] private TMP_Text _nameTagText;
     [SerializeField] private bool _keepNameTagReadable = true;
 
@@ -89,7 +92,6 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
         _motor = GetComponent<PlayerMotor>();
         _playerAnimator = GetComponent<PlayerAnimator>();
         _rb = GetComponent<Rigidbody2D>();
-        _collider = GetComponent<Collider2D>();
         
         _baseAir = _maxAir;
         _bonusAir = 0f;
@@ -101,26 +103,38 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
         _abilities = GetComponents<IPlayerAbility>();
     }
 
-    private void Start()
+    public override void OnNetworkSpawn()
     {
+         // Chỉ chạy logic khởi tạo khi object được sinh ra trên mạng
+        if (IsOwner)
+        {
+            // Gán tên từ Profile cục bộ lên NetworkVariable để đồng bộ cho người khác
+            string myName = DataManager.Instance != null ? DataManager.Instance.Profile.PlayerName : "Player";
+            NetworkPlayerName.Value = myName;
+            
+            GameplayEvents.TriggerLocalPlayerSpawned(this);
+        }
+        
+        // Đăng ký sự kiện thay đổi tên để cập nhật UI
+        NetworkPlayerName.OnValueChanged += (oldVal, newVal) => { UpdateNameTag(newVal.ToString()); };
         UpdateNameTag();
     }
 
-    /// <summary>
-    /// Đồng bộ tên từ dữ liệu lưu trữ lên UI trên đầu Player.
-    /// </summary>
-    public void UpdateNameTag()
+    private void UpdateNameTag(string name = "")
     {
         if (_nameTagText == null) return;
-
-        // Lấy tên từ DataManager (Singleton giữ PlayerProfile)
-        if (DataManager.Instance != null && DataManager.Instance.Profile != null)
+        
+        // Ưu tiên dùng giá trị từ NetworkVariable, nếu chưa có thì lấy tạm giá trị hiện tại
+        string displayName = string.IsNullOrEmpty(name) ? NetworkPlayerName.Value.ToString() : name;
+        
+        if (string.IsNullOrEmpty(displayName))
         {
-            _nameTagText.text = DataManager.Instance.Profile.PlayerName;
+            // Fallback nếu chưa kịp sync
+            _nameTagText.text = IsOwner && DataManager.Instance != null ? DataManager.Instance.Profile.PlayerName : "Loading...";
         }
         else
         {
-            _nameTagText.text = "Player"; // Fallback nếu data chưa load
+            _nameTagText.text = displayName;
         }
     }
 
@@ -189,6 +203,9 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
 
     void Update()
     {
+        // Chỉ chặn nếu là Object mạng và không phải chủ sở hữu. Singleplayer (IsSpawned = false) vẫn chạy tiếp.
+        if (IsSpawned && !IsOwner) return;
+
         if (_isDead || !_isAbilityEnabled) return;
 
         // Giảm cooldown nhảy
@@ -256,6 +273,9 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
 
     void FixedUpdate()
     {
+        // Chỉ chặn nếu là Object mạng và không phải chủ sở hữu.
+        if (IsSpawned && !IsOwner) return;
+
         if (_isDead || !_isAbilityEnabled) return;
 
         _motor.SetAttemptingToJumpOutOfWater(_isTryingToJumpOutOfWater);
@@ -277,7 +297,7 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
             _bonusAir = amount;       // Nạp đầy bonus air theo dung tích mới
 
             // Tìm UI Manager thông qua Interface để tránh lỗi tham chiếu chéo giữa các Assembly (.asmdef)
-            var uiManager = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).OfType<IGameplayUIManager>().FirstOrDefault();
+            var uiManager = Object.FindObjectsByType<MonoBehaviour>().OfType<IGameplayUIManager>().FirstOrDefault();
             uiManager?.ShowNotification($"Got {amount:F0} Air!", new Color(0.3f, 0.8f, 1f)); // Màu xanh dương nhạt
 
             return true; // Đã nhận khí thành công

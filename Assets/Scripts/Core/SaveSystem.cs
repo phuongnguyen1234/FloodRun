@@ -9,7 +9,24 @@ namespace Core
     /// </summary>
     public static class SaveSystem
     {
-        private static string SavePath => Path.Combine(Application.persistentDataPath, "player_profile.json");
+        private static string SavePath 
+        {
+            get 
+            {
+                string fileName = "player_profile.json";
+
+                #if UNITY_EDITOR
+                // ParrelSync tạo các folder clone có chứa hậu tố "_clone"
+                // Chúng ta đổi tên file save để 2 instance dùng 2 profile khác nhau.
+                if (Application.dataPath.Contains("_clone"))
+                {
+                    fileName = "player_profile_clone.json";
+                }
+                #endif
+
+                return Path.Combine(Application.persistentDataPath, fileName);
+            }
+        }
 
         public static void SaveProfile(PlayerProfile profile)
         {

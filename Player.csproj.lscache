@@ -355,6 +355,7 @@ Library/PackageCache/
 Library/ScriptAssemblies/
  Unity.2D.Animation.Runtime.dll
  Unity.InputSystem.dll
+ Unity.Netcode.Runtime.dll
  Unity.TextMeshPro.dll
  UnityEditor.UI.dll
  UnityEngine.UI.dll

@@ -62,7 +62,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         // Vì Scene.asmdef chỉ tham chiếu Core, nên nó thấy IGameplayUIManager chứ không thấy class GameplayUIManager
         if (_uiManager == null)
         {
-            _uiManager = FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<IGameplayUIManager>().FirstOrDefault();
+            _uiManager = FindObjectsByType<Component>().OfType<IGameplayUIManager>().FirstOrDefault();
         }
     }
 
@@ -123,7 +123,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         }
 
         // 1. Tìm lại MapManager mới (vì Map vừa được Instantiate)
-        _mapManager = FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<IMapManager>().FirstOrDefault();
+        _mapManager = FindObjectsByType<Component>().OfType<IMapManager>().FirstOrDefault();
 
         if (_mapManager == null)
         {

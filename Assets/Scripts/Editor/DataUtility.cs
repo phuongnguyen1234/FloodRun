@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 using Core;
@@ -29,3 +30,4 @@ using Core;
             EditorUtility.RevealInFinder(Application.persistentDataPath);
         }
     }
+#endif

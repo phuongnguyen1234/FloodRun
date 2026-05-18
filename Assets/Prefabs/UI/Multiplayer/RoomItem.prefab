@@ -74,6 +74,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7276641079568033585}
   - component: {fileID: 5358305381591059508}
+  - component: {fileID: 481281431852556145}
   m_Layer: 5
   m_Name: RoomItem
   m_TagString: Untagged
@@ -122,6 +123,22 @@ MonoBehaviour:
   m_FlexibleWidth: 1
   m_FlexibleHeight: 0
   m_LayoutPriority: 1
+--- !u!114 &481281431852556145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3800642414425445437}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b23bbdcfa22f6f4989d5dcb2ad74dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UI::UI.RoomItemUI
+  _roomInfoText: {fileID: 5798325340516218337}
+  _roomIdText: {fileID: 3765806138750067973}
+  _joinButton: {fileID: 6171780401325422025}
+  _hostAvatar: {fileID: 4980167338998120268}
 --- !u!1 &5668116445938429949
 GameObject:
   m_ObjectHideFlags: 0
@@ -734,7 +751,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8654872842967118234, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
       propertyPath: m_fontSize
-      value: 36.8
+      value: 18
       objectReference: {fileID: 0}
     - target: {fileID: 8654872842967118234, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
       propertyPath: m_fontAsset
@@ -782,3 +799,14 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 5178230505728144716, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
   m_PrefabInstance: {fileID: 5031449528061561599}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &6171780401325422025 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1186097221252333366, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
+  m_PrefabInstance: {fileID: 5031449528061561599}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 127310581586039578}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button

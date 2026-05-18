@@ -63,14 +63,19 @@ Assets/Scripts/UI/
   MapCardView.cs
   MapSelectionUI.cs
  Misc/
+  ConfirmationModalUI.cs
   DifficultyButton.cs
+  NotificationModalUI.cs
   TabButton.cs
   TabController.cs
   UIButtonSound.cs
  Multiplayer/
   CreateRoomSectionUI.cs
+  EnterPasscodeModalUI.cs
   JoinRoomSectionUI.cs
   MultiplayerUI.cs
+  MultiplayerUIManager.cs
+  RoomItemUI.cs
  Progress/
   MapSectionUI.cs
   ProgressMapCardView.cs
@@ -373,6 +378,7 @@ Library/PackageCache/
   Runtime/VisualScripting.Flow/Dependencies/NCalc/Unity.VisualScripting.Antlr3.Runtime.dll
 Library/ScriptAssemblies/
  Unity.InputSystem.dll
+ Unity.Netcode.Runtime.dll
  Unity.TextMeshPro.dll
  UnityEditor.UI.dll
  UnityEngine.UI.dll

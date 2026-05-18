@@ -87,6 +87,8 @@ Assets/Scripts/Core/
   IGameplayManager.cs
   IHomeUIManager.cs
   ILevelLoader.cs
+  IMultiplayerManager.cs
+  IMultiplayerUIManager.cs
   IUISfxPlayer.cs
   Map/
    IButtonController.cs
@@ -406,6 +408,7 @@ Library/PackageCache/
 Library/ScriptAssemblies/
  Unity.Cinemachine.dll
  Unity.InputSystem.dll
+ Unity.Netcode.Runtime.dll
  Unity.TextMeshPro.dll
  UnityEditor.UI.dll
  UnityEngine.UI.dll

@@ -39,8 +39,8 @@ public class GoalLocator : MonoBehaviour
     private void Start()
     {
         // Tìm kiếm các manager thông qua Interface
-        _gameplayManager = FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<IGameplayManager>().FirstOrDefault();
-        _mapManager = FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<IMapManager>().FirstOrDefault();
+        _gameplayManager = FindObjectsByType<Component>().OfType<IGameplayManager>().FirstOrDefault();
+        _mapManager = FindObjectsByType<Component>().OfType<IMapManager>().FirstOrDefault();
     }
 
     private void InitLocatorLines()

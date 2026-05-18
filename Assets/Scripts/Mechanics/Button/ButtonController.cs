@@ -230,7 +230,7 @@ public class ButtonController : MonoBehaviour, IInteractable, IButtonController
         // 2. Thực thi danh sách MapActions (nếu có)
         if (_actions.Count > 0)
         {
-            var manager = FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<IMapManager>().FirstOrDefault();
+            var manager = FindObjectsByType<Component>().OfType<IMapManager>().FirstOrDefault();
             foreach (var action in _actions)
             {
                 if (action != null) StartCoroutine(action.ExecuteRoutine(manager));

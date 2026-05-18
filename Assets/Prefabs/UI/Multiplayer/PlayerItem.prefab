@@ -198,6 +198,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5631249094745347247}
   - component: {fileID: 8956557888917201805}
+  - component: {fileID: 766043066053395497}
   m_Layer: 5
   m_Name: PlayerItem
   m_TagString: Untagged
@@ -246,6 +247,22 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &766043066053395497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7400385961621505274}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6399d0ba812340d4e869a85e17120afe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UI::UI.RoomPlayerItemUI
+  _avatarImage: {fileID: 1158072999994552984}
+  _playerNameText: {fileID: 44918008112830937}
+  _hostLabel: {fileID: 0}
+  _kickButton: {fileID: 5705626576504297211}
 --- !u!1 &7539914883825620219
 GameObject:
   m_ObjectHideFlags: 0
@@ -488,6 +505,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2bd8c0f110bdaf94c9bef317e6ab8971, type: 3}
+--- !u!114 &5705626576504297211 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8257597541720501685, guid: 2bd8c0f110bdaf94c9bef317e6ab8971, type: 3}
+  m_PrefabInstance: {fileID: 4446904491097373518}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!224 &8577767758495271608 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5385406057677484534, guid: 2bd8c0f110bdaf94c9bef317e6ab8971, type: 3}
