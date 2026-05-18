@@ -94,10 +94,12 @@ using System.Linq; // For FindObjectsByType with LINQ
                 // Đăng ký sự kiện thay đổi danh sách để cập nhật LAN Discovery
                 PlayerDataList.OnListChanged += OnPlayerDataListChanged;
                 LANDiscovery.Instance.UpdateBroadcastData(PlayerDataList.Count);
-
-                // Server lắng nghe client thoát để xóa khỏi list
-                NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectedFromServer;
             }
+
+            // CẢI TIẾN: Cả Server và Client đều cần lắng nghe sự kiện disconnect để cleanup/dừng nhạc.
+            // Nếu để trong khối IsServer, các Client sẽ không bao giờ chạy logic StopBackgroundMusic khi rớt mạng.
+            if (NetworkManager.Singleton != null)
+                NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectedFromServer;
 
             // FIX: Đối với Host/Local Client, Player thường spawn trước khi Manager này kịp lắng nghe sự kiện.
             // Kiểm tra nếu PlayerObject đã tồn tại thì thực hiện setup ngay.
@@ -161,6 +163,7 @@ using System.Linq; // For FindObjectsByType with LINQ
             // Chúng ta chỉ cần cleanup data ở đây
             if (clientId == NetworkManager.Singleton.LocalClientId)
             {
+                StopBackgroundMusic();
                 Debug.Log("[MultiplayerManager] Local client disconnected, data cleaned up. Waiting for DisconnectHandler...");
             }
         }
@@ -238,8 +241,17 @@ using System.Linq; // For FindObjectsByType with LINQ
 
             _uiManager?.ShowBackToMainMenuLoadingScreen();
             
+            StopBackgroundMusic();
             NetworkManager.Singleton.Shutdown();
             SceneManager.LoadScene("Home");
+        }
+
+        private void StopBackgroundMusic()
+        {
+            if (BackgroundMusicManager.Instance != null)
+            {
+                BackgroundMusicManager.Instance.GetAudioSource()?.Stop();
+            }
         }
 
         private void OnLocalPlayerSpawnedHandler(IPlayer localPlayer)

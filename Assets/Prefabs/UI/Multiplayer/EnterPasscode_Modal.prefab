@@ -330,10 +330,10 @@ RectTransform:
   - {fileID: 7632549161843817200}
   m_Father: {fileID: 1274024806530927015}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 209, y: -24.005}
+  m_SizeDelta: {x: 418, y: 48.01}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5494906346014690448
 CanvasRenderer:
@@ -781,55 +781,55 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1553360564740719094, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1553360564740719094, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1553360564740719094, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 418
       objectReference: {fileID: 0}
     - target: {fileID: 1553360564740719094, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 1553360564740719094, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 225
       objectReference: {fileID: 0}
     - target: {fileID: 1553360564740719094, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -46
       objectReference: {fileID: 0}
     - target: {fileID: 1699176509425438628, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 204.01
       objectReference: {fileID: 0}
     - target: {fileID: 2849524232687119173, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2849524232687119173, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2849524232687119173, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 418
       objectReference: {fileID: 0}
     - target: {fileID: 2849524232687119173, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 104.009995
       objectReference: {fileID: 0}
     - target: {fileID: 2849524232687119173, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 225
       objectReference: {fileID: 0}
     - target: {fileID: 2849524232687119173, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -136.005
       objectReference: {fileID: 0}
     - target: {fileID: 7033455777062008747, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_text
@@ -929,8 +929,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UI::UI.EnterPasscodeModalUI
   _passcodeInput: {fileID: 8134666752317734031}
-  _confirmButton: {fileID: 8544817603818748212}
-  _cancelButton: {fileID: 0}
+  _joinButton: {fileID: 8544817603818748212}
+  _cancelButton: {fileID: 6810676587972664147}
+--- !u!114 &6810676587972664147 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7539544450332047793, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+  m_PrefabInstance: {fileID: 3901724757000790754}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &7413091519441946114
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -961,7 +972,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5178230505728144716, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5178230505728144716, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
       propertyPath: m_AnchorMin.x
@@ -969,15 +980,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5178230505728144716, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5178230505728144716, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 418
       objectReference: {fileID: 0}
     - target: {fileID: 5178230505728144716, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 48
       objectReference: {fileID: 0}
     - target: {fileID: 5178230505728144716, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1009,11 +1020,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5178230505728144716, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 209
       objectReference: {fileID: 0}
     - target: {fileID: 5178230505728144716, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -80.009995
       objectReference: {fileID: 0}
     - target: {fileID: 5178230505728144716, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x

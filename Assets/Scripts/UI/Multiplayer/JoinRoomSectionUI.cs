@@ -25,7 +25,7 @@ namespace UI
 
         private float _timeSinceLastUpdate = 0f;
         private Coroutine _autoRefreshCoroutine;
-        private List<RoomItemUI> _roomItems = new List<RoomItemUI>();
+        private Dictionary<string, RoomItemUI> _roomItemMap = new Dictionary<string, RoomItemUI>();
 
         private void Start()
         {
@@ -42,6 +42,8 @@ namespace UI
                 
                 // Cho phép ấn Enter trên bàn phím để Join nhanh
                 _roomIdInput.onSubmit.AddListener((_) => JoinRoom());
+                // Cải tiến UX: Validate ngay khi người dùng đang nhập
+                _roomIdInput.onValueChanged.AddListener(_ => ValidateManualJoin());
             }
 
             if (_refreshButton != null)
@@ -56,6 +58,7 @@ namespace UI
                 NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
             }
 
+            ValidateManualJoin();
             _autoRefreshCoroutine = StartCoroutine(AutoRefreshRoutine());
         }
 
@@ -100,23 +103,33 @@ namespace UI
         {
             _timeSinceLastUpdate = 0f;
             Debug.Log("[JoinRoom] Fetching rooms...");
-            
-            // 1. Xóa danh sách cũ
-            foreach (Transform child in _roomListContent)
-            {
-                Destroy(child.gameObject);
-            }
-            _roomItems.Clear();
 
-            // Sinh danh sách phòng từ LANDiscovery
-            foreach (var room in LANDiscovery.Instance.DiscoveredRooms.Values)
+            var discoveredRooms = LANDiscovery.Instance.DiscoveredRooms;
+            
+            // 1. Xóa các UI Item của phòng không còn tồn tại
+            var roomsToRemove = _roomItemMap.Keys.Where(id => !discoveredRooms.ContainsKey(id)).ToList();
+            foreach (var id in roomsToRemove)
             {
-                if (_roomItemPrefab != null)
+                if (_roomItemMap.TryGetValue(id, out var item))
+                {
+                    Destroy(item.gameObject);
+                    _roomItemMap.Remove(id);
+                }
+            }
+
+            // 2. Cập nhật phòng cũ hoặc sinh phòng mới
+            foreach (var room in discoveredRooms.Values)
+            {
+                if (_roomItemMap.TryGetValue(room.RoomId, out var existingItem))
+                {
+                    existingItem.Setup(room.HostName, room.RoomId, room.CurrentPlayerCount, room.MaxPlayerCount, this);
+                }
+                else if (_roomItemPrefab != null)
                 {
                     GameObject itemObj = Instantiate(_roomItemPrefab, _roomListContent);
                     RoomItemUI itemUI = itemObj.GetComponent<RoomItemUI>();
                     itemUI.Setup(room.HostName, room.RoomId, room.CurrentPlayerCount, room.MaxPlayerCount, this);
-                    _roomItems.Add(itemUI);
+                    _roomItemMap.Add(room.RoomId, itemUI);
                 }
             }
         }
@@ -144,6 +157,15 @@ namespace UI
             }
 
             ExecuteJoin(roomId);
+        }
+
+        /// <summary>
+        /// Kiểm tra độ dài Room ID để bật/tắt nút Join thủ công.
+        /// </summary>
+        private void ValidateManualJoin()
+        {
+            if (_manualJoinButton != null)
+                _manualJoinButton.interactable = _roomIdInput != null && _roomIdInput.text.Length == 6;
         }
 
         private void ExecuteJoin(string roomId)
@@ -205,7 +227,7 @@ namespace UI
             if (_refreshButton != null) _refreshButton.interactable = state;
             if (_manualJoinButton != null) _manualJoinButton.interactable = state;
 
-            foreach (var item in _roomItems)
+            foreach (var item in _roomItemMap.Values)
             {
                 if (item != null) item.SetInteractable(state);
             }

@@ -28,14 +28,18 @@ namespace UI
             {
                 _passcodeInput.characterLimit = 6;
                 _passcodeInput.contentType = TMP_InputField.ContentType.IntegerNumber;
+                _passcodeInput.onValueChanged.AddListener(_ => ValidateInput());
             }
 
             // Lắng nghe sự kiện Checkbox để ẩn/hiện Input Passcode
             if (_usePasscodeToggle != null)
             {
                 _usePasscodeToggle.onValueChanged.AddListener(OnPasscodeToggleChanged);
+                _usePasscodeToggle.onValueChanged.AddListener(_ => ValidateInput());
                 OnPasscodeToggleChanged(_usePasscodeToggle.isOn);
             }
+
+            ValidateInput();
 
             // Lắng nghe sự kiện shutdown để bật lại nút nếu host thất bại
             if (NetworkManager.Singleton != null) {
@@ -47,6 +51,20 @@ namespace UI
         {
             if (_passcodeInput != null)
                 _passcodeInput.interactable = isOn;
+        }
+
+        /// <summary>
+        /// Kiểm tra tính hợp lệ của input để bật/tắt nút Create.
+        /// </summary>
+        private void ValidateInput()
+        {
+            bool isPasscodeValid = true;
+            if (_usePasscodeToggle != null && _usePasscodeToggle.isOn)
+            {
+                isPasscodeValid = _passcodeInput != null && _passcodeInput.text.Length >= 4 && _passcodeInput.text.Length <= 6;
+            }
+
+            if (_createButton != null) _createButton.interactable = isPasscodeValid;
         }
 
         /// <summary>
