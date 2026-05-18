@@ -24386,7 +24386,7 @@ GameObject:
   - component: {fileID: 7931050691137571249}
   - component: {fileID: 7876812508865963828}
   - component: {fileID: 662970192776480246}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Flood_Door_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -31212,7 +31212,7 @@ GameObject:
   - component: {fileID: 7603860165216586945}
   - component: {fileID: 5033061792175071943}
   - component: {fileID: 4919784280102393265}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Flood_Door_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -32961,6 +32961,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Flood2_Static
       objectReference: {fileID: 0}
+    - target: {fileID: 7914555151253692398, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -33230,6 +33234,10 @@ PrefabInstance:
       value: 0.32941177
       objectReference: {fileID: 0}
     - target: {fileID: 3586424971873970939, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3586424971873970939, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_SortingOrder
       value: 1
       objectReference: {fileID: 0}
@@ -33424,6 +33432,10 @@ PrefabInstance:
     - target: {fileID: 7914555151253692398, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_Name
       value: Flood2_Dynamic
+      objectReference: {fileID: 0}
+    - target: {fileID: 7914555151253692398, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -35508,6 +35520,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Flood1
       objectReference: {fileID: 0}
+    - target: {fileID: 7914555151253692398, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -35561,6 +35577,10 @@ PrefabInstance:
     - target: {fileID: 3586424971873970939, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_Color.r
       value: 0.32941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 3586424971873970939, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3586424971873970939, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_SortingOrder
@@ -35624,7 +35644,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: _stages.Array.data[0].ChangeTypeAt
-      value: 0.5
+      value: 0.7
       objectReference: {fileID: 0}
     - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: _stages.Array.data[0].ChangeTypeTo
@@ -35729,6 +35749,10 @@ PrefabInstance:
     - target: {fileID: 7914555151253692398, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_Name
       value: Flood3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7914555151253692398, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

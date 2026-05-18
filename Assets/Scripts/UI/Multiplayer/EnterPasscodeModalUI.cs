@@ -13,7 +13,7 @@ namespace UI
     {
         [Header("Passcode Components")]
         [SerializeField] private TMP_InputField _passcodeInput;
-        [SerializeField] private Button _confirmButton;
+        [SerializeField] private Button _joinButton;
         [SerializeField] private Button _cancelButton; // Thêm nút Cancel để thoát modal
 
         private Action<string> _onConfirmCallback;
@@ -25,6 +25,7 @@ namespace UI
             {
                 _passcodeInput.contentType = TMP_InputField.ContentType.IntegerNumber;
                 _passcodeInput.characterLimit = 6;
+                _passcodeInput.onValueChanged.AddListener(_ => ValidateInput());
             }
             
             if (_cancelButton != null) 
@@ -35,14 +36,21 @@ namespace UI
         {
             _onConfirmCallback = onConfirm;
             if (_passcodeInput != null) _passcodeInput.text = "";
+            ValidateInput();
 
-            if (_confirmButton != null)
+            if (_joinButton != null)
             {
-                _confirmButton.onClick.RemoveAllListeners();
-                _confirmButton.onClick.AddListener(OnConfirmClick);
+                _joinButton.onClick.RemoveAllListeners();
+                _joinButton.onClick.AddListener(OnConfirmClick);
             }
 
             gameObject.SetActive(true);
+        }
+
+        private void ValidateInput()
+        {
+            if (_joinButton != null)
+                _joinButton.interactable = _passcodeInput != null && _passcodeInput.text.Length >= 4;
         }
 
         private void OnConfirmClick()

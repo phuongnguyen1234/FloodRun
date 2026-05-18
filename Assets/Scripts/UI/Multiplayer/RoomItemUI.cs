@@ -36,6 +36,10 @@ namespace UI
             _joinButton.onClick.AddListener(() => {
                 if (_parentUI != null) _parentUI.JoinRoomById(_roomId);
             });
+
+            // Tự động disable nếu phòng đã đầy
+            if (_joinButton != null)
+                _joinButton.interactable = currentPlayers < maxPlayers;
         }
 
         /// <summary>

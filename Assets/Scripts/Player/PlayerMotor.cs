@@ -257,6 +257,14 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
         // Giảm cooldown chặn mặt đất
         if (_groundingCooldown > 0) _groundingCooldown -= Time.fixedDeltaTime;
 
+        // CẢI TIẾN: Cập nhật lại vùng Flood chủ đạo mỗi frame vật lý nếu đang chạm nhiều vùng nước.
+        // Điều này đảm bảo nếu một trong các vùng nước thay đổi loại (ví dụ: từ Water sang Acid), 
+        // người chơi sẽ nhận diện được sự thay đổi về Drain Rate ngay lập tức.
+        if (_activeFloodZones.Count > 1)
+        {
+            UpdateCurrentFloodAndState();
+        }
+
         bool wasGrounded = IsGrounded;
         IsGrounded = false;
 
@@ -999,29 +1007,35 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
             return;
         }
 
-        if (_floodColliders.TryGetValue(CurrentFlood, out Collider2D dominantFloodCollider))
-        {
-            // Logic FE2: Bơi nếu Torso chìm. 
-            // Sử dụng cạnh trên (top) của Trigger làm điểm quyết định.
-            Vector2 checkPoint;
-            
-            if (_swimTriggerCollider != null)
-            {
-                // Lấy điểm cao nhất của Trigger (vùng cổ)
-                checkPoint = new Vector2(_swimTriggerCollider.bounds.center.x, _swimTriggerCollider.bounds.max.y);
-            }
-            else
-            {
-                // Fallback nếu không có trigger riêng: lấy vị trí khoảng 75% chiều cao thân
-                checkPoint = (Vector2)_bodyCollider.bounds.center + Vector2.up * (_bodyCollider.size.y * 0.25f);
-            }
+        // CẢI TIẾN: Thay vì chỉ kiểm tra vùng Flood "chủ đạo", ta kiểm tra tất cả các vùng đang chạm.
+    // Điều này giúp việc bơi qua 2 khối nước đặt cạnh nhau mượt mà hơn, tránh bị ngắt bơi ở khe tiếp giáp.
+    bool submergedInAny = false;
 
-            IsSubmerged = dominantFloodCollider.OverlapPoint(checkPoint);
+    // Xác định điểm kiểm tra (checkPoint)
+    Vector2 checkPoint;
+    if (_swimTriggerCollider != null)
+        {
+            // Lấy điểm cao nhất của Trigger (vùng cổ/đầu)
+        checkPoint = new Vector2(_swimTriggerCollider.bounds.center.x, _swimTriggerCollider.bounds.max.y);
         }
         else
         {
-            IsSubmerged = false;
+        checkPoint = (Vector2)_bodyCollider.bounds.center + Vector2.up * (_bodyCollider.size.y * 0.25f);
         }
+
+        foreach (var flood in _activeFloodZones)
+    {
+        if (_floodColliders.TryGetValue(flood, out Collider2D col))
+        {
+            if (col != null && col.OverlapPoint(checkPoint))
+            {
+                submergedInAny = true;
+                break;
+            }
+        }
+    }
+
+    IsSubmerged = submergedInAny;
     }
 
     private void UpdateCurrentFloodAndState()

@@ -174,7 +174,19 @@ namespace UI.Multiplayer
 
         public void ShowBackToMainMenuLoadingScreen()
         {
+            StopBackgroundMusic();
             if (_backToMainMenuLoadingPanel != null) _backToMainMenuLoadingPanel.SetActive(true);
+        }
+
+        /// <summary>
+        /// Dừng nhạc nền ngay lập tức khi thoát khỏi phòng.
+        /// </summary>
+        private void StopBackgroundMusic()
+        {
+            if (BackgroundMusicManager.Instance != null)
+            {
+                BackgroundMusicManager.Instance.GetAudioSource()?.Stop();
+            }
         }
 
         public void SetupLoadingScreen(MapData data)
