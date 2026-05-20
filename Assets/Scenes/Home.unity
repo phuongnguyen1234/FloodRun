@@ -2539,7 +2539,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d368e6d7f17c8f4e85ac78a8795eea2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Scene::HomeManager
-  _menuMusic: {fileID: 8300000, guid: d19601de677f41543b6523c018d01661, type: 3}
+  _menuMusic: {fileID: 8300000, guid: 895fc23fb6efd564399e36b61cf3670a, type: 3}
   _mapSelectSound: {fileID: 8300000, guid: 7d8045ebbbdec9a4eb2fcad77186ec27, type: 3}
   _loadingMusic: {fileID: 8300000, guid: 5ed6967f573076d4d98b789db4762dad, type: 3}
 --- !u!4 &599435117
