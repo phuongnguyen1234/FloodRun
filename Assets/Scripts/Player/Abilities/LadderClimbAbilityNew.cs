@@ -1,9 +1,10 @@
 using UnityEngine;
+using Unity.Netcode;
 
 /// <summary>
 /// Khả năng leo thang mới, sử dụng phương pháp quét OverlapBox để phát hiện thang, giúp tránh tình trạng bị kẹt khi đứng sát thang hoặc ở góc thang.
 /// </summary>
-public class LadderClimbAbilityNew : MonoBehaviour, IPlayerAbility
+public class LadderClimbAbilityNew : NetworkBehaviour, IPlayerAbility
 {
     [Header("Settings")]
     [SerializeField] private float _climbSpeed = 6f;
@@ -62,6 +63,9 @@ public class LadderClimbAbilityNew : MonoBehaviour, IPlayerAbility
 
     private void Update()
     {
+        // Chỉ Owner mới xử lý input và cập nhật trạng thái leo thang
+        if (IsSpawned && !IsOwner) return;
+
         if (!_isAbilityEnabled || _motor.IsSwimming || _motor.IsZiplining) 
         {
             if (_isClimbing) ExitClimbing();
@@ -117,6 +121,8 @@ public class LadderClimbAbilityNew : MonoBehaviour, IPlayerAbility
 
     private void FixedUpdate()
     {
+        if (IsSpawned && !IsOwner) return;
+
         if (_isClimbing)
         {
             // Di chuyển dọc, triệt tiêu vận tốc ngang hoàn toàn
@@ -212,12 +218,16 @@ public class LadderClimbAbilityNew : MonoBehaviour, IPlayerAbility
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        if (IsSpawned && !IsOwner) return;
+
         // Đã chuyển sang dùng OverlapBox trong Update để ổn định hơn
         if (other.TryGetComponent(out ILadder ladder)) _motor.SetTouchingLadder(true);
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
+        if (IsSpawned && !IsOwner) return;
+
         if (other.TryGetComponent(out ILadder ladder))
         {
             _motor.SetTouchingLadder(false);

@@ -1,11 +1,12 @@
 using UnityEngine;
 using System.Collections;
 using Core;
+using Unity.Netcode;
 
 /// <summary>
 /// Khả năng Zipline cho phép Player bám vào dây và trượt theo đường cong Bézier được định nghĩa bởi IZipline.
 /// </summary>
-public class ZiplineAbility : MonoBehaviour, IPlayerAbility
+public class ZiplineAbility : NetworkBehaviour, IPlayerAbility
 {
     [Header("Settings")]
     [SerializeField] private LayerMask _ziplineLayer;
@@ -88,6 +89,9 @@ public class ZiplineAbility : MonoBehaviour, IPlayerAbility
 
     private void Update()
     {
+        // Chỉ chạy logic trên máy của người sở hữu nhân vật
+        if (IsSpawned && !IsOwner) return;
+
         if (!_isAbilityEnabled) return;
 
         if (_reattachCooldown > 0)
@@ -98,6 +102,8 @@ public class ZiplineAbility : MonoBehaviour, IPlayerAbility
 
     private void FixedUpdate()
     {
+        if (IsSpawned && !IsOwner) return;
+
         if (_isAbilityEnabled && _isZiplining)
         {
             HandleZiplineMovement();
@@ -106,6 +112,8 @@ public class ZiplineAbility : MonoBehaviour, IPlayerAbility
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        if (IsSpawned && !IsOwner) return;
+
         // Chỉ kích hoạt khi chạm vào Trigger của điểm Start (Trigger này phải nằm trong object con của Zipline)
         if (!_isZiplining && _isAbilityEnabled && _reattachCooldown <= 0f)
         {

@@ -55,23 +55,28 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
     private float _bonusAirMaxCap; // Dung tích tối đa của bình khí bonus hiện tại
     private float _originalGravityScale;
     private float _outOfFloodTimer = 0f; // Timer đếm thời gian khi ra khỏi nước
-    private bool _isDead = false;
+    // Đồng bộ trạng thái chết và nguyên nhân chết qua mạng
+    public NetworkVariable<bool> NetworkIsDead = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<DeathReason> NetworkDeathReason = new(DeathReason.Drowned, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private bool _isDeadSingleplayer = false; // Backing field cho Singleplayer
+    private bool _isDeathEffectsExecuted = false; // Đảm bảo hiệu ứng nổ chỉ chạy 1 lần
     private bool _isAbilityEnabled = true;
     private bool _isInfiniteAir = false;
     private bool _isInfiniteJump = false;
     private bool _isInvincible = false;
     private float _jumpCooldown = 0f; // Cooldown để ngăn spam lệnh nhảy khi giữ phím
-    private DeathReason _lastDeathReason = DeathReason.Drowned; // Mặc định là chết đuối
+    private DeathReason _lastDeathReasonSingleplayer = DeathReason.Drowned;
     private float _currentAirChangeRate = 0f; // Biến lưu tốc độ thay đổi khí hiện tại
 
     private Vector2 _currentMoveInput;
     private bool _isTryingToJumpOutOfWater;
 
     // Thực thi interface IPlayer: Cho phép bên ngoài đọc trạng thái chết
-    public bool IsDead => _isDead;
+    public bool IsDead => IsSpawned ? NetworkIsDead.Value : _isDeadSingleplayer;
 
     public bool IsZiplining => _motor != null && _motor.IsZiplining;
-    public DeathReason LastDeathReason => _lastDeathReason;
+    public DeathReason LastDeathReason => IsSpawned ? NetworkDeathReason.Value : _lastDeathReasonSingleplayer;
     public bool IsClinging => _motor != null && _motor.IsClinging;
     public bool IsSwimming => _motor != null && _motor.IsSwimming; // Trạng thái bơi được lấy từ PlayerMotor
     public bool IsSubmerged => _motor != null && _motor.IsSubmerged; // Trạng thái ngập trong nước
@@ -117,7 +122,25 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         
         // Đăng ký sự kiện thay đổi tên để cập nhật UI
         NetworkPlayerName.OnValueChanged += (oldVal, newVal) => { UpdateNameTag(newVal.ToString()); };
+        
+        // Đồng bộ hiệu ứng chết cho Proxies
+        NetworkIsDead.OnValueChanged += OnDeathStateChanged;
+
+        // Xử lý trường hợp người chơi vào phòng sau khi ai đó đã chết
+        if (NetworkIsDead.Value)
+        {
+            ExecuteDeathEffects(NetworkDeathReason.Value, false);
+        }
+
         UpdateNameTag();
+    }
+
+    private void OnDeathStateChanged(bool oldVal, bool newVal)
+    {
+        if (newVal)
+        {
+            ExecuteDeathEffects(NetworkDeathReason.Value, true);
+        }
     }
 
     private void UpdateNameTag(string name = "")
@@ -206,7 +229,7 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         // Chỉ chặn nếu là Object mạng và không phải chủ sở hữu. Singleplayer (IsSpawned = false) vẫn chạy tiếp.
         if (IsSpawned && !IsOwner) return;
 
-        if (_isDead || !_isAbilityEnabled) return;
+        if (IsDead || !_isAbilityEnabled) return;
 
         // Giảm cooldown nhảy
         if (_jumpCooldown > 0) _jumpCooldown -= Time.deltaTime;
@@ -276,7 +299,7 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         // Chỉ chặn nếu là Object mạng và không phải chủ sở hữu.
         if (IsSpawned && !IsOwner) return;
 
-        if (_isDead || !_isAbilityEnabled) return;
+        if (IsDead || !_isAbilityEnabled) return;
 
         _motor.SetAttemptingToJumpOutOfWater(_isTryingToJumpOutOfWater);
 
@@ -427,9 +450,27 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
 
     public void Die(DeathReason reason = DeathReason.Drowned)
     {
-        if (_isDead) return;
-        _lastDeathReason = reason;
-        _isDead = true;
+        if (IsDead) return;
+        if (IsSpawned && !IsOwner) return; // Chỉ Owner mới có quyền quyết định mình chết
+
+        if (IsSpawned)
+        {
+            NetworkDeathReason.Value = reason;
+            NetworkIsDead.Value = true;
+            // Callback OnDeathStateChanged sẽ tự gọi ExecuteDeathEffects cho tất cả mọi người
+        }
+        else
+        {
+            _isDeadSingleplayer = true;
+            _lastDeathReasonSingleplayer = reason;
+            ExecuteDeathEffects(reason, true);
+        }
+    }
+
+    private void ExecuteDeathEffects(DeathReason reason, bool spawnGibs)
+    {
+        if (_isDeathEffectsExecuted) return;
+        _isDeathEffectsExecuted = true;
 
         // 1. Lưu vận tốc cuối cùng để tạo quán tính (đang chạy mà chết thì xác phải văng đi)
         Vector2 deathVelocity = _rb != null ? _rb.linearVelocity : Vector2.zero;
@@ -450,12 +491,15 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
             col.enabled = false;
         }
 
-        // Cập nhật thống kê chết và kiểm tra thành tựu
-        DataManager.Instance.Profile.RegisterDeath();
-        GameplayEvents.TriggerPlayerDied();
+        // Chỉ cập nhật thống kê nếu là Local Player (Owner của chính mình)
+        if (IsOwner || !IsSpawned)
+        {
+            DataManager.Instance.Profile.RegisterDeath();
+            GameplayEvents.TriggerPlayerDied();
+        }
 
         // 5. Hiệu ứng nổ mảnh vụn (Gibs)
-        if (_gibPrefab != null && _gibMappings != null)
+        if (spawnGibs && _gibPrefab != null && _gibMappings != null)
         {
             // Lấy index của layer từ LayerMask để gán cho GameObject
             int layerIndex = 0;
