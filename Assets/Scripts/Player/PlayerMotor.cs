@@ -75,8 +75,28 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     private string _currentLabel;
 
     private Rigidbody2D _rb;
-    private bool _facingRight = true;
-    public bool IsFacingRight => _facingRight;
+
+    // Đồng bộ các trạng thái quan trọng cho Visuals
+    private NetworkVariable<bool> _facingRight = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _facingRightLocal = true;
+    public bool IsFacingRight => IsSpawned ? _facingRight.Value : _facingRightLocal;
+
+    private NetworkVariable<bool> _isSwimming = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _isSwimmingLocal = false;
+    private NetworkVariable<bool> _isClimbing = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _isClimbingLocal = false;
+    private NetworkVariable<bool> _isGrounded = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _isGroundedLocal = false;
+    private NetworkVariable<bool> _isClinging = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _isClingingLocal = false;
+    private NetworkVariable<bool> _isSliding = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _isSlidingLocal = false;
+    private NetworkVariable<bool> _isDiving = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _isDivingLocal = false;
+    private NetworkVariable<bool> _isZiplining = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _isZipliningLocal = false;
+    private NetworkVariable<float> _horizontalSpeed = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private float _horizontalSpeedLocal = 0f;
 
     private Vector3 _velocity = Vector3.zero;
     public float OriginalGravityScale => _originalGravityScale;
@@ -95,17 +115,50 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
 
     public IFloodZone CurrentFlood { get; private set; }
 
-    public bool IsGrounded { get; private set; }
+    public bool IsGrounded 
+    { 
+        get => IsSpawned ? _isGrounded.Value : _isGroundedLocal; 
+        private set { if (IsSpawned) _isGrounded.Value = value; _isGroundedLocal = value; } 
+    }
     public float JumpForce => _jumpForce;
     public float InfJumpForce => _infJumpForce;
-    public bool IsSwimming { get; private set; }
+    public bool IsSwimming 
+    { 
+        get => IsSpawned ? _isSwimming.Value : _isSwimmingLocal; 
+        private set { if (IsSpawned) _isSwimming.Value = value; _isSwimmingLocal = value; } 
+    }
     public bool IsSubmerged { get; private set; } // True khi player ngập trong nước/flood (dựa vào swim trigger)
-    public bool IsClinging { get; private set; }
-    public bool IsSliding { get; private set; }
-    public bool IsDiving { get; private set; }
-    public bool IsZiplining { get; private set; }
+    public bool IsClinging 
+    { 
+        get => IsSpawned ? _isClinging.Value : _isClingingLocal; 
+        private set { if (IsSpawned) _isClinging.Value = value; _isClingingLocal = value; } 
+    }
+    public bool IsSliding 
+    { 
+        get => IsSpawned ? _isSliding.Value : _isSlidingLocal; 
+        private set { if (IsSpawned) _isSliding.Value = value; _isSlidingLocal = value; } 
+    }
+    public bool IsDiving 
+    { 
+        get => IsSpawned ? _isDiving.Value : _isDivingLocal; 
+        private set { if (IsSpawned) _isDiving.Value = value; _isDivingLocal = value; } 
+    }
+    public bool IsZiplining 
+    { 
+        get => IsSpawned ? _isZiplining.Value : _isZipliningLocal; 
+        private set { if (IsSpawned) _isZiplining.Value = value; _isZipliningLocal = value; } 
+    }
+    public float HorizontalSpeed
+    {
+        get => IsSpawned ? _horizontalSpeed.Value : _horizontalSpeedLocal;
+        private set { if (IsSpawned) _horizontalSpeed.Value = value; _horizontalSpeedLocal = value; }
+    }
     public bool IsTouchingLadder { get; private set; } // Trạng thái đang chạm vào vùng thang (Trigger)
-    public bool IsClimbing { get; private set; } // Trạng thái leo thang
+    public bool IsClimbing 
+    { 
+        get => IsSpawned ? _isClimbing.Value : _isClimbingLocal; 
+        private set { if (IsSpawned) _isClimbing.Value = value; _isClimbingLocal = value; } 
+    }
     public bool IsDead { get; set; } // Trạng thái chết (được set từ Controller)
 
     // Variables để restore trạng thái collider
@@ -136,14 +189,16 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     public void UpdateSpriteLabels()
     {
         string targetLabel = _idleLabel;
+        // Sử dụng giá trị speed đã được đồng bộ thay vì giá trị ảo 0.11f
+        float speed = (IsSpawned && IsOwner) || !IsSpawned ? Mathf.Abs(_rb.linearVelocity.x) : HorizontalSpeed;
 
         if (IsClimbing)
         {
             targetLabel = _climbLabel;
         }
-        else if (Mathf.Abs(_rb.linearVelocity.x) > 0.1f || IsSwimming)
+        else if (speed > 0.1f || IsSwimming)
         {
-            targetLabel = _facingRight ? _rightLabel : _leftLabel;
+            targetLabel = IsFacingRight ? _rightLabel : _leftLabel;
         }
 
         if (_currentLabel == targetLabel) return;
@@ -236,7 +291,21 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
         // Nếu là máy khách khác: Kinematic để máy đó không tự tính vật lý cho nhân vật của mình
         _rb.bodyType = IsOwner ? RigidbodyType2D.Dynamic : RigidbodyType2D.Kinematic;
         
-        if (IsOwner) _rb.gravityScale = _originalGravityScale;
+        if (IsOwner)
+        {
+            _rb.gravityScale = _originalGravityScale;
+            
+            // Đồng bộ trạng thái hiện tại (nếu có) lên mạng ngay khi spawn
+            _facingRight.Value = _facingRightLocal;
+            _isSwimming.Value = _isSwimmingLocal;
+            _isClimbing.Value = _isClimbingLocal;
+            _isGrounded.Value = _isGroundedLocal;
+            _isClinging.Value = _isClingingLocal;
+            _isSliding.Value = _isSlidingLocal;
+            _isDiving.Value = _isDivingLocal;
+            _isZiplining.Value = _isZipliningLocal;
+            _horizontalSpeed.Value = _horizontalSpeedLocal;
+        }
 
         // Thông báo cho MultiplayerManager biết Local Player đã được spawn thành công
         if (IsOwner && TryGetComponent<IPlayer>(out var player))
@@ -470,14 +539,14 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
             // CẢI TIẾN: Khi bơi, ưu tiên Flip theo vận tốc thực tế của Rigidbody.
             // Nếu bơi chạm dốc và bị đẩy lùi, nhân vật sẽ tự động quay mặt về hướng trượt.
             float flipReference = Mathf.Abs(_rb.linearVelocity.x) > 0.5f ? _rb.linearVelocity.x : input.x;
-            if (flipReference > 0.01f && !_facingRight) Flip();
-            else if (flipReference < -0.01f && _facingRight) Flip();
+            if (flipReference > 0.01f && !_facingRight.Value) Flip();
+            else if (flipReference < -0.01f && _facingRight.Value) Flip();
         }
         else
         {
             // Trên cạn: Quay mặt theo phím nhấn để phản hồi tức thì.
-            if (input.x > 0 && !_facingRight) Flip();
-            else if (input.x < 0 && _facingRight) Flip();
+            if (input.x > 0 && !_facingRight.Value) Flip();
+            else if (input.x < 0 && _facingRight.Value) Flip();
         }
         
         // Nếu đang bị khóa di chuyển (do WallJump, Slide), giảm timer và bỏ qua logic di chuyển
@@ -496,7 +565,9 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
                 _bodyCollider.sharedMaterial = _slipperyMaterial;
             if (_feetCollider != null)
                 _feetCollider.sharedMaterial = _slipperyMaterial;
-
+            // Cập nhật tốc độ ngang để các máy khác biết khi nào chuyển từ Idle sang Run
+            if (!IsSpawned || IsOwner) HorizontalSpeed = Mathf.Abs(_rb.linearVelocity.x);
+            
             float targetSwimX = input.x * _speed;
             // FIX: Ngăn chặn triệt để việc Collider đâm xuyên/giật khi bơi sát tường.
             // Nếu đang nhấn phím di chuyển vào tường, ta chủ động set target velocity về 0
@@ -922,7 +993,9 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     public void Flip()
 	{
         // Đảo chiều trạng thái quay mặt
-        _facingRight = !_facingRight;
+        bool newVal = !IsFacingRight;
+        if (IsSpawned) _facingRight.Value = newVal;
+        _facingRightLocal = newVal;
 
         if (_useScaleFlip)
         {
@@ -1085,6 +1158,9 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        // Chỉ chủ sở hữu mới có quyền tính toán và cập nhật trạng thái bơi lên mạng
+        if (IsSpawned && !IsOwner) return;
+
         // FIX: Dùng GetComponentInParent để tìm IFloodZone ngay cả khi script nằm ở object cha của Collider
         IFloodZone flood = other.GetComponentInParent<IFloodZone>();
         if (flood != null && !_activeFloodZones.Contains(flood))
@@ -1097,6 +1173,8 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
 
     private void OnTriggerStay2D(Collider2D other)
     {
+        if (IsSpawned && !IsOwner) return;
+
         // Cần thiết cho trường hợp Teleport thẳng vào vùng Flood
         IFloodZone flood = other.GetComponentInParent<IFloodZone>();
         if (flood != null && !_activeFloodZones.Contains(flood))
@@ -1109,6 +1187,8 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
 
     private void OnTriggerExit2D(Collider2D other)
     {
+        if (IsSpawned && !IsOwner) return;
+
         // FIX: Tương tự, dùng GetComponentInParent để xác định vùng vừa thoát
         IFloodZone flood = other.GetComponentInParent<IFloodZone>();
         if (flood != null && _activeFloodZones.Contains(flood))

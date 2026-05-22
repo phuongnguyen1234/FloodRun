@@ -91,7 +91,7 @@ GameObject:
   - component: {fileID: 6234162547833087925}
   - component: {fileID: 3739865018710673040}
   - component: {fileID: 2476841695079872035}
-  - component: {fileID: 1953275979751774416}
+  - component: {fileID: 6118609805542603034}
   m_Layer: 7
   m_Name: Player
   m_TagString: Player
@@ -477,7 +477,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2222251896
+  GlobalObjectIdHash: 2617846252
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -548,6 +548,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c530a7c0ae9b194cbccd9fcc0e1f374, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Player::PlayerAnimator
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &1261875866234627915
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -762,7 +763,7 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
---- !u!114 &1953275979751774416
+--- !u!114 &6118609805542603034
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -771,9 +772,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1211683872267545562}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
+  m_Script: {fileID: 11500000, guid: 1a3aa502d09209d4395a8d021a8b656f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkAnimator
+  m_EditorClassIdentifier: Player::Core.Multiplayer.OwnerNetworkAnimator
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkAnimatorExpanded: 0
   AuthorityMode: 1

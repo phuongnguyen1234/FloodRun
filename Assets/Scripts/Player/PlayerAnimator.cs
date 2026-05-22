@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Netcode;
 
 /// <summary>
 /// PlayerAnimator chịu trách nhiệm cập nhật các tham số của Animator dựa trên trạng thái của PlayerMotor và Rigidbody2D.
@@ -6,7 +7,7 @@ using UnityEngine;
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(PlayerMotor))]
 [RequireComponent(typeof(Rigidbody2D))]
-public class PlayerAnimator : MonoBehaviour
+public class PlayerAnimator : NetworkBehaviour
 {
     private Animator _animator;
     private PlayerMotor _motor;
@@ -70,10 +71,14 @@ public class PlayerAnimator : MonoBehaviour
 
     void Update()
     {
-        // Cập nhật các tham số của Animator dựa trên trạng thái của Motor và Rigidbody
-        UpdateAnimationParameters();
+        // Chỉ Owner mới tính toán và set parameter cho Animator
+        // NetworkAnimator sẽ tự đồng bộ các tham số này sang các máy khách khác
+        if (!IsSpawned || IsOwner)
+        {
+            UpdateAnimationParameters();
+        }
 
-        // Cập nhật Sprite Label (Back, Side_Right, v.v.)
+        // Visuals (Sprite swap) cần chạy trên tất cả các máy để ai cũng thấy đúng hướng/loại sprite
         _motor.UpdateSpriteLabels();
         _wasGotorGrounded = _motor.IsGrounded; // Cập nhật trạng thái grounded của motor cho frame tiếp theo
     }
