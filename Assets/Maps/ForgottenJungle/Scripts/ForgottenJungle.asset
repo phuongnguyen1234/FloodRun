@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 617946ca0553ff345b7c386184b3a557, type: 3}
   m_Name: ForgottenJungle
   m_EditorClassIdentifier: Map::MapData
-  Name: ForgottenJungle
-  Author: PublicStaticVoidMain
+  Name: Forgotten Jungle
+  Author: PhamPhucDat
   Description: a jungle has been forgotten
   Difficulty: 1.17
   MapDuration: 60
