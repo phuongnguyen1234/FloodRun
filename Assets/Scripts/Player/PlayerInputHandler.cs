@@ -13,6 +13,7 @@ public class PlayerInputHandler : MonoBehaviour, IPlayerAbility, IInputProvider
     private PlayerInputActions _inputActions;
 
     public Vector2 MoveInput { get; private set; }
+    public Vector2 LadderInput { get; private set; }
 
     // Biến kiểm tra trạng thái giữ phím Space và Shift
     public bool JumpInput { get; private set; }
@@ -37,6 +38,9 @@ public class PlayerInputHandler : MonoBehaviour, IPlayerAbility, IInputProvider
 
         _inputActions.Player.Move.performed += OnMove;
         _inputActions.Player.Move.canceled += OnMoveCanceled;
+        _inputActions.Player.Ladder.performed += OnLadder;
+        _inputActions.Player.Ladder.canceled += OnLadderCanceled;
+
         _inputActions.Player.Jump.performed += OnJumpPerformed;
         
         // Lắng nghe sự kiện bắt đầu và kết thúc nhấn nút Jump (Space) để xác định trạng thái giữ phím
@@ -63,6 +67,10 @@ public class PlayerInputHandler : MonoBehaviour, IPlayerAbility, IInputProvider
 
     private void OnMoveCanceled(InputAction.CallbackContext context) => MoveInput = Vector2.zero;
 
+    private void OnLadder(InputAction.CallbackContext context) => LadderInput = context.ReadValue<Vector2>();
+
+    private void OnLadderCanceled(InputAction.CallbackContext context) => LadderInput = Vector2.zero;
+
     private void OnJumpPerformed(InputAction.CallbackContext context) => OnJump?.Invoke();
 
     private void OnJumpStarted(InputAction.CallbackContext context) => JumpInput = true;
@@ -86,6 +94,8 @@ public class PlayerInputHandler : MonoBehaviour, IPlayerAbility, IInputProvider
     {
         _inputActions.Player.Move.performed -= OnMove;
         _inputActions.Player.Move.canceled -= OnMoveCanceled;
+        _inputActions.Player.Ladder.performed -= OnLadder;
+        _inputActions.Player.Ladder.canceled -= OnLadderCanceled;
         _inputActions.Player.Jump.performed -= OnJumpPerformed;
         _inputActions.Player.Jump.started -= OnJumpStarted;
         _inputActions.Player.Jump.canceled -= OnJumpCanceled;

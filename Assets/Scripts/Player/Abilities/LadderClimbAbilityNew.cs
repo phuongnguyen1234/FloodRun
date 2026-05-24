@@ -72,7 +72,7 @@ public class LadderClimbAbilityNew : NetworkBehaviour, IPlayerAbility
             return;
         }
 
-        float verticalInput = _input.MoveInput.y;
+        float verticalInput = _input.LadderInput.y;
 
         // --- KIỂM TRA BẮT ĐẦU LEO (Quét chủ động bằng OverlapBox) ---
         if (!_isClimbing)
@@ -126,7 +126,7 @@ public class LadderClimbAbilityNew : NetworkBehaviour, IPlayerAbility
         if (_isClimbing)
         {
             // Di chuyển dọc, triệt tiêu vận tốc ngang hoàn toàn
-            float vVelocity = _input.MoveInput.y * _climbSpeed;
+            float vVelocity = _input.LadderInput.y * _climbSpeed;
             _rb.linearVelocity = new Vector2(0, vVelocity);
             
             // Khóa di chuyển ngang của Motor
@@ -152,9 +152,18 @@ public class LadderClimbAbilityNew : NetworkBehaviour, IPlayerAbility
 
     private void SnapToTop(float topY)
     {
+        // FIX: Kiểm tra xem Player đã gần đỉnh thang chưa bằng _topSnapThreshold
+        float currentFootY = (_motor.FeetCollider != null) ? _motor.FeetCollider.bounds.min.y : _bodyCollider.bounds.min.y;
+        float distanceToTop = topY - transform.position.y;
+        
+        // Nếu khoảng cách lớn hơn threshold, chưa đủ gần để snap - bỏ qua
+        if (distanceToTop > _topSnapThreshold)
+        {
+            return;
+        }
+        
         // Tính toán khoảng cách từ Pivot (transform.position) đến điểm thấp nhất của chân (FeetCollider)
         // Nếu không có chân, dùng đáy của BodyCollider làm fallback
-        float currentFootY = (_motor.FeetCollider != null) ? _motor.FeetCollider.bounds.min.y : _bodyCollider.bounds.min.y;
         
         // Offset này là khoảng cách từ chân lên đến Pivot (luôn dương nếu Pivot ở trên chân)
         float pivotOffset = transform.position.y - currentFootY;

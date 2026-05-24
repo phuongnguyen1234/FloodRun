@@ -78,9 +78,47 @@ public class PlayerAnimator : NetworkBehaviour
             UpdateAnimationParameters();
         }
 
-        // Visuals (Sprite swap) cần chạy trên tất cả các máy để ai cũng thấy đúng hướng/loại sprite
+        // Visuals (Sprite swap + Rotation) cần chạy trên tất cả các máy để ai cũng thấy đúng hướng/loại sprite
         _motor.UpdateSpriteLabels();
+        
+        // FIX: Sync visual rotation cho proxy (flip + swimming rotation)
+        if (IsSpawned && !IsOwner)
+        {
+            SyncProxyVisuals();
+        }
+        
         _wasGotorGrounded = _motor.IsGrounded; // Cập nhật trạng thái grounded của motor cho frame tiếp theo
+    }
+    
+    /// <summary>
+    /// Đồng bộ visual của proxy dựa trên NetworkVariable từ Owner
+    /// </summary>
+    private void SyncProxyVisuals()
+    {
+        // Sync Flip (Scale X)
+        if (_motor._useScaleFlip)
+        {
+            Vector3 currentScale = transform.localScale;
+            float targetScaleX = _motor.IsFacingRight ? Mathf.Abs(currentScale.x) : -Mathf.Abs(currentScale.x);
+            if (!Mathf.Approximately(currentScale.x, targetScaleX))
+            {
+                currentScale.x = targetScaleX;
+                transform.localScale = currentScale;
+            }
+        }
+        
+        // Sync Rotation (Swimming + Water Exit Reset)
+        // FIX: Luôn sync rotation, không chỉ khi IsSwimming, vì ta cần sync cả rotation reset (90°) khi lên khỏi nước
+        if (_motor._visualsRoot != null)
+        {
+            float targetRotZ = _motor.VisualsRotationZ;
+            Quaternion targetRot = Quaternion.Euler(0, 0, targetRotZ);
+            _motor._visualsRoot.localRotation = Quaternion.Lerp(
+                _motor._visualsRoot.localRotation,
+                targetRot,
+                Time.deltaTime * 15f
+            );
+        }
     }
 
     private void UpdateAnimationParameters()
