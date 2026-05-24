@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 617946ca0553ff345b7c386184b3a557, type: 3}
+  m_Name: ChrismasWorld_Data
+  m_EditorClassIdentifier: Map::MapData
+  Name: ChrismasWorld
+  Author: Rexx
+  Description: ChrismasWorld for Chrismas Day
+  Difficulty: 1.5
+  MapDuration: 180
+  ButtonNumber: 4
+  MapPreviewImage: {fileID: -5248143932855167462, guid: 7e55288f10f3b7241944a20c5ab6158e, type: 3}
+  MapPrefab: {fileID: 4785617213215511861, guid: 025aff7d7346382419e9fedfeee01a64, type: 3}
+  BackgroundMusic: {fileID: 8300000, guid: 291a334140508cd408b1f521e64ae7b6, type: 3}
+  EnableDevTools: 1
