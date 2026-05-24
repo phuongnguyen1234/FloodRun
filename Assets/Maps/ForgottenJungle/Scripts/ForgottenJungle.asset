@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 617946ca0553ff345b7c386184b3a557, type: 3}
+  m_Name: ForgottenJungle
+  m_EditorClassIdentifier: Map::MapData
+  Name: ForgottenJungle
+  Author: PublicStaticVoidMain
+  Description: a jungle has been forgotten
+  Difficulty: 1.17
+  MapDuration: 60
+  ButtonNumber: 4
+  MapPreviewImage: {fileID: 3002315276091994846, guid: 8a1400cd682f2394a9098ddee77addf7, type: 3}
+  MapPrefab: {fileID: 1637740676321180219, guid: 7f76c5e873577914d976c8812cfe2e82, type: 3}
+  BackgroundMusic: {fileID: 8300000, guid: d828e654b10d4a14bb8339ef679488fe, type: 3}
+  EnableDevTools: 1
