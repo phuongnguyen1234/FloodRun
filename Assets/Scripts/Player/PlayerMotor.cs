@@ -25,13 +25,16 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     [SerializeField] private float _jumpForce = 11.5f;
     [Header("Visuals Root")]
     [Tooltip("Transform chứa toàn bộ Sprite/Xương của nhân vật. Chúng ta sẽ xoay cái này thay vì xoay Rigidbody khi bơi.")]
-    [SerializeField] private Transform _visualsRoot;
+    [SerializeField] public Transform _visualsRoot; // Public để PlayerAnimator đọc cho proxy
     [Tooltip("Lực đẩy riêng khi thực hiện nhảy vô hạn trên không")]
     [SerializeField] private float _infJumpForce = 12f;
 
     [Tooltip("Chiều rộng của Collider khi đang Slide. Nên nhỏ hơn hoặc bằng 1 để chui vừa khe 1 grid.")]
     [SerializeField] private float _slideWidth = 0.8f;
     
+    [Tooltip("Tỉ lệ giảm chiều cao khi trượt (Đồng bộ từ SlideAbility).")]
+    [SerializeField] private float _slideHeightRatio = 0.5f;
+
     [Header("Movement Smoothing")]
     [Range(0, .3f)] [SerializeField] private float _groundSmoothing = .05f;      // Độ mượt khi di chuyển (nhạy)
     [Range(0, .5f)] [SerializeField] private float _swimSmoothing = .15f;        // Độ mượt khi bơi (có quán tính nước)
@@ -69,7 +72,7 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     [SerializeField] private string _climbLabel = "Back";
 
     [Tooltip("Nếu Sprite trong Library đã vẽ sẵn hướng Trái/Phải, hãy tắt cái này để tránh lật 2 lần")]
-    [SerializeField] private bool _useScaleFlip = false;
+    [SerializeField] public bool _useScaleFlip = false; // Public để PlayerAnimator đọc cho proxy
 
     private SpriteResolver[] _spriteResolvers;
     private string _currentLabel;
@@ -80,6 +83,10 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     private NetworkVariable<bool> _facingRight = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private bool _facingRightLocal = true;
     public bool IsFacingRight => IsSpawned ? _facingRight.Value : _facingRightLocal;
+
+    // Đồng bộ rotation của visuals khi bơi cho tất cả player (proxy)
+    private NetworkVariable<float> _visualsRotationZ = new NetworkVariable<float>(90f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public float VisualsRotationZ => IsSpawned ? _visualsRotationZ.Value : 90f;
 
     private NetworkVariable<bool> _isSwimming = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private bool _isSwimmingLocal = false;
@@ -192,11 +199,12 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
         // Sử dụng giá trị speed đã được đồng bộ thay vì giá trị ảo 0.11f
         float speed = (IsSpawned && IsOwner) || !IsSpawned ? Mathf.Abs(_rb.linearVelocity.x) : HorizontalSpeed;
 
+        // FIX: Thêm IsClinging vào điều kiện chọn nhãn Side để quay mặt ra ngoài tường dù speed = 0
         if (IsClimbing)
         {
             targetLabel = _climbLabel;
         }
-        else if (speed > 0.1f || IsSwimming)
+        else if (speed > 0.1f || IsSwimming || IsClinging)
         {
             targetLabel = IsFacingRight ? _rightLabel : _leftLabel;
         }
@@ -305,7 +313,16 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
             _isDiving.Value = _isDivingLocal;
             _isZiplining.Value = _isZipliningLocal;
             _horizontalSpeed.Value = _horizontalSpeedLocal;
+            _visualsRotationZ.Value = 90f; // Rotation mặc định
         }
+
+        // Đăng ký callback để đồng bộ Collider cho Proxy
+        _isSliding.OnValueChanged += (oldVal, newVal) => {
+            if (!IsOwner) { if (newVal) ResizeCollider(_slideHeightRatio, true); else ResetCollider(); }
+        };
+        _isSwimming.OnValueChanged += (oldVal, newVal) => {
+            if (!IsOwner) { if (newVal) ResizeCollider(0f, false); else ResetCollider(); }
+        };
 
         // Thông báo cho MultiplayerManager biết Local Player đã được spawn thành công
         if (IsOwner && TryGetComponent<IPlayer>(out var player))
@@ -318,6 +335,12 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     {
         // Tránh việc các máy khách (Proxy) tự tính toán va chạm/mặt đất cho nhân vật của người khác
         if (IsSpawned && !IsOwner) return;
+
+        // FIX: Đảm bảo Singleplayer luôn là Dynamic để chuyển động và nhảy bình thường
+        // NetworkRigidbody2D có thể auto-set kinematic, nên phải override nó mỗi frame cho singleplayer
+        // NHƯNG: Nếu đang bám tường (IsClinging), thì WallJumpAbility sẽ set Kinematic, đừng override nó
+        if (!IsSpawned && !IsClinging)
+            _rb.bodyType = RigidbodyType2D.Dynamic;
 
         if (!_isAbilityEnabled) return;
 
@@ -444,6 +467,11 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
                 Time.fixedDeltaTime * 800f
             );        
         }
+        
+        // FIX: Đồng bộ rotation cho proxy
+        float currentZ = _visualsRoot.localRotation.eulerAngles.z;
+        if (IsSpawned && IsOwner)
+            _visualsRotationZ.Value = currentZ;
     }
 
     // Bắn tia Raycast xuống dưới để lấy vector pháp tuyến (độ nghiêng) của sàn
@@ -539,14 +567,16 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
             // CẢI TIẾN: Khi bơi, ưu tiên Flip theo vận tốc thực tế của Rigidbody.
             // Nếu bơi chạm dốc và bị đẩy lùi, nhân vật sẽ tự động quay mặt về hướng trượt.
             float flipReference = Mathf.Abs(_rb.linearVelocity.x) > 0.5f ? _rb.linearVelocity.x : input.x;
-            if (flipReference > 0.01f && !_facingRight.Value) Flip();
-            else if (flipReference < -0.01f && _facingRight.Value) Flip();
+            // FIX: Dùng IsFacingRight property thay vì _facingRight.Value để đồng nhất với singleplayer
+            if (flipReference > 0.01f && !IsFacingRight) Flip();
+            else if (flipReference < -0.01f && IsFacingRight) Flip();
         }
         else
         {
             // Trên cạn: Quay mặt theo phím nhấn để phản hồi tức thì.
-            if (input.x > 0 && !_facingRight.Value) Flip();
-            else if (input.x < 0 && _facingRight.Value) Flip();
+            // FIX: Dùng IsFacingRight property thay vì _facingRight.Value để đồng nhất với singleplayer
+            if (input.x > 0 && !IsFacingRight) Flip();
+            else if (input.x < 0 && IsFacingRight) Flip();
         }
         
         // Nếu đang bị khóa di chuyển (do WallJump, Slide), giảm timer và bỏ qua logic di chuyển
@@ -992,8 +1022,16 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     /// </summary>
     public void Flip()
 	{
-        // Đảo chiều trạng thái quay mặt
+        // FIX: Thêm guard để tránh flip lặp lại nếu đã facing hướng đó
+        // Kiểm tra xem direction có thực sự cần đổi không
         bool newVal = !IsFacingRight;
+        if (IsSpawned && _facingRight.Value == newVal) return; // Đã facing hướng này rồi, bỏ qua
+        if (!IsSpawned && _facingRightLocal == newVal) return;
+
+        // FIX: Kiểm tra quyền ghi trước (chỉ Owner mới được phép set network variable)
+        if (IsSpawned && !IsOwner) return; // Proxy không được flip
+        
+        // Đảo chiều trạng thái quay mặt
         if (IsSpawned) _facingRight.Value = newVal;
         _facingRightLocal = newVal;
 
@@ -1010,6 +1048,8 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     /// </summary>
     public void SetClinging(bool isClinging)
     {
+        // FIX: Kiểm tra quyền ghi (chỉ Owner mới được phép)
+        if (IsSpawned && !IsOwner) return;
         IsClinging = isClinging;
     }
 
@@ -1221,6 +1261,14 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
 
         // Dù có reset collider hay không, trạng thái bơi ngang phải được tắt khi ra khỏi nước.
         _isSwimHorizontal = false;
+        
+        // FIX: Reset visualsRoot về tư thế đứng thẳng (90 độ) khi lên khỏi nước
+        if (_visualsRoot != null)
+            _visualsRoot.localRotation = Quaternion.Euler(0, 0, 90f);
+        
+        // Cập nhật network variable để proxy cũng thấy rotation reset
+        if (IsSpawned && IsOwner)
+            _visualsRotationZ.Value = 90f;
 
         // FIX: Ưu tiên dùng floodOverride (nếu có) để phát tiếng khi CurrentFlood đã bị null do ra khỏi trigger
         IFloodZone floodToPlay = floodOverride != null ? floodOverride : CurrentFlood;

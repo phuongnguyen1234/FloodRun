@@ -237,23 +237,33 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         // Đồng bộ trạng thái nhấn phím nhảy sang Motor để Animator có thể sử dụng
         _motor.JumpInput = _input.JumpInput;
 
-        Vector2 input = _input.MoveInput;
+        Vector2 input = Vector2.zero;
         _isTryingToJumpOutOfWater = false;
 
-        // Nếu đang bơi, sử dụng Space để bơi lên và Shift để lặn xuống
         if (_motor.IsSwimming)
         {
-            float vertical = 0f;
+            // BƠI: A/D ngang từ Move, Space/Shift từ Jump/Dive để lên/xuống
+            input.x = _input.MoveInput.x; // A/D bơi ngang
+            
+            float vertical = 0f; // Không dùng W/S khi bơi
             if (_input.JumpInput)
             {
-                vertical += 1f; // Space -> Bơi lên (Up)
+                vertical = 1f; // Space -> bơi lên
                 _isTryingToJumpOutOfWater = true;
             }
-            if (_input.DiveInput) vertical -= 1f; // Shift -> Lặn xuống (Down)
-            input.y = vertical; // Ghi đè trục Y của MoveInput (W/S)
+            if (_input.DiveInput) vertical = -1f; // Shift -> lặn xuống
+            input.y = vertical;
+        }
+        else if (_motor.IsClimbing)
+        {
+            // LEO THANG: Sử dụng Action Ladder riêng biệt (W/S)
+            input = _input.LadderInput;
         }
         else
         {
+            // TRÊN CẠN: MoveInput bây giờ đã được config chỉ có A/D
+            input = _input.MoveInput;
+            
             // Logic nhảy (bao gồm Infinite Jump)
             // Điều kiện nhảy: Giữ phím + Hết cooldown + (Chạm đất HOẶC bật InfJump)
             // Không cho phép nhảy khi: Đang bơi, Đang leo thang, Đang đu dây (để tránh phá vỡ logic vật lý riêng của các ability này)

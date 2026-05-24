@@ -92,6 +92,7 @@ GameObject:
   - component: {fileID: 3739865018710673040}
   - component: {fileID: 2476841695079872035}
   - component: {fileID: 6118609805542603034}
+  - component: {fileID: 5450615391674834396}
   m_Layer: 7
   m_Name: Player
   m_TagString: Player
@@ -635,6 +636,16 @@ MonoBehaviour:
   _gibLayer:
     serializedVersion: 2
     m_Bits: 256
+  NetworkIsDead:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
+  NetworkDeathReason:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
 --- !u!114 &4715545568130325091
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -669,6 +680,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0b97641164c37047af0dd0df752a0f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Player::SlideAbility
+  ShowTopMostFoldoutHeaderGroup: 1
   _slideSpeed: 6
   _maxSlideTime: 0.5
   _slideCooldown: 0.1
@@ -690,6 +702,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0fd0beb8f89f52046935389bf99310f3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Player::ZiplineAbility
+  ShowTopMostFoldoutHeaderGroup: 1
   _ziplineLayer:
     serializedVersion: 2
     m_Bits: 2048
@@ -711,6 +724,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2d582d6301ae7141a200bbd777aacbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Player::LadderClimbAbilityNew
+  ShowTopMostFoldoutHeaderGroup: 1
   _climbSpeed: 5
   _jumpOffForce: 11.5
   _ladderLayer:
@@ -732,8 +746,8 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 1
   AutoOwnerAuthorityTickOffset: 1
-  PositionInterpolationType: 0
-  RotationInterpolationType: 0
+  PositionInterpolationType: 2
+  RotationInterpolationType: 2
   ScaleInterpolationType: 0
   PositionLerpSmoothing: 1
   PositionMaxInterpolationTime: 0.1
@@ -741,7 +755,7 @@ MonoBehaviour:
   RotationMaxInterpolationTime: 0.1
   ScaleLerpSmoothing: 1
   ScaleMaxInterpolationTime: 0.1
-  AuthorityMode: 0
+  AuthorityMode: 1
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
   SyncPositionX: 1
@@ -750,9 +764,9 @@ MonoBehaviour:
   SyncRotAngleX: 1
   SyncRotAngleY: 1
   SyncRotAngleZ: 1
-  SyncScaleX: 1
-  SyncScaleY: 1
-  SyncScaleZ: 1
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
   PositionThreshold: 0.001
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
@@ -848,6 +862,23 @@ MonoBehaviour:
       Synchronize: 1
       ParameterType: 9
   AnimatorParametersExpanded: 0
+--- !u!114 &5450615391674834396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1211683872267545562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80d7c879794dfda4687da0e400131852, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkRigidbody2D
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkRigidbodyBaseExpanded: 0
+  UseRigidBodyForMotion: 1
+  AutoUpdateKinematicState: 1
+  AutoSetKinematicOnDespawn: 1
 --- !u!1 &1776421307666142869
 GameObject:
   m_ObjectHideFlags: 0
