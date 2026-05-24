@@ -18,10 +18,10 @@ MonoBehaviour:
 
 
 '
-  Difficulty: 4
-  MapDuration: 180
-  ButtonNumber: 0
-  MapPreviewImage: {fileID: 0}
+  Difficulty: 5.5
+  MapDuration: 200
+  ButtonNumber: 4
+  MapPreviewImage: {fileID: -7956361835015383230, guid: f259ac4a88b41f545a4a541582f99797, type: 3}
   MapPrefab: {fileID: 5330293211370870075, guid: 508ecfc428ddbaf46a49604f040a4fbf, type: 3}
-  BackgroundMusic: {fileID: 0}
+  BackgroundMusic: {fileID: 8300000, guid: c47f245887d8ded4486de545ebd59bb2, type: 3}
   EnableDevTools: 1
