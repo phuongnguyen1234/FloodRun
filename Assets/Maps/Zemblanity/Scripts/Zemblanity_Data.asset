@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Zemblanity_Data
   m_EditorClassIdentifier: Core::Core.MapData
   Name: Zemblanity
-  Author: PublicStaticVoidMain
+  Author: PhamThanhSon
   Description: 'You''re lost in an unknown woods. Make your way out of it
 
     V1.0'
-  Difficulty: 1.3
+  Difficulty: 1.2
   MapDuration: 70
   ButtonNumber: 4
   MapPreviewImage: {fileID: 4088649926128961819, guid: 3518657932259c04d88356f80399638d, type: 3}
