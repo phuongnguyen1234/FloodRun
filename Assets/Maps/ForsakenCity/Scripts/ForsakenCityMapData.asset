@@ -12,13 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 617946ca0553ff345b7c386184b3a557, type: 3}
   m_Name: ForsakenCityMapData
   m_EditorClassIdentifier: Core::Core.MapData
-  Name: ForsakenCity
+  Name: Forsaken City
   Author: NTDzVEKNY
   Description: '
 
 
 '
-  Difficulty: 6
+  Difficulty: 5.2
   MapDuration: 110
   ButtonNumber: 4
   MapPreviewImage: {fileID: -7956361835015383230, guid: f259ac4a88b41f545a4a541582f99797, type: 3}
