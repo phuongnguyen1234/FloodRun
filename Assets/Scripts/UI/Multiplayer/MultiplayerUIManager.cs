@@ -24,6 +24,28 @@ namespace UI.Multiplayer
         [SerializeField] private RoomInfoModalUI _roomInfoModal; 
         [SerializeField] private GameObject _settingsModal;
 
+        [Header("HUD Management")]
+        [SerializeField] private GameObject _lobbyHUD;
+        [SerializeField] private GameObject _gameplayHUD;
+
+        [Header("Lobby Buttons Reference")]
+        [SerializeField] private TMP_Text _playStatusText;
+        [SerializeField] private Image _playStatusIcon;
+        [SerializeField] private Sprite _playSprite;
+        [SerializeField] private Sprite _pauseSprite;
+        [Space]
+        [SerializeField] private TMP_Text _spectateStatusText;
+        [SerializeField] private Image _spectateIcon;
+        [SerializeField] private Sprite _spectateSprite;
+        [SerializeField] private Sprite _stopSpectateSprite;
+        [SerializeField] private GameObject _spectateControls;
+
+        [Header("Lobby Icon Colors")]
+        [SerializeField] private Color _playActiveColor = Color.white;
+        [SerializeField] private Color _playAfkColor = Color.yellow;
+        [SerializeField] private Color _spectateNormalColor = Color.white;
+        [SerializeField] private Color _spectateActiveColor = Color.red;
+
         [Header("Chat Settings")]
         [SerializeField] private GameObject _chatLinePrefab;
         [SerializeField] private Transform _chatContent;
@@ -58,6 +80,8 @@ namespace UI.Multiplayer
         [SerializeField] private AudioClip _clickSound;
         [SerializeField] private AudioSource _uiAudioSource;
 
+        private IMultiplayerManager _logicManager;
+
         private void Awake()
         {
             if (Instance == null) Instance = this;
@@ -71,10 +95,10 @@ namespace UI.Multiplayer
 
             // Tối ưu: Tìm Logic Manager một lần duy nhất và gán cho các Modal con
             // Việc gán này vẫn hoạt động ngay cả khi Modal đang SetActive(false)
-            var logicManager = FindObjectsByType<MonoBehaviour>().OfType<IMultiplayerManager>().FirstOrDefault();
-            if (logicManager != null)
+            _logicManager = FindObjectsByType<MonoBehaviour>().OfType<IMultiplayerManager>().FirstOrDefault();
+            if (_logicManager != null)
             {
-                if (_roomInfoModal != null) _roomInfoModal.SetManager(logicManager);
+                if (_roomInfoModal != null) _roomInfoModal.SetManager(_logicManager);
                 // Bạn có thể gán cho các modal khác ở đây (ví dụ: ChatModal, VoteModal...)
                 // if (_chatModal != null) _chatModal.SetManager(logicManager);
             }
@@ -221,13 +245,73 @@ namespace UI.Multiplayer
         }
 
         public void PlayClickSound()
-    {
-        if (_uiAudioSource != null && _clickSound != null)
         {
-            // Lấy âm lượng SFX từ SettingsManager
-            float volume = (SettingsManager.Instance != null) ? SettingsManager.Instance.SfxVolume : 1f;
-            _uiAudioSource.PlayOneShot(_clickSound, volume);
+            if (_uiAudioSource != null && _clickSound != null)
+            {
+                // Lấy âm lượng SFX từ SettingsManager
+                float volume = (SettingsManager.Instance != null) ? SettingsManager.Instance.SfxVolume : 1f;
+                _uiAudioSource.PlayOneShot(_clickSound, volume);
+            }
+        }
+
+        public void SetHUDMode(bool isGameplay)
+        {
+            if (_lobbyHUD != null) _lobbyHUD.SetActive(!isGameplay);
+            if (_gameplayHUD != null) _gameplayHUD.SetActive(isGameplay);
+
+            // Tự động đóng các modal khi vào gameplay
+            if (isGameplay) HideAllModals();
+        }
+
+        public void UpdatePlayStatus(bool isAFK)
+        {
+            if (_playStatusText != null)
+                _playStatusText.text = isAFK ? "AFK" : "Play";
+
+            if (_playStatusIcon != null)
+            {
+                _playStatusIcon.sprite = isAFK ? _pauseSprite : _playSprite;
+                _playStatusIcon.color = isAFK ? _playAfkColor : _playActiveColor;
+            }
+        }
+
+        public void UpdateSpectateStatus(bool isSpectating)
+        {
+            if (_spectateStatusText != null)
+                _spectateStatusText.text = isSpectating ? "Stop spectating" : "Spectate";
+
+            if (_spectateIcon != null)
+            {
+                _spectateIcon.sprite = isSpectating ? _stopSpectateSprite : _spectateSprite;
+                _spectateIcon.color = isSpectating ? _spectateActiveColor : _spectateNormalColor;
+            }
+
+            // Spectate_Btns (chứa 2 nút next/previous) chỉ hiện khi đang spectate
+            if (_spectateControls != null)
+            {
+                _spectateControls.SetActive(isSpectating);
+            }
+        }
+
+        // --- Lobby HUD Actions (Gán vào OnClick trong Inspector) ---
+
+        public void OnPlayToggleClick()
+        {
+            PlayClickSound();
+            _logicManager?.LocalPlayer?.ToggleAFKStatus();
+        }
+
+        public void OnSpectateToggleClick()
+        {
+            PlayClickSound();
+            _logicManager?.LocalPlayer?.ToggleSpectateStatus();
+        }
+
+        public void OnShopClick()
+        {
+            PlayClickSound();
+            // Ở đây sẽ gọi logic mở CharacterUI theo thiết kế
         }
     }
-    }
+    
 }

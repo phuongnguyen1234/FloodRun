@@ -58,11 +58,6 @@ public class PlayerAnimator : NetworkBehaviour
     {
         _animator.SetTrigger(_animIDDoJump);
 
-        // FIX: Ép trực tiếp tham số để Animator "nhảy" state ngay trong frame này,
-        // tránh việc đi qua Entry -> Idle của Sub-machine Locomotion.
-        _animator.SetBool(_animIDGrounded, false);
-        _animator.SetFloat(_animIDVerticalVelocity, 10f);
-        
         // CỰC KỲ QUAN TRỌNG: Ép các biến đệm mặt đất về 0 ngay lập tức
         // Điều này chặn việc Animator tự động chuyển ngược về Idle/Run ngay trong frame đầu tiên
         _stableStateGraceTimer = 0;

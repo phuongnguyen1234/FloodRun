@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using Unity.Collections;
 using System;
+using System.Collections.Generic;
 
 namespace Core.Interfaces
 {
@@ -25,8 +26,9 @@ namespace Core.Interfaces
 
     /// <summary>
     /// Interface dành riêng cho các tính năng quản lý mạng và phòng.
+    /// Extends IGameLoopManager để cung cấp các tính năng gameplay cơ bản.
     /// </summary>
-    public interface IMultiplayerManager
+    public interface IMultiplayerManager : IGameLoopManager
     {
         NetworkVariable<float> NetworkTime { get; }
         NetworkVariable<FixedString32Bytes> RoomId { get; }
@@ -43,5 +45,6 @@ namespace Core.Interfaces
 
         void RequestKickPlayer(ulong clientId);
         void RequestLeaveRoom();
+        void RequestResetPlayer();
     }
 }

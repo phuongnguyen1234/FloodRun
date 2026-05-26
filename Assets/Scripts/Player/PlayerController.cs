@@ -58,6 +58,9 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
     // Đồng bộ trạng thái chết và nguyên nhân chết qua mạng
     public NetworkVariable<bool> NetworkIsDead = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public NetworkVariable<DeathReason> NetworkDeathReason = new(DeathReason.Drowned, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    // Đồng bộ trạng thái AFK và Spectating
+    public NetworkVariable<bool> IsAFK { get; } = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<bool> IsSpectating { get; } = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     private bool _isDeadSingleplayer = false; // Backing field cho Singleplayer
     private bool _isDeathEffectsExecuted = false; // Đảm bảo hiệu ứng nổ chỉ chạy 1 lần
@@ -126,6 +129,10 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         // Đồng bộ hiệu ứng chết cho Proxies
         NetworkIsDead.OnValueChanged += OnDeathStateChanged;
 
+        // Các trạng thái AFK/Spectating sẽ được MultiplayerManager lắng nghe và cập nhật UI
+        // Không cần lắng nghe ở đây
+
+
         // Xử lý trường hợp người chơi vào phòng sau khi ai đó đã chết
         if (NetworkIsDead.Value)
         {
@@ -140,6 +147,10 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         if (newVal)
         {
             ExecuteDeathEffects(NetworkDeathReason.Value, true);
+        }
+        else
+        {
+            PerformReviveComponents(); // Khi NetworkIsDead trở thành false, mọi người đều hiện lại Sprite
         }
     }
 
@@ -212,6 +223,20 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         
         Debug.Log($"[DevTool] Player teleported to {position}");
     }
+
+    public void ToggleAFKStatus()
+    {
+        if (!IsSpawned || !IsOwner) return;
+        IsAFK.Value = !IsAFK.Value;
+        Debug.Log($"[PlayerController] Player {NetworkPlayerName.Value} AFK status: {IsAFK.Value}");
+    }
+
+    public void ToggleSpectateStatus()
+    {
+        if (!IsSpawned || !IsOwner) return;
+        IsSpectating.Value = !IsSpectating.Value;
+        Debug.Log($"[PlayerController] Player {NetworkPlayerName.Value} Spectating status: {IsSpectating.Value}");
+    }
     #endregion
 
     private void OnEnable()
@@ -226,6 +251,9 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
 
     void Update()
     {
+        // CẬP NHẬT VISUAL: Đảm bảo Name Tag không bị lật ngược (Chạy cho cả Local Player và Proxies)
+        HandleNameTagReadability();
+
         // Chỉ chặn nếu là Object mạng và không phải chủ sở hữu. Singleplayer (IsSpawned = false) vẫn chạy tiếp.
         if (IsSpawned && !IsOwner) return;
 
@@ -288,9 +316,6 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
 
         _currentMoveInput = input;
         HandleAirSystem();
-        
-        // Đảm bảo Name Tag không bị lật ngược khi Player lật localScale
-        HandleNameTagReadability();
     }
 
     private void HandleNameTagReadability()
@@ -575,5 +600,59 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         }
 
         this.enabled = false; // Ngắt chính script PlayerController này
+    }
+
+    /// <summary>
+    /// Revive player sau khi đã chết (dùng cho respawn).
+    /// Đảo ngược tất cả các tác động của Die() method.
+    /// </summary>
+    public void Revive()
+    {
+        if (IsSpawned)
+        {
+            if (!IsOwner) return; // Chỉ Owner mới có quyền ghi vào NetworkVariable
+            NetworkIsDead.Value = false;
+            // PerformReviveComponents() sẽ được gọi tự động qua OnDeathStateChanged
+        }
+        else
+        {
+            _isDeadSingleplayer = false;
+            PerformReviveComponents();
+        }
+    }
+
+    /// <summary>
+    /// Thực hiện các thao tác bật lại linh kiện (Animator, Sprite, Physics) cho cả Owner và Proxy.
+    /// </summary>
+    private void PerformReviveComponents()
+    {
+        _isDeathEffectsExecuted = false;
+
+        if (_playerAnimator != null) _playerAnimator.enabled = true;
+
+        if (_rb != null)
+        {
+            _rb.simulated = true;
+            _rb.linearVelocity = Vector2.zero;
+        }
+
+        foreach (var col in GetComponents<Collider2D>())
+        {
+            col.enabled = true;
+        }
+
+        SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>();
+        foreach (var sr in renderers) sr.enabled = true;
+
+        _baseAir = _maxAir;
+        _bonusAir = 0f;
+        _bonusAirMaxCap = 0f;
+
+        foreach (var ability in _abilities)
+        {
+            if (ability != (IPlayerAbility)this) ability.EnableAbility();
+        }
+
+        this.enabled = true;
     }
 }

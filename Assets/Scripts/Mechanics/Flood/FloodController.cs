@@ -17,7 +17,7 @@ using DG.Tweening;
 [RequireComponent(typeof(SpriteRenderer), typeof(AudioSource))]
 public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
 {
-    private IGameplayManager _gameplayManager;
+    private IGameLoopManager _gameLoopManager;
 
     [System.Serializable]
     public class FloodStage
@@ -129,12 +129,12 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
         _audioSource = GetComponent<AudioSource>();
         _defaultAlpha = _spriteRenderer.color.a;
 
-        // Tìm IGameplayManager trong Scene (thường gắn trên GameplayManager object)
+        // Tìm IGameLoopManager trong Scene (có thể là GameplayManager hoặc MultiplayerManager)
         // Việc này giải quyết vấn đề "không thấy MapManager.cs" giữa các Assembly.
-        if (_gameplayManager == null)
+        if (_gameLoopManager == null)
         {
-            // Tìm kiếm đối tượng thực thi IGameplayManager
-            _gameplayManager = FindObjectsByType<Component>().OfType<IGameplayManager>().FirstOrDefault();
+            // Tìm kiếm đối tượng thực thi IGameLoopManager
+            _gameLoopManager = FindObjectsByType<Component>().OfType<IGameLoopManager>().FirstOrDefault();
         }
 
         UpdateVisuals();
@@ -174,8 +174,8 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
 
         bool isPlayerSwimmingHere = false;
 
-        // Truy vấn Player thông qua IGameplayManager (Boss quản lý vòng đời player)
-        if (_gameplayManager != null && _gameplayManager.LocalPlayer is IPlayer player)
+        // Truy vấn Player thông qua IGameLoopManager (Generic, works for SP & MP)
+        if (_gameLoopManager != null && _gameLoopManager.LocalPlayer is IPlayer player)
         {
             // Sử dụng IsSubmerged để giữ Alpha thấp ngay cả khi đang Zipline/Climb/Cling trong nước
             if (player.IsSubmerged && player.CurrentFlood == (IFloodZone)this)
