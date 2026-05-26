@@ -23,17 +23,20 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
     [SerializeField] private TMP_Text _personalTimeText;
     [Tooltip("Icon đồng hồ hiển thị bên cạnh thời gian cá nhân")]
     [SerializeField] private Image _personalTimeIcon;
-    [SerializeField] private TMP_Text _countdownText;
+    [SerializeField] private TMP_Text _floatNotificationText;
     [SerializeField] private TMP_Text _airText;
     [SerializeField] private TMP_Text _airRateText; // Text riêng cho drain rate
     [Tooltip("Text hiển thị số thứ tự nút cần bấm (Ví dụ: 1)")]
     [SerializeField] private TMP_Text _buttonStepText;
     [SerializeField] private Image _buttonIcon;
     [SerializeField] private GameObject _finishFlag;
+    [Space]
+    [SerializeField] private TMP_Text _playerCountText;
+    [SerializeField] private Image _playerCountIcon;
+    [SerializeField] private GameObject _playerFinishFlag;
     [Header("Stat Pulse Settings")]
     [SerializeField] private float _pulseDuration = 0.3f;
     [SerializeField] private TMP_Text _recordTimeText; // Thêm text kỷ lục
-    //TODO: setup số player nếu có multiplayer sau này
 
     [Header("Sliders")]
     [Tooltip("Slider hiển thị lượng Air còn lại")]
@@ -86,6 +89,9 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
     private Color _originalButtonIconColor;
     private Color _originalPersonalTimeColor;
     private Color _originalPersonalTimeIconColor;
+    private int _prevAliveCount = -1;
+    private Color _originalPlayerCountColor;
+    private Color _originalPlayerIconColor;
     private Vector2 _originalCountdownPos;
     private Coroutine _notificationCoroutine;
 
@@ -96,13 +102,16 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
         
         if (_buttonStepText != null) _originalButtonTextColor = _buttonStepText.color;
         if (_buttonIcon != null) _originalButtonIconColor = _buttonIcon.color;
+        if (_playerCountText != null) _originalPlayerCountColor = _playerCountText.color;
+        if (_playerCountIcon != null) _originalPlayerIconColor = _playerCountIcon.color;
         if (_personalTimeText != null) _originalPersonalTimeColor = _personalTimeText.color;
         if (_personalTimeIcon != null) _originalPersonalTimeIconColor = _personalTimeIcon.color;
-        if (_countdownText != null) 
+        if (_floatNotificationText != null) 
         {
-            _originalCountdownPos = _countdownText.rectTransform.anchoredPosition;
+            _originalCountdownPos = _floatNotificationText.rectTransform.anchoredPosition;
         }
         _prevActivatedCount = 0;
+        _prevAliveCount = 0;
 
         // Ẩn các panel khi bắt đầu
         if (_endGamePanel != null) _endGamePanel.SetActive(false);
@@ -124,9 +133,10 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
     /// <summary>
     /// Cập nhật giá trị slider tiến độ thời gian của màn chơi.
     /// </summary>
-    public void UpdateLevelProgress(float time)
+    public void UpdateTimeSlider(float currentTime, float maxTime, bool isVotePhase = false)
     {
-        if (_timeSlider != null) _timeSlider.value = time;
+        if (_timeSlider != null) _timeSlider.value = currentTime;
+        if (_timeSlider != null) _timeSlider.maxValue = maxTime; // Ensure max value is set
     }
 
     public void SetMaxTime(float time)
@@ -155,16 +165,29 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
         }
     }
 
+    public void ShowPlayerFinishFlag(bool show)
+    {
+        if (_playerFinishFlag != null) _playerFinishFlag.SetActive(show);
+
+        // Khi cờ hoàn thành hiện lên, ẩn số lượng người chơi
+        if (_playerCountText != null) _playerCountText.gameObject.SetActive(!show);
+        if (_playerCountIcon != null) _playerCountIcon.gameObject.SetActive(!show);
+
+        // Đảm bảo trạng thái ban đầu khi cờ ẩn
+        if (!show && _prevAliveCount != -1) // Chỉ hiện lại nếu đã có giá trị trước đó
+            UpdateAlivePlayerCount(_prevAliveCount, 1); // Cập nhật lại để hiện số đúng
+    }
+
     public void SetCountdownText(string text)
     {
-        if (_countdownText != null)
+        if (_floatNotificationText != null)
         {
             // Reset lại trạng thái của Text nếu GameplayManager gọi (tránh bị ảnh hưởng bởi tween notification)
-            _countdownText.DOKill();
-            _countdownText.color = Color.white;
-            _countdownText.alpha = 1f; // Sử dụng TMP alpha thay vì canvasRenderer
-            _countdownText.rectTransform.anchoredPosition = _originalCountdownPos;
-            _countdownText.text = text;
+            _floatNotificationText.DOKill();
+            _floatNotificationText.color = Color.white;
+            _floatNotificationText.alpha = 1f; // Sử dụng TMP alpha thay vì canvasRenderer
+            _floatNotificationText.rectTransform.anchoredPosition = _originalCountdownPos;
+            _floatNotificationText.text = text;
         }
     }
 
@@ -261,6 +284,24 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
         }
     }
 
+    public void UpdateAlivePlayerCount(int current, int total)
+    {
+        if (_playerCountText == null) return;
+
+        if (current != _prevAliveCount && _prevAliveCount != -1)
+        {
+            StopCoroutine(nameof(PulsePlayerCountRoutine));
+            StartCoroutine(PulsePlayerCountRoutine());
+        }
+        _prevAliveCount = current;
+        _playerCountText.text = current.ToString();
+    }
+
+    public void UpdateLevelProgress(float time)
+    {
+        if (_timeSlider != null) _timeSlider.value = time;
+    }
+
     private IEnumerator PulseButtonRoutine()
     {
         float elapsed = 0f;
@@ -294,6 +335,35 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
 
         if (_buttonIcon != null) 
             _buttonIcon.color = _originalButtonIconColor;
+    }
+
+    private IEnumerator PulsePlayerCountRoutine()
+    {
+        float elapsed = 0f;
+        Color activeColor = Color.red;
+
+        if (_playerCountIcon != null) _playerCountIcon.color = activeColor;
+        if (_playerCountText != null) _playerCountText.color = activeColor;
+
+        while (elapsed < _pulseDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = elapsed / _pulseDuration;
+
+            if (_playerCountText != null)
+                _playerCountText.color = Color.Lerp(activeColor, _originalPlayerCountColor, t);
+
+            if (_playerCountIcon != null)
+                _playerCountIcon.color = Color.Lerp(activeColor, _originalPlayerIconColor, t);
+
+            yield return null;
+        }
+
+        if (_playerCountText != null)
+            _playerCountText.color = _originalPlayerCountColor;
+
+        if (_playerCountIcon != null) 
+            _playerCountIcon.color = _originalPlayerIconColor;
     }
 
     public void ShowEndGame(bool isVictory, string title, MapData data, float time, int buttons, bool isNewBest, int earnedCoins = 0)
@@ -405,7 +475,7 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
         if (_loadingScreen != null) _loadingScreen.SetActive(show);
     }
 
-    public void ShowBackToHomeLoadingScreen()
+    public void ShowBackToMainMenuLoadingScreen()
     {
         if (_backToHomeLoadingPanel != null) _backToHomeLoadingPanel.SetActive(true);
     }
@@ -504,7 +574,7 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
 
     public void ShowNotification(string message, Color color, float duration = 1f)
     {
-        if (_countdownText == null) return;
+        if (_floatNotificationText == null) return;
 
         if (_notificationCoroutine != null) StopCoroutine(_notificationCoroutine);
         _notificationCoroutine = StartCoroutine(NotificationRoutine(message, color, duration));
@@ -516,25 +586,25 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
         float moveOffset = 20f;
 
         // 1. Reset trạng thái ban đầu (Ở trên cao và mờ)
-        _countdownText.DOKill();
-        _countdownText.text = message;
-        _countdownText.color = color;
-        _countdownText.alpha = 0f; // Bắt đầu từ hoàn toàn trong suốt
-        _countdownText.rectTransform.anchoredPosition = _originalCountdownPos + new Vector2(0, moveOffset);
+        _floatNotificationText.DOKill();
+        _floatNotificationText.text = message;
+        _floatNotificationText.color = color;
+        _floatNotificationText.alpha = 0f; // Bắt đầu từ hoàn toàn trong suốt
+        _floatNotificationText.rectTransform.anchoredPosition = _originalCountdownPos + new Vector2(0, moveOffset);
 
         // 2. Fade In từ trên xuống
-        _countdownText.DOFade(1f, fadeTime).SetUpdate(true);
-        _countdownText.rectTransform.DOAnchorPos(_originalCountdownPos, fadeTime).SetEase(Ease.Linear).SetUpdate(true);
+        _floatNotificationText.DOFade(1f, fadeTime).SetUpdate(true);
+        _floatNotificationText.rectTransform.DOAnchorPos(_originalCountdownPos, fadeTime).SetEase(Ease.Linear).SetUpdate(true);
         
         yield return new WaitForSecondsRealtime(duration);
 
         // 3. Fade Out từ dưới lên (tiếp tục đi lên trên)
-        _countdownText.DOFade(0f, fadeTime).SetUpdate(true);
-        _countdownText.rectTransform.DOAnchorPos(_originalCountdownPos + new Vector2(0, moveOffset), fadeTime).SetEase(Ease.Linear).SetUpdate(true);
+        _floatNotificationText.DOFade(0f, fadeTime).SetUpdate(true);
+        _floatNotificationText.rectTransform.DOAnchorPos(_originalCountdownPos + new Vector2(0, moveOffset), fadeTime).SetEase(Ease.Linear).SetUpdate(true);
 
         yield return new WaitForSecondsRealtime(fadeTime);
 
-        _countdownText.text = "";
+        _floatNotificationText.text = "";
         _notificationCoroutine = null;
     }
 }

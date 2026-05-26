@@ -1,6 +1,7 @@
 using UnityEngine;
 using Core.Interfaces;
 using Core.Events;
+using DG.Tweening;
 
 namespace Core
 {
@@ -96,6 +97,34 @@ namespace Core
         public void SetPlayer(IPlayer player)
         {
             _currentPlayer = player;
+        }
+
+        /// <summary>
+        /// Chuyển đổi nhạc nền lập tức (tạm thời bỏ hiệu ứng Fade).
+        /// </summary>
+        public void FadeTo(AudioClip newClip, float fadeDuration = 0.5f, bool loop = true)
+        {
+            if (_audioSource == null) return;
+            
+            // Nếu nhạc đang phát giống hệt nhạc mới thì không làm gì
+            if (_audioSource.clip == newClip && _audioSource.isPlaying) return;
+
+            // Dừng mọi tween volume đang chạy nếu có
+            _audioSource.DOKill();
+            float targetVolume = (SettingsManager.Instance != null) ? SettingsManager.Instance.MusicVolume : 0.7f;
+
+            if (newClip == null)
+            {
+                _audioSource.Stop();
+                _audioSource.clip = null;
+            }
+            else
+            {
+                _audioSource.clip = newClip;
+                _audioSource.loop = loop;
+                _audioSource.volume = targetVolume;
+                _audioSource.Play();
+            }
         }
 
         /// <summary>

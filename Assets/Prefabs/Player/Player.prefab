@@ -478,7 +478,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2617846252
+  GlobalObjectIdHash: 2222251896
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -513,6 +513,7 @@ MonoBehaviour:
   _visualsRoot: {fileID: 8507364654961222875}
   _infJumpForce: 12
   _slideWidth: 0.8
+  _slideHeightRatio: 0.5
   _groundSmoothing: 0.1
   _swimSmoothing: 0.1
   _swimRotationSpeed: 25
@@ -616,8 +617,8 @@ MonoBehaviour:
   _nameTagText: {fileID: 3359250863719528896}
   _keepNameTagReadable: 1
   _maxAir: 100
-  _bonusAirEmptySound: {fileID: 8300000, guid: 531f330d2692f2e4584d0caba456b1c6, type: 3}
-  _playerDeathSound: {fileID: 8300000, guid: 9583a139e16cf864b92fb1a700d85d46, type: 3}
+  _bonusAirEmptySound: {fileID: 8300000, guid: 42328842fb8745247a69cfcbabc31597, type: 3}
+  _playerDeathSound: {fileID: 8300000, guid: fdf2b47b786a86845bb276ef6b38ca82, type: 3}
   _deathExplosionSound: {fileID: 0}
   _gibPrefab: {fileID: 1620210117744658857, guid: 826bf0cc0f1dfde45984743bc6429a72, type: 3}
   _gibMappings:
@@ -658,6 +659,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9cf03b6c26e830948a7f3270c94d428d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Player::WallJumpAbility
+  ShowTopMostFoldoutHeaderGroup: 1
   _wallLayer:
     serializedVersion: 2
     m_Bits: 8192
@@ -666,8 +668,8 @@ MonoBehaviour:
   _jumpOffForce: {x: 10, y: 10}
   _wallJumpLockTime: 0.25
   _clingOffset: 0.35
-  _wallClingSound: {fileID: 8300000, guid: f921eee3456e76f4580aeadff50a2c89, type: 3}
-  _wallJumpSound: {fileID: 8300000, guid: c3079de0f91733a4d84d440e09c9b643, type: 3}
+  _wallClingSound: {fileID: 8300000, guid: fb205829c9d12cd4ca41644caa234fc0, type: 3}
+  _wallJumpSound: {fileID: 8300000, guid: 244091f628653304aaa0c612e4b72c56, type: 3}
 --- !u!114 &3684775757700946467
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -687,8 +689,8 @@ MonoBehaviour:
   _heightReductionRatio: 0.45
   _diveSpeed: 30
   _postDiveSlideDelay: 0.1
-  _slideSound: {fileID: 8300000, guid: b6a07626f16609344ad2688d8b222124, type: 3}
-  _diveSound: {fileID: 8300000, guid: e29527c8d5b93c743839df0595a6b818, type: 3}
+  _slideSound: {fileID: 8300000, guid: c891d5d3ea469ee468d39de38f6c9fdc, type: 3}
+  _diveSound: {fileID: 8300000, guid: 354fa44cb0149c04c9174efabe1477ee, type: 3}
   _slideParticles: {fileID: 2730751228623216842}
 --- !u!114 &6234162547833087925
 MonoBehaviour:
@@ -709,9 +711,9 @@ MonoBehaviour:
   _launcherLockTime: 0.3
   _ziplineAnchor: {fileID: 734472085970483876}
   _slideEffect: {fileID: 1228673030328946047}
-  _ziplineConnectSound: {fileID: 8300000, guid: c3079de0f91733a4d84d440e09c9b643, type: 3}
-  _ziplineSlideLoopSound: {fileID: 8300000, guid: e11bc1fb892b1a4429e8774fc85be01c, type: 3}
-  _ziplineDetachSound: {fileID: 8300000, guid: f921eee3456e76f4580aeadff50a2c89, type: 3}
+  _ziplineConnectSound: {fileID: 8300000, guid: 244091f628653304aaa0c612e4b72c56, type: 3}
+  _ziplineSlideLoopSound: {fileID: 8300000, guid: 7ef774a14188fc84b8239823383f770c, type: 3}
+  _ziplineDetachSound: {fileID: 8300000, guid: fb205829c9d12cd4ca41644caa234fc0, type: 3}
 --- !u!114 &3739865018710673040
 MonoBehaviour:
   m_ObjectHideFlags: 0

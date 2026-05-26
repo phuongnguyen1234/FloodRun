@@ -12,7 +12,7 @@ namespace Core.Events
     public static class GameplayEvents
     {
         // Sự kiện được bắn khi player hoàn thành level (đi vào ExitRegion hợp lệ)
-        public static event Action<MonoBehaviour> OnLevelCompleted;
+        public static event Action<IPlayer> OnLevelCompleted;
         
         // Sự kiện yêu cầu bật/tắt Infinite Air từ DevTool
         public static event Action OnInfiniteAirToggleRequested;
@@ -42,9 +42,15 @@ namespace Core.Events
         // Sự kiện khi Local Player được sinh ra và sẵn sàng
         public static event Action<IPlayer> OnLocalPlayerSpawned;
 
-        public static void TriggerLevelCompleted(MonoBehaviour triggerComponent)
+        // Sự kiện khi bất kỳ người chơi nào (Local hoặc Remote) gia nhập Scene
+        public static event Action<IPlayer> OnPlayerJoined;
+
+        // Sự kiện khi một người chơi thoát/despawn khỏi mạng
+        public static event Action<IPlayer> OnPlayerLeft;
+
+        public static void TriggerLevelCompleted(IPlayer playerWhoCompleted)
         {
-            OnLevelCompleted?.Invoke(triggerComponent);
+            OnLevelCompleted?.Invoke(playerWhoCompleted);
         }
 
         public static void TriggerInfiniteAirToggle()
@@ -99,6 +105,16 @@ namespace Core.Events
         public static void TriggerLocalPlayerSpawned(IPlayer player)
         {
             OnLocalPlayerSpawned?.Invoke(player);
+        }
+
+        public static void TriggerPlayerJoined(IPlayer player)
+        {
+            OnPlayerJoined?.Invoke(player);
+        }
+
+        public static void TriggerPlayerLeft(IPlayer player)
+        {
+            OnPlayerLeft?.Invoke(player);
         }
     }
 }
