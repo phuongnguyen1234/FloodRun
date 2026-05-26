@@ -2,10 +2,12 @@ using System;
 using UnityEngine;
 using TMPro;
 using Core.Interfaces;
+using System.Collections;
 using UnityEngine.UI;
 using Core;
 using System.Linq;
 using UI;
+using DG.Tweening;
 
 namespace UI.Multiplayer
 {
@@ -17,18 +19,12 @@ namespace UI.Multiplayer
     {
         public static MultiplayerUIManager Instance { get; private set; }
 
-        [Header("Multiplayer Specific UI")]
-        [SerializeField] private GameObject _votingPanel;
-        [SerializeField] private GameObject _chatPanel;
-        [SerializeField] private TMP_Text _playerCountText;
-        [SerializeField] private RoomInfoModalUI _roomInfoModal; 
-        [SerializeField] private GameObject _settingsModal;
-
         [Header("HUD Management")]
         [SerializeField] private GameObject _lobbyHUD;
         [SerializeField] private GameObject _gameplayHUD;
 
-        [Header("Lobby Buttons Reference")]
+        [Header("Lobby HUD & Player Status")]
+        [Space]
         [SerializeField] private TMP_Text _playStatusText;
         [SerializeField] private Image _playStatusIcon;
         [SerializeField] private Sprite _playSprite;
@@ -39,30 +35,58 @@ namespace UI.Multiplayer
         [SerializeField] private Sprite _spectateSprite;
         [SerializeField] private Sprite _stopSpectateSprite;
         [SerializeField] private GameObject _spectateControls;
-
-        [Header("Lobby Icon Colors")]
+        [Space]
         [SerializeField] private Color _playActiveColor = Color.white;
         [SerializeField] private Color _playAfkColor = Color.yellow;
         [SerializeField] private Color _spectateNormalColor = Color.white;
         [SerializeField] private Color _spectateActiveColor = Color.red;
 
-        [Header("Chat Settings")]
+        [Header("Gameplay HUD (Common with SP)")]
+        [SerializeField] private TMP_Text _personalTimeText;
+        [SerializeField] private TMP_Text _maxTimeText;
+        [SerializeField] private TMP_Text _floatNotificationText;
+        [Tooltip("Cờ hoàn thành map cho người chơi cục bộ")]
+        [SerializeField] private GameObject _playerFinishFlag;
+        [Space]
+        [SerializeField] private TMP_Text _playerCountText;
+        [SerializeField] private Image _playerCountIcon; // Biểu thị số player còn sống
+        [SerializeField] private float _pulseDuration = 0.3f;
+
+        [Header("Air UI")]
+        [SerializeField] private Slider _airSlider;
+        [Tooltip("Ảnh Fill của lớp Bubble Air (nên đặt đè lên trên Fill gốc)")]
+        [SerializeField] private Image _bonusAirFill;
+        [SerializeField] private TMP_Text _airText;
+        [SerializeField] private TMP_Text _airRateText;
+
+        [Header("Button Progress")]
+        [SerializeField] private TMP_Text _buttonStepText;
+        [SerializeField] private Image _buttonIcon;
+        [SerializeField] private GameObject _finishFlag;
+
+        [Header("Sliders")]
+        [SerializeField] private Slider _timeSlider;
+
+        [Header("Multiplayer Systems")]
+        [SerializeField] private GameObject _votingPanel;
+        [SerializeField] private GameObject _chatPanel;
+        [Space]
         [SerializeField] private GameObject _chatLinePrefab;
         [SerializeField] private Transform _chatContent;
         [SerializeField] private int _maxChatLines = 50;
 
-        [Header("Global Modals")]
+        [Header("Modals & Modifiers")]
+        [SerializeField] private RoomInfoModalUI _roomInfoModal; 
+        [SerializeField] private GameObject _settingsModal;
         [SerializeField] private NotificationModalUI _notificationPrefab;
         [SerializeField] private ConfirmationModalUI _confirmationPrefab;
-        
-        private NotificationModalUI _notificationInstance;
-        private ConfirmationModalUI _confirmationInstance;
 
         [Header("Loading Screens")]
         [SerializeField] private GameObject _mapLoadingPanel;
         [SerializeField] private GameObject _joiningRoomLoadingPanel;
         [SerializeField] private GameObject _backToMainMenuLoadingPanel;
 
+        [SerializeField] private NotificationModalUI _notificationModalPrefab; // Prefab cho NotificationModal
         [Header("Map Loading Details")]
         [SerializeField] private Image _loadingPreviewImage;
         [Tooltip("Định dạng: <Tên map> [<Tier>] - <Tác giả>")]
@@ -70,17 +94,25 @@ namespace UI.Multiplayer
         [SerializeField] private TMP_Text _loadingStatusText;
         [SerializeField] private TMP_Text _loadingButtonCountText;
         [SerializeField] private TMP_Text _loadingDifficultyText;
+
+        [Header("Global Settings & Audio")]
         [SerializeField] private DifficultyPalette _palette;
-
-        [Header("Inherited HUD (Reused from SP)")]
-        [SerializeField] private Slider _timeSlider;
-        // Bạn có thể kéo các component từ HUD cũ vào đây
-
-        [Header("Audio SFX")]
         [SerializeField] private AudioClip _clickSound;
         [SerializeField] private AudioSource _uiAudioSource;
 
+        private NotificationModalUI _notificationInstance;
+        private ConfirmationModalUI _confirmationInstance;
         private IMultiplayerManager _logicManager;
+        private Vector2 _originalCountdownPos; // For notification animation
+        private Coroutine _notificationCoroutine; // For notification animation
+
+        private int _prevActivatedCount = -1;
+        private Color _originalButtonTextColor;
+        private Color _originalButtonIconColor;
+        private int _prevAliveCount = -1;
+        private Color _originalPlayerCountColor;
+        private Color _originalPlayerIconColor;
+
 
         private void Awake()
         {
@@ -102,21 +134,257 @@ namespace UI.Multiplayer
                 // Bạn có thể gán cho các modal khác ở đây (ví dụ: ChatModal, VoteModal...)
                 // if (_chatModal != null) _chatModal.SetManager(logicManager);
             }
+
+            if (_floatNotificationText != null)
+            {
+                _originalCountdownPos = _floatNotificationText.rectTransform.anchoredPosition;
+            }
+
+            if (_buttonStepText != null) _originalButtonTextColor = _buttonStepText.color;
+            if (_buttonIcon != null) _originalButtonIconColor = _buttonIcon.color;
+            if (_playerCountText != null) _originalPlayerCountColor = _playerCountText.color;
+            if (_playerCountIcon != null) _originalPlayerIconColor = _playerCountIcon.color;
+            
+            _prevActivatedCount = 0;
+            _prevAliveCount = 0;
         }
 
-        // Giữ lại UpdateLevelProgress vì nó có triển khai cơ bản
-        public void UpdateLevelProgress(float time) { if (_timeSlider != null) _timeSlider.value = time; }
-        
-        // Cập nhật để nhận callback khi đóng thông báo
-        public void ShowNotification(string message, Action onClose = null)
+
+
+        #region ICommonUIManager Implementation
+
+        /// <summary>
+        /// Hiển thị thông báo tạm thời (floating text).
+        /// TODO: Implement với floating text system (color, duration)
+        /// </summary>
+        public void ShowNotification(string message, Color color = default, float duration = 2f)
         {
-            if (_notificationInstance == null && _notificationPrefab != null)
-            {
-                _notificationInstance = Instantiate(_notificationPrefab, transform);
-            }
-            
+            if (_floatNotificationText == null) return;
+            if (_notificationCoroutine != null) StopCoroutine(_notificationCoroutine);
+            _notificationCoroutine = StartCoroutine(NotificationRoutine(message, color, duration));
+        }
+
+        /// <summary>
+        /// Hiển thị một NotificationModal chặn tương tác với thông báo.
+        /// </summary>
+        public void ShowNotificationModal(string message, Action onClose = null)
+        {
+            if (_notificationInstance == null && _notificationModalPrefab != null)
+                _notificationInstance = Instantiate(_notificationModalPrefab, transform);
             if (_notificationInstance != null) _notificationInstance.ShowMessage(message, onClose);
         }
+
+        #endregion
+
+        #region IGameplayHUDUI Implementation
+
+        public void UpdatePersonalTime(float time)
+        {
+            if (_personalTimeText != null)
+                _personalTimeText.text = FormatTime(time);
+        }
+
+        public void SetMaxTime(float time)
+        {
+            if (_maxTimeText != null)
+                _maxTimeText.text = $"Target: {FormatTime(time)}";
+            if (_timeSlider != null) _timeSlider.maxValue = time; // Set max value for the slider
+        }
+
+        /// <summary>
+        /// MP không dùng record time, nhưng phải implement vì kế thừa IGameplayHUDUI.
+        /// </summary>
+        public void SetRecordTime(float time)
+        {
+            // MP không hiển thị record time
+        }
+
+        public void ShowPlayerFinishFlag(bool show)
+        {
+            if (_playerFinishFlag != null) _playerFinishFlag.SetActive(show);
+
+            // Khi cờ hoàn thành cá nhân hiện lên, ẩn phần đếm số lượng player để tránh che khuất
+            if (_playerCountText != null) _playerCountText.gameObject.SetActive(!show);
+            if (_playerCountIcon != null) _playerCountIcon.gameObject.SetActive(!show);
+        }
+
+        public void UpdateAirUI(float currentAir, float bonusAir, float bonusMax, float rate)
+        {
+            if (_airSlider != null)
+                _airSlider.value = Mathf.Clamp(currentAir, 0, _airSlider.maxValue);
+
+            // Cập nhật Text Drain Rate với màu sắc
+            if (_airRateText != null)
+            {
+                UpdateAirRateUI(rate);
+            }
+
+            // Cập nhật lớp Bubble Air (Bonus) giống GameplayUIManager
+            if (_bonusAirFill != null)
+            {
+                bool hasBonus = bonusAir > 0.1f; // Sử dụng ngưỡng nhỏ để tránh nháy UI do sai số float
+                _bonusAirFill.gameObject.SetActive(hasBonus);
+
+                if (hasBonus && bonusMax > 0)
+                {
+                    // Khi dùng 9-slice (Sliced), ta không dùng fillAmount.
+                    // Thay vào đó, ta điều chỉnh anchorMax.x của RectTransform để co giãn thanh.
+                    float ratio = Mathf.Clamp01(bonusAir / bonusMax);
+                    Vector2 anchorMax = _bonusAirFill.rectTransform.anchorMax;
+                    anchorMax.x = ratio;
+                    _bonusAirFill.rectTransform.anchorMax = anchorMax;
+                }
+            }
+
+            if (_airText != null)
+            {
+                float totalAir = currentAir + bonusAir;
+                _airText.text = totalAir.ToString("F0");
+            }
+        }
+
+        private void UpdateAirRateUI(float rate)
+        {
+            if (rate > 0.1f)
+            {
+                _airRateText.text = $"+{rate:F0}/s";
+                _airRateText.color = Color.green;
+            }
+            else if (rate < -0.1f)
+            {
+                _airRateText.text = $"{rate:F0}/s";
+                _airRateText.color = Color.red;
+            }
+            else
+            {
+                _airRateText.text = "";
+                _airRateText.color = Color.gray;
+            }
+        }
+
+        public void UpdateButtonProgress(int current, int total)
+        {
+            if (_buttonStepText == null) return;
+
+            // 1. Hiệu ứng Pulse khi số lượng nút tăng lên (giống SP)
+            if (current > _prevActivatedCount && _prevActivatedCount != -1)
+            {
+                StopCoroutine(nameof(PulseButtonRoutine));
+                StartCoroutine(PulseButtonRoutine());
+                
+                // Thông báo floating text cho local player
+                ShowNotification($"Pressed Button {current}", new Color(1f, 1f, 0.7f)); 
+            }
+            _prevActivatedCount = current;
+
+            // 2. Kiểm tra trạng thái hoàn thành: Hiện lá cờ nếu đã đủ nút
+            bool isFinished = (total > 0 && current >= total);
+
+            if (isFinished)
+            {
+                _buttonStepText.text = "";
+                if (_finishFlag != null) _finishFlag.SetActive(true);
+                if (_buttonIcon != null) _buttonIcon.gameObject.SetActive(false);
+            }
+            else
+            {
+                _buttonStepText.text = (current + 1).ToString();
+                if (_finishFlag != null) _finishFlag.SetActive(false);
+                if (_buttonIcon != null) _buttonIcon.gameObject.SetActive(true);
+            }
+        }
+
+        public void SetCountdownText(string text)
+        {
+            if (_floatNotificationText != null)
+            {
+                // Reset lại trạng thái của Text (tránh bị ảnh hưởng bởi tween notification)
+                _floatNotificationText.DOKill();
+                _floatNotificationText.color = Color.white;
+                _floatNotificationText.alpha = 1f;
+                _floatNotificationText.rectTransform.anchoredPosition = _originalCountdownPos;
+                _floatNotificationText.text = text;
+            }
+        }
+
+        public void UpdateTimeSlider(float currentTime, float maxTime, bool isVotePhase = false)
+        {
+            if (_timeSlider != null)
+            {
+                _timeSlider.maxValue = maxTime;
+                _timeSlider.value = currentTime;
+
+                // Thay đổi màu slider dựa vào phase
+                // (Có thể thêm logic highlight khác nếu cần)
+            }
+        }
+
+        private IEnumerator PulseButtonRoutine()
+        {
+            float elapsed = 0f;
+            Color activeColor = Color.green;
+
+            // 1. Chuyển sang trạng thái Active ngay lập tức
+            if (_buttonIcon != null) _buttonIcon.color = activeColor;
+            if (_buttonStepText != null) _buttonStepText.color = activeColor;
+
+            // 2. Hiệu ứng Fade Out quay về trạng thái bình thường
+            while (elapsed < _pulseDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = elapsed / _pulseDuration;
+
+                if (_buttonStepText != null)
+                    _buttonStepText.color = Color.Lerp(activeColor, _originalButtonTextColor, t);
+
+                if (_buttonIcon != null)
+                    _buttonIcon.color = Color.Lerp(activeColor, _originalButtonIconColor, t);
+
+                yield return null;
+            }
+
+            if (_buttonStepText != null)
+                _buttonStepText.color = _originalButtonTextColor;
+
+            if (_buttonIcon != null) 
+                _buttonIcon.color = _originalButtonIconColor;
+        }
+
+        private IEnumerator PulsePlayerCountRoutine()
+        {
+            float elapsed = 0f;
+            Color activeColor = Color.red; // Pulse màu đỏ khi số lượng player thay đổi
+
+            // 1. Chuyển sang trạng thái Active ngay lập tức
+            if (_playerCountIcon != null) _playerCountIcon.color = activeColor;
+            if (_playerCountText != null) _playerCountText.color = activeColor;
+
+            // 2. Hiệu ứng Fade Out quay về trạng thái bình thường
+            while (elapsed < _pulseDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = elapsed / _pulseDuration;
+
+                if (_playerCountText != null)
+                    _playerCountText.color = Color.Lerp(activeColor, _originalPlayerCountColor, t);
+
+                if (_playerCountIcon != null)
+                    _playerCountIcon.color = Color.Lerp(activeColor, _originalPlayerIconColor, t);
+
+                yield return null;
+            }
+
+            if (_playerCountText != null)
+                _playerCountText.color = _originalPlayerCountColor;
+
+            if (_playerCountIcon != null) 
+                _playerCountIcon.color = _originalPlayerIconColor;
+        }
+
+        #endregion
+
+        #region Confirmation & Modals
+
 
         public void AskConfirmation(string message, Action onYes)
         {
@@ -125,10 +393,13 @@ namespace UI.Multiplayer
                 _confirmationInstance = Instantiate(_confirmationPrefab, transform);
             }
             
+            // Setup của ConfirmationModalUI chỉ nhận 2 tham số: message và action cho nút Yes
             if (_confirmationInstance != null) _confirmationInstance.Setup(message, onYes);
         }
+        #endregion
 
-        // Các hàm hỗ trợ Chat và Voting
+        #region Chat System
+
         public void ShowChat(bool show)
         {
             _chatPanel?.SetActive(show);
@@ -142,8 +413,16 @@ namespace UI.Multiplayer
 
         public void UpdateAlivePlayerCount(int current, int total)
         {
-            if (_playerCountText != null) 
-                _playerCountText.text = $"{current}/{total} Players Alive";
+            if (_playerCountText == null) return;
+
+            // Hiệu ứng Pulse đỏ khi số lượng thay đổi (người chết hoặc thoát)
+            if (current != _prevAliveCount && _prevAliveCount != -1)
+            {
+                StopCoroutine(nameof(PulsePlayerCountRoutine));
+                StartCoroutine(PulsePlayerCountRoutine());
+            }
+            _prevAliveCount = current;
+            _playerCountText.text = current.ToString();
         }
 
         public void AddChatMessage(string sender, string message, bool isHost)
@@ -165,6 +444,10 @@ namespace UI.Multiplayer
             }
         }
 
+        #endregion
+
+        #region Room & UI Management
+
         public void ShowRoomInfo(bool show)
         {
             if (_roomInfoModal == null) return;
@@ -185,6 +468,10 @@ namespace UI.Multiplayer
             ShowRoomInfo(false);
             ShowSettings(false);
         }
+
+        #endregion
+
+        #region Loading Screen
 
         public void ShowLoadingScreen(bool show)
         {
@@ -244,6 +531,10 @@ namespace UI.Multiplayer
                 _loadingDifficultyText.text = data.Difficulty.ToString("F1");
         }
 
+        #endregion
+
+        #region Audio SFX
+
         public void PlayClickSound()
         {
             if (_uiAudioSource != null && _clickSound != null)
@@ -253,6 +544,10 @@ namespace UI.Multiplayer
                 _uiAudioSource.PlayOneShot(_clickSound, volume);
             }
         }
+
+        #endregion
+
+        #region HUD Control
 
         public void SetHUDMode(bool isGameplay)
         {
@@ -295,6 +590,10 @@ namespace UI.Multiplayer
 
         // --- Lobby HUD Actions (Gán vào OnClick trong Inspector) ---
 
+        #endregion
+
+        #region Lobby HUD Actions
+
         public void OnPlayToggleClick()
         {
             PlayClickSound();
@@ -312,6 +611,49 @@ namespace UI.Multiplayer
             PlayClickSound();
             // Ở đây sẽ gọi logic mở CharacterUI theo thiết kế
         }
+
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// Định dạng số giây thành chuỗi MM:SS.MS
+        /// </summary>
+        private string FormatTime(float timeInSeconds)
+        {
+            System.TimeSpan t = System.TimeSpan.FromSeconds(timeInSeconds);
+            return string.Format("{0:0}:{1:00}.{2:000}", (int)t.TotalMinutes, t.Seconds, t.Milliseconds);
+        }
+
+        private System.Collections.IEnumerator NotificationRoutine(string message, Color color, float duration)
+        {
+            float fadeTime = 0.2f;
+            float moveOffset = 20f;
+
+            // 1. Reset trạng thái ban đầu (Ở trên cao và mờ)
+            _floatNotificationText.DOKill();
+            _floatNotificationText.text = message;
+            _floatNotificationText.color = color;
+            _floatNotificationText.alpha = 0f; // Bắt đầu từ hoàn toàn trong suốt
+            _floatNotificationText.rectTransform.anchoredPosition = _originalCountdownPos + new Vector2(0, moveOffset);
+
+            // 2. Fade In từ trên xuống
+            _floatNotificationText.DOFade(1f, fadeTime).SetUpdate(true);
+            _floatNotificationText.rectTransform.DOAnchorPos(_originalCountdownPos, fadeTime).SetEase(DG.Tweening.Ease.Linear).SetUpdate(true);
+            
+            yield return new WaitForSecondsRealtime(duration);
+
+            // 3. Fade Out từ dưới lên (tiếp tục đi lên trên)
+            _floatNotificationText.DOFade(0f, fadeTime).SetUpdate(true);
+            _floatNotificationText.rectTransform.DOAnchorPos(_originalCountdownPos + new Vector2(0, moveOffset), fadeTime).SetEase(DG.Tweening.Ease.Linear).SetUpdate(true);
+
+            yield return new WaitForSecondsRealtime(fadeTime);
+
+            _floatNotificationText.text = "";
+            _notificationCoroutine = null;
+        }
+
+        #endregion
     }
     
 }

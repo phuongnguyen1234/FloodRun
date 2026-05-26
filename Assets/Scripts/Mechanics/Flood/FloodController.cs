@@ -118,9 +118,7 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
     private float _defaultAlpha = 1f;
     private bool _isChangingType = false; // Cờ ngăn Update can thiệp khi đang đổi loại
     private Tween _fadeTween; // Lưu lại tween để quản lý
-    private float _externalPauseTimer = 0f; // Bộ đếm thời gian tạm dừng từ bên ngoài
     private int _currentStageIndex = -1; // Theo dõi stage đang thực hiện
-    private float _currentAlphaVelocity; // Dùng cho Lerp/SmoothDamp
 
     private void Awake()
     {

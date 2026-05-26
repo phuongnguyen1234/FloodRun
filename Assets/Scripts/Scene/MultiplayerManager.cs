@@ -40,8 +40,8 @@ using System.Linq; // For FindObjectsByType with LINQ
 
         // IGameLoopManager implementation
         public IPlayer LocalPlayer { get; private set; }
-        public List<IPlayer> AllPlayers => FindObjectsByType<Component>().OfType<IPlayer>().ToList(); // MP: tất cả players trong scene
-        public bool IsHost => IsServer;
+        private List<IPlayer> _activePlayers = new List<IPlayer>();
+        public List<IPlayer> AllPlayers => _activePlayers;         public new bool IsHost => IsServer;
         public bool IsMultiplayer => true;
         public bool IsPaused => false; // TODO: Implement pause logic cho MP nếu cần
 
@@ -53,6 +53,8 @@ using System.Linq; // For FindObjectsByType with LINQ
         [SerializeField] private Transform _mapParent;
         [Tooltip("Kéo object LobbySpawn trong scene vào đây")]
         [SerializeField] private PlayerSpawn _lobbySpawn;
+        [Tooltip("Nhạc nền riêng khi ở Lobby Multiplayer")]
+        [SerializeField] private AudioClip _lobbyMusic;
         
         private GameObject _currentMapInstance; 
         private IMapManager _mapManager; // Reference to the instantiated map's manager
@@ -77,6 +79,9 @@ using System.Linq; // For FindObjectsByType with LINQ
 
             // Đăng ký ở Awake để đảm bảo bắt được sự kiện ngay cả khi Player spawn cực sớm
             GameplayEvents.OnLocalPlayerSpawned += OnLocalPlayerSpawnedHandler;
+            GameplayEvents.OnPlayerJoined += OnPlayerJoinedHandler;
+            GameplayEvents.OnPlayerLeft += OnPlayerLeftHandler;
+            GameplayEvents.OnLevelCompleted += OnLevelCompletedHandler;
             GameplayEvents.OnPlayerDied += OnPlayerDiedHandler;
 
             // Tìm UI Manager thông qua Interface (Pattern tương tự GameplayManager)
@@ -97,6 +102,21 @@ using System.Linq; // For FindObjectsByType with LINQ
             CurrentState.OnValueChanged += (oldVal, newVal) => 
             {
                 if (_uiManager != null) _uiManager.SetHUDMode(newVal == GameState.Playing);
+                
+                // Xử lý chuyển nhạc dựa trên trạng thái Game
+                if (IsClient)
+                {
+                    if (newVal == GameState.Playing)
+                    {
+                        // Chuyển sang nhạc Map
+                        var mapMusic = _mapManager?.GetMapMusic();
+                        BackgroundMusicManager.Instance.FadeTo(mapMusic, 0f); // Không fade nhạc map
+                    }
+                    else if (newVal == GameState.Lobby)
+                    {
+                        BackgroundMusicManager.Instance.FadeTo(_lobbyMusic, 0f); // Không fade nhạc lobby
+                    }
+                }
             };
             
             if (_uiManager != null) _uiManager.SetHUDMode(CurrentState.Value == GameState.Playing);
@@ -139,6 +159,12 @@ using System.Linq; // For FindObjectsByType with LINQ
             // Mỗi Client khi spawn sẽ gửi thông tin tên của mình lên cho Server
             if (IsClient)
             {
+                // Bắt đầu nhạc Lobby ngay khi vào phòng
+                if (CurrentState.Value == GameState.Lobby)
+                {
+                    BackgroundMusicManager.Instance.FadeTo(_lobbyMusic, 0f);
+                }
+
                 string myName = DataManager.Instance != null ? DataManager.Instance.Profile.PlayerName : "Player " + NetworkManager.Singleton.LocalClientId;
                 RegisterPlayerServerRpc(NetworkManager.Singleton.LocalClientId, myName, IsServer);
             }
@@ -193,9 +219,21 @@ using System.Linq; // For FindObjectsByType with LINQ
             }
         }
 
+        private void OnLevelCompletedHandler(IPlayer playerWhoCompleted)
+        {
+            // Nếu người chơi hoàn thành là người chơi cục bộ, hiển thị cờ hoàn thành trên HUD của họ
+            if (playerWhoCompleted == LocalPlayer)
+            {
+                _uiManager?.ShowPlayerFinishFlag(true);
+            }
+        }
+
         public override void OnDestroy()
         {
             GameplayEvents.OnLocalPlayerSpawned -= OnLocalPlayerSpawnedHandler;
+            GameplayEvents.OnPlayerJoined -= OnPlayerJoinedHandler;
+            GameplayEvents.OnPlayerLeft -= OnPlayerLeftHandler;
+            GameplayEvents.OnLevelCompleted -= OnLevelCompletedHandler;
             GameplayEvents.OnPlayerDied -= OnPlayerDiedHandler;
 
             // Unsubscribe callback bất kể IsServer hay IsClient
@@ -231,6 +269,13 @@ using System.Linq; // For FindObjectsByType with LINQ
         private void Update()
         {
             if (!IsServer) return;
+
+            // Cập nhật số lượng player còn sống lên HUD (Sử dụng danh sách cache)
+            if (IsGameActive && _uiManager != null)
+            {
+                int aliveCount = _activePlayers.Count(p => !p.IsDead);
+                _uiManager.UpdateAlivePlayerCount(aliveCount, PlayerDataList.Count);
+            }
 
             // Server xử lý logic đếm ngược và chuyển trạng thái
             if (IsGameActive)
@@ -319,9 +364,22 @@ using System.Linq; // For FindObjectsByType with LINQ
 
         private void StopBackgroundMusic()
         {
-            if (BackgroundMusicManager.Instance != null)
+            BackgroundMusicManager.Instance?.FadeTo(null, 0.5f);
+        }
+
+        private void OnPlayerJoinedHandler(IPlayer player)
+        {
+            if (!_activePlayers.Contains(player))
             {
-                BackgroundMusicManager.Instance.GetAudioSource()?.Stop();
+                _activePlayers.Add(player);
+            }
+        }
+
+        private void OnPlayerLeftHandler(IPlayer player)
+        {
+            if (_activePlayers.Contains(player))
+            {
+                _activePlayers.Remove(player);
             }
         }
 
@@ -417,6 +475,11 @@ using System.Linq; // For FindObjectsByType with LINQ
                     Vector3 spawnPos = _lobbySpawn.GetRandomSpawnPosition();
                     LocalPlayer.Teleport(spawnPos);
                     LocalPlayer.Revive();
+
+                    // Reset UI hoàn thành khi hồi sinh
+                    _uiManager?.ShowPlayerFinishFlag(false);
+                    
+                    // TODO: Hiện SummaryModal theo MultiplayerDesign.md
                     Debug.Log("[MultiplayerManager] Local player respawned and teleported.");
                 }
             }

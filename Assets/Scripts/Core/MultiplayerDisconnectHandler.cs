@@ -63,25 +63,25 @@ namespace Core
             Debug.Log($"[DisconnectHandler] Returning to Home. Reason: {message}");
             
             // Tìm UI Manager thông qua Interface vì Handler này nằm ở Core
+            // Sử dụng FindAnyObjectByType để tìm Instance đang hoạt động trong Scene hiện tại
             var uiManager = FindObjectsByType<MonoBehaviour>().OfType<IMultiplayerUIManager>().FirstOrDefault();
 
             if (uiManager != null)
             {
-                // 1. Hiện màn hình loading phía sau để che việc dọn dẹp scene
-                uiManager.ShowBackToMainMenuLoadingScreen();
-
-                // 2. Gọi thông báo thông qua Interface, truyền logic chuyển scene vào callback
-                uiManager.ShowNotification(message, () => {
-                    if (NetworkManager.Singleton != null) NetworkManager.Singleton.Shutdown();
-                    SceneManager.LoadScene("Home");
-                });
+                // Hiển thị NotificationModal với thông báo và hành động quay về Home khi đóng modal
+                uiManager.ShowNotificationModal(message, () => ForceReturnToHome());
             }
             else
             {
-                // Fallback nếu không tìm thấy UI Manager (hiếm gặp)
-                if (NetworkManager.Singleton != null) NetworkManager.Singleton.Shutdown();
-                SceneManager.LoadScene("Home");
+                // Nếu không tìm thấy UI, thực hiện dọn dẹp và về Home ngay lập tức
+                ForceReturnToHome();
             }
+        }
+
+        private void ForceReturnToHome()
+        {
+            if (NetworkManager.Singleton != null) NetworkManager.Singleton.Shutdown();
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Home");
         }
     }
 }

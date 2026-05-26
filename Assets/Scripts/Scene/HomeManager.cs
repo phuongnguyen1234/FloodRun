@@ -80,14 +80,9 @@ public class HomeManager : MonoBehaviour, ILevelLoader
             _uiManager.PlayCustomSound(_mapSelectSound);
         }
 
-        // 2. Chuyển sang nhạc Loading
-        if (BackgroundMusicManager.Instance != null && _loadingMusic != null)
-        {
-            AudioSource source = BackgroundMusicManager.Instance.GetAudioSource();
-            source.clip = _loadingMusic;
-            source.loop = true;
-            source.Play();
-        }
+        // 2. Chuyển sang nhạc Loading với fade nhanh
+        if (BackgroundMusicManager.Instance != null)
+            BackgroundMusicManager.Instance.FadeTo(_loadingMusic, 0.25f);
 
         StartCoroutine(LoadLevelRoutine(mapData));
     }

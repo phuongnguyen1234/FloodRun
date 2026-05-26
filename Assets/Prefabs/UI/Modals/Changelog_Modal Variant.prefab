@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1003177409384360596, guid: f2008e88686e23a44b948a9b3f0ae438, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 458
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1003177409384360596, guid: f2008e88686e23a44b948a9b3f0ae438, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -156,6 +156,10 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 406475154633514777, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       propertyPath: m_ChildControlHeight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 406475154633514777, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+      propertyPath: m_ChildForceExpandHeight
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 581391624902971959, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
@@ -395,8 +399,36 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2849524232687119173, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6571380604283584709}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4235813400385173504, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 778461938821930117}
   m_SourcePrefab: {fileID: 100100000, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+--- !u!1 &7422401194751623385 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4235813400385173504, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+  m_PrefabInstance: {fileID: 6757945187514136793}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &778461938821930117
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7422401194751623385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
+  m_IgnoreLayout: 0
+  m_MinWidth: 200
+  m_MinHeight: -1
+  m_PreferredWidth: -1
+  m_PreferredHeight: 458
+  m_FlexibleWidth: -1
+  m_FlexibleHeight: 0
+  m_LayoutPriority: 1
 --- !u!224 &8809745000917750684 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 2849524232687119173, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}

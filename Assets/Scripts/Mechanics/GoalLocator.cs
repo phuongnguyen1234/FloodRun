@@ -24,7 +24,7 @@ public class GoalLocator : MonoBehaviour
     private LineRenderer _sequencePathLine;
     private SpriteRenderer _playerDot;
 
-    private IGameplayManager _gameplayManager;
+    private IGameLoopManager _gameLoopManager;
     private IMapManager _mapManager;
     
     private Vector3 _smoothedTargetPos;
@@ -39,7 +39,7 @@ public class GoalLocator : MonoBehaviour
     private void Start()
     {
         // Tìm kiếm các manager thông qua Interface
-        _gameplayManager = FindObjectsByType<Component>().OfType<IGameplayManager>().FirstOrDefault();
+        _gameLoopManager = FindObjectsByType<Component>().OfType<IGameLoopManager>().FirstOrDefault();
         _mapManager = FindObjectsByType<Component>().OfType<IMapManager>().FirstOrDefault();
     }
 
@@ -82,15 +82,15 @@ public class GoalLocator : MonoBehaviour
         bool isLocatorEnabled = SettingsManager.Instance != null && SettingsManager.Instance.GoalLocator;
         
         // Kiểm tra điều kiện hiển thị
-        if (!isLocatorEnabled || _gameplayManager == null || _mapManager == null || _gameplayManager.LocalPlayer == null || 
-            !_gameplayManager.IsGameActive || _gameplayManager.LocalPlayer.IsDead)
+        if (!isLocatorEnabled || _gameLoopManager == null || _mapManager == null || _gameLoopManager.LocalPlayer == null || 
+            !_gameLoopManager.IsGameActive || _gameLoopManager.LocalPlayer.IsDead)
         {
             DisableLocator();
             return;
         }
 
         List<Transform> buttons = _mapManager.GetRemainingButtonTransforms();
-        Vector3 playerPos = ((Component)_gameplayManager.LocalPlayer).transform.position;
+        Vector3 playerPos = ((Component)_gameLoopManager.LocalPlayer).transform.position;
         playerPos.z = 0;
         
         Transform targetTransform = null;

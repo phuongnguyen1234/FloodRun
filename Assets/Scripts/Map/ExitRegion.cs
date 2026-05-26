@@ -52,7 +52,7 @@ public class ExitRegion : MonoBehaviour
                     }
 
                     // Bắn sự kiện hoàn thành level ra toàn hệ thống
-                    GameplayEvents.TriggerLevelCompleted(this);
+                    GameplayEvents.TriggerLevelCompleted(player);
                 }
                 else
                 {

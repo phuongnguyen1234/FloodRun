@@ -2539,9 +2539,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d368e6d7f17c8f4e85ac78a8795eea2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Scene::HomeManager
-  _menuMusic: {fileID: 8300000, guid: 895fc23fb6efd564399e36b61cf3670a, type: 3}
-  _mapSelectSound: {fileID: 8300000, guid: 7d8045ebbbdec9a4eb2fcad77186ec27, type: 3}
-  _loadingMusic: {fileID: 8300000, guid: 5ed6967f573076d4d98b789db4762dad, type: 3}
+  _menuMusic: {fileID: 8300000, guid: efacac7ec7702e84090f231a966ffaee, type: 3}
+  _mapSelectSound: {fileID: 8300000, guid: 1dd911e27e217704995a5cbbbaab44fc, type: 3}
+  _loadingMusic: {fileID: 8300000, guid: 61a69ebca31568a4ab847c124c72caf6, type: 3}
 --- !u!4 &599435117
 Transform:
   m_ObjectHideFlags: 0
@@ -2940,7 +2940,7 @@ MonoBehaviour:
   _loadingButtonCountText: {fileID: 2726293146754981095}
   _loadingDifficultyText: {fileID: 2726293146754981094}
   _palette: {fileID: 11400000, guid: 3cd5c2851e58e1a4793845e05bf1626e, type: 2}
-  _clickSound: {fileID: 8300000, guid: 7d8045ebbbdec9a4eb2fcad77186ec27, type: 3}
+  _clickSound: {fileID: 8300000, guid: 1dd911e27e217704995a5cbbbaab44fc, type: 3}
   _uiAudioSource: {fileID: 709344105}
 --- !u!82 &709344105
 AudioSource:

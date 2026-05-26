@@ -122,6 +122,9 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
             
             GameplayEvents.TriggerLocalPlayerSpawned(this);
         }
+
+        // Đăng ký vào danh sách chung của Manager (cho cả Local và Proxy)
+        GameplayEvents.TriggerPlayerJoined(this);
         
         // Đăng ký sự kiện thay đổi tên để cập nhật UI
         NetworkPlayerName.OnValueChanged += (oldVal, newVal) => { UpdateNameTag(newVal.ToString()); };
@@ -140,6 +143,12 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         }
 
         UpdateNameTag();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        // Báo cho hệ thống biết người chơi này đã thực sự thoát (Despawn)
+        GameplayEvents.TriggerPlayerLeft(this);
     }
 
     private void OnDeathStateChanged(bool oldVal, bool newVal)
@@ -178,7 +187,7 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         _isAbilityEnabled = true;
         foreach (var ability in _abilities)
         {
-            if (ability != this) ability.EnableAbility();
+            if (!ReferenceEquals(ability, this)) ability.EnableAbility();
         }
         if (_motor != null) _motor.ResetGravityScale();
     }
@@ -188,7 +197,7 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         _isAbilityEnabled = false;
         foreach (var ability in _abilities)
         {
-            if (ability != this) ability.DisableAbility();
+            if (!ReferenceEquals(ability, this)) ability.DisableAbility();
         }
         if (_rb != null) _rb.linearVelocity = Vector2.zero;
         if (_motor != null) _motor.SetGravityScale(0f);
@@ -355,7 +364,7 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
             _bonusAir = amount;       // Nạp đầy bonus air theo dung tích mới
 
             // Tìm UI Manager thông qua Interface để tránh lỗi tham chiếu chéo giữa các Assembly (.asmdef)
-            var uiManager = Object.FindObjectsByType<MonoBehaviour>().OfType<IGameplayUIManager>().FirstOrDefault();
+            var uiManager = Object.FindObjectsByType<MonoBehaviour>().OfType<ICommonUIManager>().FirstOrDefault();
             uiManager?.ShowNotification($"Got {amount:F0} Air!", new Color(0.3f, 0.8f, 1f)); // Màu xanh dương nhạt
 
             return true; // Đã nhận khí thành công
@@ -596,7 +605,7 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         // 6. Ngắt các script điều khiển khác
         foreach (var ability in _abilities)
         {
-            if (ability != (IPlayerAbility)this) ability.DisableAbility();
+            if (!ReferenceEquals(ability, this)) ability.DisableAbility();
         }
 
         this.enabled = false; // Ngắt chính script PlayerController này
