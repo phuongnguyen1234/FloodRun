@@ -24,23 +24,34 @@ namespace UI
 
         [Header("Actions")]
         [SerializeField] private Button _leaveRoomButton;
+        [SerializeField] private Button _resetCharacterButton;
 
         private IMultiplayerManager _manager;
+        private IMultiplayerUIManager _uiManager;
 
         private void Start()
         {
             if (_leaveRoomButton != null) _leaveRoomButton.onClick.AddListener(OnLeaveClick);
+            if (_resetCharacterButton != null) _resetCharacterButton.onClick.AddListener(OnResetCharacterClick);
+
+            // Lấy reference tới UI Manager để gọi hàm AskConfirmation
+            if (_uiManager == null)
+            {
+                _uiManager = FindObjectsByType<Component>().OfType<IMultiplayerUIManager>().FirstOrDefault();
+            }
         }
 
         private void OnEnable()
         {
             SubscribeToManagerEvents(true);
             RefreshUI();
+            _manager?.LocalPlayer?.DisableAbility(); // Khóa input khi hiện modal
         }
 
         private void OnDisable()
         {
             SubscribeToManagerEvents(false);
+            _manager?.LocalPlayer?.EnableAbility(); // Mở lại input khi đóng modal
         }
 
         // UI Manager sẽ gọi hàm này ngay khi scene load xong
@@ -123,6 +134,21 @@ namespace UI
         private void OnLeaveClick()
         {
             _manager?.RequestLeaveRoom();
+        }
+
+        private void OnResetCharacterClick()
+        {
+            if (_uiManager != null)
+            {
+                _uiManager.AskConfirmation("Reset your character? You will be sent to respawn point.", () =>
+                {
+                    if (_manager != null)
+                    {
+                        _manager.RequestResetPlayer();
+                        Hide(); // Đóng modal ngay khi nhấn Reset
+                    }
+                });
+            }
         }
 
         private void OnDestroy()

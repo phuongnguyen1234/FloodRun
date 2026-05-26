@@ -102,8 +102,6 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     private bool _isDivingLocal = false;
     private NetworkVariable<bool> _isZiplining = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private bool _isZipliningLocal = false;
-    private NetworkVariable<float> _horizontalSpeed = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private float _horizontalSpeedLocal = 0f;
 
     private Vector3 _velocity = Vector3.zero;
     public float OriginalGravityScale => _originalGravityScale;
@@ -125,46 +123,41 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     public bool IsGrounded 
     { 
         get => IsSpawned ? _isGrounded.Value : _isGroundedLocal; 
-        private set { if (IsSpawned) _isGrounded.Value = value; _isGroundedLocal = value; } 
+        private set { if (IsSpawned && IsOwner) _isGrounded.Value = value; _isGroundedLocal = value; } 
     }
     public float JumpForce => _jumpForce;
     public float InfJumpForce => _infJumpForce;
     public bool IsSwimming 
     { 
         get => IsSpawned ? _isSwimming.Value : _isSwimmingLocal; 
-        private set { if (IsSpawned) _isSwimming.Value = value; _isSwimmingLocal = value; } 
+        private set { if (IsSpawned && IsOwner) _isSwimming.Value = value; _isSwimmingLocal = value; } 
     }
     public bool IsSubmerged { get; private set; } // True khi player ngập trong nước/flood (dựa vào swim trigger)
     public bool IsClinging 
     { 
         get => IsSpawned ? _isClinging.Value : _isClingingLocal; 
-        private set { if (IsSpawned) _isClinging.Value = value; _isClingingLocal = value; } 
+        private set { if (IsSpawned && IsOwner) _isClinging.Value = value; _isClingingLocal = value; } 
     }
     public bool IsSliding 
     { 
         get => IsSpawned ? _isSliding.Value : _isSlidingLocal; 
-        private set { if (IsSpawned) _isSliding.Value = value; _isSlidingLocal = value; } 
+        private set { if (IsSpawned && IsOwner) _isSliding.Value = value; _isSlidingLocal = value; } 
     }
     public bool IsDiving 
     { 
         get => IsSpawned ? _isDiving.Value : _isDivingLocal; 
-        private set { if (IsSpawned) _isDiving.Value = value; _isDivingLocal = value; } 
+        private set { if (IsSpawned && IsOwner) _isDiving.Value = value; _isDivingLocal = value; } 
     }
     public bool IsZiplining 
     { 
         get => IsSpawned ? _isZiplining.Value : _isZipliningLocal; 
-        private set { if (IsSpawned) _isZiplining.Value = value; _isZipliningLocal = value; } 
-    }
-    public float HorizontalSpeed
-    {
-        get => IsSpawned ? _horizontalSpeed.Value : _horizontalSpeedLocal;
-        private set { if (IsSpawned) _horizontalSpeed.Value = value; _horizontalSpeedLocal = value; }
+        private set { if (IsSpawned && IsOwner) _isZiplining.Value = value; _isZipliningLocal = value; } 
     }
     public bool IsTouchingLadder { get; private set; } // Trạng thái đang chạm vào vùng thang (Trigger)
     public bool IsClimbing 
     { 
         get => IsSpawned ? _isClimbing.Value : _isClimbingLocal; 
-        private set { if (IsSpawned) _isClimbing.Value = value; _isClimbingLocal = value; } 
+        private set { if (IsSpawned && IsOwner) _isClimbing.Value = value; _isClimbingLocal = value; } 
     }
     public bool IsDead { get; set; } // Trạng thái chết (được set từ Controller)
 
@@ -196,8 +189,7 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     public void UpdateSpriteLabels()
     {
         string targetLabel = _idleLabel;
-        // Sử dụng giá trị speed đã được đồng bộ thay vì giá trị ảo 0.11f
-        float speed = (IsSpawned && IsOwner) || !IsSpawned ? Mathf.Abs(_rb.linearVelocity.x) : HorizontalSpeed;
+        float speed = Mathf.Abs(_rb.linearVelocity.x);
 
         // FIX: Thêm IsClinging vào điều kiện chọn nhãn Side để quay mặt ra ngoài tường dù speed = 0
         if (IsClimbing)
@@ -235,11 +227,21 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     public void DisableAbility() 
     {
         _isAbilityEnabled = false;
-        // Dọn dẹp sạch trạng thái Flood để tránh lỗi logic khi Teleport hoặc Reset
+        
+        // Reset các trạng thái vật lý và dọn dẹp flood
         _activeFloodZones.Clear();
         _floodColliders.Clear();
+        
+        // Reset tất cả các flags trạng thái để tránh lỗi animation khi hồi sinh
         IsSwimming = false;
         IsSubmerged = false;
+        IsClinging = false;
+        IsSliding = false;
+        IsDiving = false;
+        IsClimbing = false;
+        IsZiplining = false;
+        
+        ResetCollider(); // Đảm bảo collider và rotation trở về mặc định
         CurrentFlood = null;
     }
     #endregion
@@ -312,7 +314,6 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
             _isSliding.Value = _isSlidingLocal;
             _isDiving.Value = _isDivingLocal;
             _isZiplining.Value = _isZipliningLocal;
-            _horizontalSpeed.Value = _horizontalSpeedLocal;
             _visualsRotationZ.Value = 90f; // Rotation mặc định
         }
 
@@ -595,8 +596,6 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
                 _bodyCollider.sharedMaterial = _slipperyMaterial;
             if (_feetCollider != null)
                 _feetCollider.sharedMaterial = _slipperyMaterial;
-            // Cập nhật tốc độ ngang để các máy khác biết khi nào chuyển từ Idle sang Run
-            if (!IsSpawned || IsOwner) HorizontalSpeed = Mathf.Abs(_rb.linearVelocity.x);
             
             float targetSwimX = input.x * _speed;
             // FIX: Ngăn chặn triệt để việc Collider đâm xuyên/giật khi bơi sát tường.
@@ -782,9 +781,30 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     /// Thông báo cho Animator và các hệ thống khác rằng một cú nhảy đã xảy ra.
     /// Dùng cho các Ability tự áp dụng lực nhảy riêng (như WallJump).
     /// </summary>
-    public void NotifyJumpTriggered() 
+    public void NotifyJumpTriggered()
+    {
+        if (IsSpawned && IsOwner)
+        {
+            NotifyJumpTriggeredServerRpc();
+        }
+        else if (!IsSpawned) // Singleplayer
+        {
+            _groundingCooldown = 0.15f;
+            OnJumpTriggered?.Invoke();
+        }
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void NotifyJumpTriggeredServerRpc()
     {
         _groundingCooldown = 0.15f; // Khóa nhận diện mặt đất trong 0.15s
+        NotifyJumpTriggeredClientRpc();
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void NotifyJumpTriggeredClientRpc()
+    {
+        // This will run on all clients (including the owner)
         OnJumpTriggered?.Invoke();
     }
 

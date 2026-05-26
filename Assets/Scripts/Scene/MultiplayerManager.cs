@@ -38,6 +38,13 @@ using System.Linq; // For FindObjectsByType with LINQ
 
         public bool IsGameActive => CurrentState.Value == GameState.Playing;
 
+        // IGameLoopManager implementation
+        public IPlayer LocalPlayer { get; private set; }
+        public List<IPlayer> AllPlayers => FindObjectsByType<Component>().OfType<IPlayer>().ToList(); // MP: tất cả players trong scene
+        public bool IsHost => IsServer;
+        public bool IsMultiplayer => true;
+        public bool IsPaused => false; // TODO: Implement pause logic cho MP nếu cần
+
         // --- New fields similar to GameplayManager ---
         [Header("Multiplayer Scene References")]
         [Tooltip("Kéo Virtual Camera từ Scene vào đây")]
@@ -51,6 +58,10 @@ using System.Linq; // For FindObjectsByType with LINQ
         private IMapManager _mapManager; // Reference to the instantiated map's manager
 
         private IMultiplayerUIManager _uiManager;
+
+        // Respawn tracking
+        [SerializeField] private float _respawnDelay = 3f;
+        private Dictionary<ulong, float> _playerRespawnTimers = new Dictionary<ulong, float>();
 
         private void Awake()
         {
@@ -66,6 +77,7 @@ using System.Linq; // For FindObjectsByType with LINQ
 
             // Đăng ký ở Awake để đảm bảo bắt được sự kiện ngay cả khi Player spawn cực sớm
             GameplayEvents.OnLocalPlayerSpawned += OnLocalPlayerSpawnedHandler;
+            GameplayEvents.OnPlayerDied += OnPlayerDiedHandler;
 
             // Tìm UI Manager thông qua Interface (Pattern tương tự GameplayManager)
             if (_uiManager == null)
@@ -80,6 +92,14 @@ using System.Linq; // For FindObjectsByType with LINQ
             {   
                 CurrentState.Value = GameState.Lobby;
             }
+
+            // Lắng nghe thay đổi trạng thái game để chuyển đổi HUD tự động
+            CurrentState.OnValueChanged += (oldVal, newVal) => 
+            {
+                if (_uiManager != null) _uiManager.SetHUDMode(newVal == GameState.Playing);
+            };
+            
+            if (_uiManager != null) _uiManager.SetHUDMode(CurrentState.Value == GameState.Playing);
 
             // Host gán thông tin phòng từ dữ liệu tạm
             if (IsServer)
@@ -108,6 +128,11 @@ using System.Linq; // For FindObjectsByType with LINQ
                 if (NetworkManager.Singleton.LocalClient.PlayerObject.TryGetComponent<IPlayer>(out var localPlayer))
                 {
                     OnLocalPlayerSpawnedHandler(localPlayer);
+                    // Cập nhật UI ngay lập tức với trạng thái hiện tại của LocalPlayer
+                    if (_uiManager != null) {
+                        _uiManager.UpdatePlayStatus(localPlayer.IsAFK.Value);
+                        _uiManager.UpdateSpectateStatus(localPlayer.IsSpectating.Value);
+                    }
                 }
             }
 
@@ -171,6 +196,7 @@ using System.Linq; // For FindObjectsByType with LINQ
         public override void OnDestroy()
         {
             GameplayEvents.OnLocalPlayerSpawned -= OnLocalPlayerSpawnedHandler;
+            GameplayEvents.OnPlayerDied -= OnPlayerDiedHandler;
 
             // Unsubscribe callback bất kể IsServer hay IsClient
             if (NetworkManager.Singleton != null)
@@ -211,6 +237,29 @@ using System.Linq; // For FindObjectsByType with LINQ
             {
                 _networkTime.Value += Time.deltaTime;
             }
+
+            // Xử lý respawn timers
+            HandleRespawnTimers();
+        }
+
+        private void HandleRespawnTimers()
+        {
+            if (_playerRespawnTimers.Count == 0) return;
+
+            // Sử dụng danh sách tạm để tránh lỗi "Collection was modified"
+            var clientIds = _playerRespawnTimers.Keys.ToList();
+
+            foreach (var clientId in clientIds)
+            {
+                _playerRespawnTimers[clientId] -= Time.deltaTime;
+
+                if (_playerRespawnTimers[clientId] <= 0f)
+                {
+                    // Gửi lệnh hồi sinh cho Client cụ thể
+                    RespawnPlayerClientRpc(RpcTarget.Single(clientId, RpcTargetUse.Temp));
+                    _playerRespawnTimers.Remove(clientId);
+                }
+            }
         }
 
         public void RequestStartGame() { if (IsServer) CurrentState.Value = GameState.Voting; }
@@ -230,6 +279,28 @@ using System.Linq; // For FindObjectsByType with LINQ
             _uiManager?.AskConfirmation("Do you want to leave the room?", () => {
                 ExecuteLeave();
             });
+        }
+
+        public void RequestResetPlayer()
+        {
+            ResetPlayerServerRpc(NetworkManager.Singleton.LocalClientId);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void ResetPlayerServerRpc(ulong clientId)
+        {
+            if (!IsServer) return;
+            Debug.Log($"[MultiplayerManager] Requesting character reset for client {clientId}");
+            
+            // Server yêu cầu Client tự gọi hàm Die() để đảm bảo đúng quyền Owner
+            ForceDieClientRpc(RpcTarget.Single(clientId, RpcTargetUse.Temp));
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        private void ForceDieClientRpc(RpcParams rpcParams)
+        {
+            // Chạy trên Client sở hữu Player
+            LocalPlayer?.Die(DeathReason.Reset);
         }
 
         private void ExecuteLeave()
@@ -256,6 +327,15 @@ using System.Linq; // For FindObjectsByType with LINQ
 
         private void OnLocalPlayerSpawnedHandler(IPlayer localPlayer)
         {
+            // Lưu reference tới local player để các systems có thể truy cập qua IGameLoopManager
+            LocalPlayer = localPlayer;
+            
+            // Lắng nghe sự thay đổi trạng thái AFK/Spectating của LocalPlayer để cập nhật UI
+            LocalPlayer.IsAFK.OnValueChanged += (oldVal, newVal) => _uiManager?.UpdatePlayStatus(newVal);
+            LocalPlayer.IsSpectating.OnValueChanged += (oldVal, newVal) => _uiManager?.UpdateSpectateStatus(newVal);
+            _uiManager?.UpdatePlayStatus(localPlayer.IsAFK.Value); // Cập nhật UI ban đầu
+            _uiManager?.UpdateSpectateStatus(localPlayer.IsSpectating.Value); // Cập nhật UI ban đầu
+
             // Sử dụng Coroutine để đợi các Component mạng (NetworkTransform) ổn định trước khi xử lý
             StartCoroutine(SetupLocalPlayerRoutine(localPlayer));
         }
@@ -302,5 +382,43 @@ using System.Linq; // For FindObjectsByType with LINQ
 
             // Tắt màn hình joining loading sau khi đã setup xong xuôi vị trí và camera
             _uiManager?.ShowJoiningLoadingScreen(false);
+        }
+
+        private void OnPlayerDiedHandler()
+        {
+            // Gửi yêu cầu respawn lên server cho local player
+            if (LocalPlayer is MonoBehaviour playerMono && playerMono.TryGetComponent<NetworkObject>(out var netObj))
+            {
+                OnPlayerDeadServerRpc(netObj.OwnerClientId);
+            }
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        private void OnPlayerDeadServerRpc(ulong clientId)
+        {
+            // Server bắt đầu respawn timer cho player này
+            if (!_playerRespawnTimers.ContainsKey(clientId))
+            {
+                _playerRespawnTimers[clientId] = _respawnDelay;
+                Debug.Log($"[MultiplayerManager] Player {clientId} will respawn in {_respawnDelay}s");
+            }
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        private void RespawnPlayerClientRpc(RpcParams rpcParams)
+        {
+            // Chạy trên Client cần được hồi sinh
+            if (LocalPlayer != null)
+            {
+                if (_lobbySpawn == null) _lobbySpawn = FindAnyObjectByType<PlayerSpawn>();
+
+                if (_lobbySpawn != null)
+                {
+                    Vector3 spawnPos = _lobbySpawn.GetRandomSpawnPosition();
+                    LocalPlayer.Teleport(spawnPos);
+                    LocalPlayer.Revive();
+                    Debug.Log("[MultiplayerManager] Local player respawned and teleported.");
+                }
+            }
         }
     }

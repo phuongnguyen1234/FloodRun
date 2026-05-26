@@ -38,6 +38,10 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
     public List<IPlayer> AllPlayers { get; private set; } = new List<IPlayer>();
     public IPlayer LocalPlayer { get; private set; }
 
+    // IGameLoopManager implementation
+    public bool IsHost => true; // SP luôn là host
+    public bool IsMultiplayer => false; // SP không phải MP
+
     private IGameplayUIManager _uiManager;
     private IMapManager _mapManager;
 

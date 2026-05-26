@@ -21,5 +21,10 @@ namespace Core.Interfaces
         void ShowJoiningLoadingScreen(bool show);
         void ShowBackToMainMenuLoadingScreen();
         void SetupLoadingScreen(MapData data);
+
+        // HUD Control
+        void SetHUDMode(bool isGameplay);
+        void UpdatePlayStatus(bool isAFK);
+        void UpdateSpectateStatus(bool isSpectating);
     }
 }
