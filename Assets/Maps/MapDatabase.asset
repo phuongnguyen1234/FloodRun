@@ -1,3 +1,21 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:92f5ef25e8c7ac00be52803db3bb938083c77ed86ffcc8db858e1010c3e44dbc
-size 859
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97213b403ff358f45af527a5beaaf131, type: 3}
+  m_Name: MapDatabase
+  m_EditorClassIdentifier: Map::MapDatabase
+  AllMaps:
+  - {fileID: 11400000, guid: 09f726a4c7cab75448f015cef9b214ad, type: 2}
+  - {fileID: 11400000, guid: c59a2cc68dc50704382a6aa04a3dfd5d, type: 2}
+  - {fileID: 11400000, guid: 109572de057195748b4d1274698735ad, type: 2}
+  - {fileID: 11400000, guid: 0e6411c8f9bbdac41a34c6e26e7fa8a8, type: 2}
+  - {fileID: 11400000, guid: 67ed5aec827d9fb4091a6744fe6fc1db, type: 2}
+  - {fileID: 11400000, guid: 963a7719b338abd4aab7af962ad56723, type: 2}

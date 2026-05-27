@@ -1,3 +1,21 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:130f54c2f39a3d085d004c2bec18ba990b2bd7b913ce62422f321b0649b16abc
-size 661
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 0
+    path: Assets/Scenes/SampleScene.unity
+    guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/Scenes/Home.unity
+    guid: 41dc82e1f8813b74dbb4e32d86a99e10
+  - enabled: 1
+    path: Assets/Scenes/Gameplay.unity
+    guid: afaa2b5758b81e348b4cc614648526e9
+  - enabled: 1
+    path: Assets/Scenes/Multiplayer.unity
+    guid: 48e064c43042ff341b847b76cdd6eb98
+  m_configObjects:
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: b9570a951d0387a4289862a99066e252, type: 3}

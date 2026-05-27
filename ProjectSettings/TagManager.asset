@@ -1,3 +1,89 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:f54994c3453f765b369daac56019bb7ceee9b308630b889f43d6e6fc14fd479b
-size 1268
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 3
+  tags:
+  - Flood
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - 
+  - Water
+  - UI
+  - Ground
+  - Player
+  - Debris
+  - Button
+  - Flood
+  - Zipline
+  - Ladder
+  - Walljump
+  - Trigger
+  - Pickup
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0
+  - name: Background
+    uniqueID: 2684143993
+    locked: 0
+  - name: BackDecorations
+    uniqueID: 1850461657
+    locked: 0
+  - name: Ladder
+    uniqueID: 1278236237
+    locked: 0
+  - name: Object
+    uniqueID: 2342399507
+    locked: 0
+  - name: Player
+    uniqueID: 97397561
+    locked: 0
+  - name: BackFlood
+    uniqueID: 3700476139
+    locked: 0
+  - name: Ground
+    uniqueID: 1566747371
+    locked: 0
+  - name: Agility
+    uniqueID: 4102844527
+    locked: 0
+  - name: FrontDecorations
+    uniqueID: 4036841115
+    locked: 0
+  - name: Effect
+    uniqueID: 2094852713
+    locked: 0
+  - name: FrontFlood
+    uniqueID: 3588488125
+    locked: 0
+  - name: Foreground
+    uniqueID: 3678083749
+    locked: 0
+  - name: Locator
+    uniqueID: 2595701069
+    locked: 0
+  - name: UIWorld
+    uniqueID: 3146295365
+    locked: 0
+  m_RenderingLayers:
+  - Default
+  m_MigratedRenderPipelines: []

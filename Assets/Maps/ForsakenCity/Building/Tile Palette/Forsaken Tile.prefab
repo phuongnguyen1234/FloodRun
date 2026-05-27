@@ -10283,6 +10283,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8678755376928066403}
     m_Modifications:
+    - target: {fileID: 2474681576771676377, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 3638738435
+      objectReference: {fileID: 0}
     - target: {fileID: 3586424971873970939, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_DynamicOccludee
       value: 0
