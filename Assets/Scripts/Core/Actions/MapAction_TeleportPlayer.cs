@@ -15,7 +15,7 @@ public class MapAction_TeleportPlayer : MapAction
 
     public override void Execute(IMapManager manager)
     {
-        var gameplay = Object.FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<IGameplayManager>().FirstOrDefault();
+        var gameplay = Object.FindObjectsByType<Component>().OfType<IGameLoopManager>().FirstOrDefault();
         if (gameplay == null || Destination == null) return;
 
         // Lấy danh sách cần teleport

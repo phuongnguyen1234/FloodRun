@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -195,3 +196,4 @@ public class AnimatorStateMachineExtractor : EditorWindow
         return string.Join(" AND ", condStrings);
     }
 }
+#endif

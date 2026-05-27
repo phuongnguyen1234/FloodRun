@@ -89,8 +89,8 @@ public class BadSlicedImageDetectorWindow : EditorWindow
 
     private void ScanScene()
     {
-        Image[] images = FindObjectsOfType<Image>(true);
-        SpriteRenderer[] renderers = FindObjectsOfType<SpriteRenderer>(true);
+        Image[] images = FindObjectsByType<Image>(FindObjectsInactive.Include);
+        SpriteRenderer[] renderers = FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include);
 
         AnalyzeList(images, renderers);
     }

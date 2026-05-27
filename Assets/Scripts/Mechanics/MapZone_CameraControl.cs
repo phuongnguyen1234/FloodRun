@@ -13,14 +13,14 @@ public class MapZone_CameraControl : MonoBehaviour
     [SerializeField] private CinemachineVirtualCameraBase _zoneCamera;
     [SerializeField] private int _activePriority = 20;
 
-    private IGameplayManager _gameplayManager;
+    private IGameLoopManager _gameLoopManager;
 
     private void Awake()
     {
-        _gameplayManager = FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<IGameplayManager>().FirstOrDefault();
-        if (_gameplayManager == null)
+        _gameLoopManager = FindObjectsByType<Component>().OfType<IGameLoopManager>().FirstOrDefault();
+        if (_gameLoopManager == null)
         {
-            Debug.LogError("[MapZone_CameraControl] IGameplayManager not found in scene!");
+            Debug.LogError("[MapZone_CameraControl] IGameLoopManager not found in scene!");
         }
     }
 
@@ -41,8 +41,8 @@ public class MapZone_CameraControl : MonoBehaviour
 
     private bool IsLocalPlayer(Collider2D other)
     {
-        if (_gameplayManager == null) return false;
+        if (_gameLoopManager == null) return false;
         IPlayer player = other.GetComponentInParent<IPlayer>();
-        return player != null && player == _gameplayManager.LocalPlayer;
+        return player != null && player == _gameLoopManager.LocalPlayer;
     }
 }

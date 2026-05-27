@@ -15,7 +15,7 @@ public class MapObjectController : MonoBehaviour, IMapCommandHandler
 
     private void OnEnable()
     {
-        _mapManager = FindObjectsByType<Component>(FindObjectsSortMode.None)
+        _mapManager = FindObjectsByType<Component>()
                             .OfType<IMapManager>()
                             .FirstOrDefault();
                             

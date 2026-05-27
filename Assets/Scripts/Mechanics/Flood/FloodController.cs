@@ -17,7 +17,7 @@ using DG.Tweening;
 [RequireComponent(typeof(SpriteRenderer), typeof(AudioSource))]
 public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
 {
-    private IGameplayManager _gameplayManager;
+    private IGameLoopManager _gameLoopManager;
 
     [System.Serializable]
     public class FloodStage
@@ -118,9 +118,7 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
     private float _defaultAlpha = 1f;
     private bool _isChangingType = false; // Cờ ngăn Update can thiệp khi đang đổi loại
     private Tween _fadeTween; // Lưu lại tween để quản lý
-    private float _externalPauseTimer = 0f; // Bộ đếm thời gian tạm dừng từ bên ngoài
     private int _currentStageIndex = -1; // Theo dõi stage đang thực hiện
-    private float _currentAlphaVelocity; // Dùng cho Lerp/SmoothDamp
 
     private void Awake()
     {
@@ -129,12 +127,12 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
         _audioSource = GetComponent<AudioSource>();
         _defaultAlpha = _spriteRenderer.color.a;
 
-        // Tìm IGameplayManager trong Scene (thường gắn trên GameplayManager object)
+        // Tìm IGameLoopManager trong Scene (có thể là GameplayManager hoặc MultiplayerManager)
         // Việc này giải quyết vấn đề "không thấy MapManager.cs" giữa các Assembly.
-        if (_gameplayManager == null)
+        if (_gameLoopManager == null)
         {
-            // Tìm kiếm đối tượng thực thi IGameplayManager
-            _gameplayManager = FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<IGameplayManager>().FirstOrDefault();
+            // Tìm kiếm đối tượng thực thi IGameLoopManager
+            _gameLoopManager = FindObjectsByType<Component>().OfType<IGameLoopManager>().FirstOrDefault();
         }
 
         UpdateVisuals();
@@ -174,8 +172,8 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
 
         bool isPlayerSwimmingHere = false;
 
-        // Truy vấn Player thông qua IGameplayManager (Boss quản lý vòng đời player)
-        if (_gameplayManager != null && _gameplayManager.LocalPlayer is IPlayer player)
+        // Truy vấn Player thông qua IGameLoopManager (Generic, works for SP & MP)
+        if (_gameLoopManager != null && _gameLoopManager.LocalPlayer is IPlayer player)
         {
             // Sử dụng IsSubmerged để giữ Alpha thấp ngay cả khi đang Zipline/Climb/Cling trong nước
             if (player.IsSubmerged && player.CurrentFlood == (IFloodZone)this)

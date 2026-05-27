@@ -1,10 +1,12 @@
 using UnityEngine;
 using Core.Interfaces;
+using Unity.Netcode;
 
 /// <summary>
 /// Khả năng nhảy tường cho Player. Cho phép bám vào tường khi đang ở trên không và nhảy bật ra khỏi tường.
+/// Tường luôn tĩnh cố định, không di chuyển. Cơ chế bám dùng offset method mà không re-parent.
 /// </summary>
-public class WallJumpAbility : MonoBehaviour, IPlayerAbility
+public class WallJumpAbility : NetworkBehaviour, IPlayerAbility
 {
     [Header("Settings")]
     [SerializeField] private LayerMask _wallLayer;
@@ -29,6 +31,7 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
     private bool _isAbilityEnabled = true;
     private Transform _currentWall; // Lưu trữ tường đang bám
     private Transform _lastWall;    // Lưu trữ tường vừa nhảy khỏi
+    private Vector2 _clingWallNormal; // Vector pháp tuyến của tường hiện tại (dùng để snap vị trí)
     private float _clingTimer;
     private bool _currentWallHasTimer = false; // Biến kiểm tra xem tường hiện tại có timer không
     private float _reClingCooldown = 0.1f; // Thời gian không cho phép bám tường lại sau khi nhảy
@@ -42,14 +45,16 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
 
     private void OnEnable() 
     {
-        _input.OnJump += HandleJump;
+        if (_input != null) _input.OnJump += HandleJump;
         if (_motor != null) _motor.OnTeleported += HandleTeleport;
+        if (_motor != null) _motor.OnJumpTriggered += ExitCling;
     }
 
     private void OnDisable() 
     {
-        _input.OnJump -= HandleJump;
+        if (_input != null) _input.OnJump -= HandleJump;
         if (_motor != null) _motor.OnTeleported -= HandleTeleport;
+        if (_motor != null) _motor.OnJumpTriggered -= ExitCling;
     }
 
     private void HandleTeleport() => ExitCling();
@@ -62,6 +67,12 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
 
     private void Update()
     {
+        // Chỉ Owner (hoặc Singleplayer) mới xử lý logic bám tường
+        if (IsSpawned && !IsOwner) return;
+        
+        // Guard: Chờ cho đến khi các component được initialize
+        if (_motor == null || _input == null || _rb == null) return;
+
         // Nếu đang trượt Zipline, không cho phép bám tường
         if (_motor.IsZiplining)
         {
@@ -90,6 +101,12 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
                 return;
             }
 
+            // MAINTAIN POSITION: Giữ player sát tường bằng cách snap X position mỗi frame
+            // Vì tường tĩnh, ta chỉ cần snap X, Y có thể di chuyển tự do dọc tường
+            float targetX = _currentWall.position.x + (_clingWallNormal.x * _clingOffset);
+            Vector3 currentPos = transform.position;
+            transform.position = new Vector3(targetX, currentPos.y, currentPos.z);
+
             // Xử lý timer nếu được bật
             if (_currentWallHasTimer)
             {
@@ -105,12 +122,6 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
         {
             CheckForWall();
         }
-    }
-
-    private void FixedUpdate()
-    {
-        // Nếu đang bơi, rời trạng thái bám tường
-        if (_isClinging && _motor.IsSwimming) ExitCling();
     }
 
     private void CheckForWall()
@@ -148,14 +159,10 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
         _isClinging = true;
         _motor.SetClinging(true); // Báo cho Motor (và Animator) biết
 
-        // FIX: Không Disable Motor nữa để Motor vẫn cập nhật được trạng thái Flood (IsSubmerged)
-        // _motor.DisableAbility();
-
         // 2. Ngừng vật lý (Đứng im trên không)
         _rb.linearVelocity = Vector2.zero;
         _rb.gravityScale = 0f;
-        // FIX: Chuyển sang Kinematic khi bám tường để Player di chuyển mượt mà theo tường (nếu tường di chuyển).
-        // Dynamic Rigidbody khi làm con (child) của object di chuyển thường bị rung hoặc không đi theo.
+        // Chuyển sang Kinematic khi bám tường để Player không bị rơi xuống
         _rb.bodyType = RigidbodyType2D.Kinematic;
 
         // SNAP VỊ TRÍ: Đưa Player về sát mặt tường dựa trên điểm va chạm và offset
@@ -168,8 +175,6 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
         _reClingCooldown = 0.15f;
 
         // Kiểm tra xem tường này có setup timer không
-        // Chúng ta lấy component WallJumpSurface từ transform của tường
-        // Bằng cách kiểm tra xem IWallSurface có phải là IWallJumpSurface không
         if (wallSurface is IWallJumpSurface timedWall && timedWall.UseJumpTimer)
         {
             _currentWallHasTimer = true;
@@ -189,9 +194,9 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
         bool shouldFaceRight = hit.normal.x > 0;
         if (_motor.IsFacingRight != shouldFaceRight) _motor.Flip();
 
-        // 4. Set Parent để Player di chuyển cùng với tường (nếu tường di chuyển)
+        // 4. Lưu trạng thái tường
         _currentWall = wallTransform;
-        transform.SetParent(_currentWall);
+        _clingWallNormal = hit.normal;
     }
 
     private void HandleJump()
@@ -250,19 +255,14 @@ public class WallJumpAbility : MonoBehaviour, IPlayerAbility
         _isClinging = false;
         _motor.SetClinging(false); // Tắt trạng thái bám tường
         
-        // FIX: Trả lại trạng thái Dynamic để vật lý hoạt động lại (trọng lực, lực nhảy)
+        // Trả lại trạng thái Dynamic để vật lý hoạt động lại (trọng lực, lực nhảy)
         _rb.bodyType = RigidbodyType2D.Dynamic;
         
-        // FIX: Chỉ khôi phục trọng lực nếu KHÔNG phải đang bơi.
+        // Chỉ khôi phục trọng lực nếu KHÔNG phải đang bơi.
         // Nếu đang bơi, PlayerMotor đã set gravity = 0, ta không được ghi đè lại.
         if (!_motor.IsSwimming)
             _rb.gravityScale = _motor.OriginalGravityScale;
-        
-        // FIX: Không cần gọi EnableAbility vì ta không còn Disable nó nữa
-        // _motor.EnableAbility();
 
-        // Nhả Parent để Player di chuyển độc lập trở lại
-        transform.SetParent(null);
         _currentWall = null;
     }
 

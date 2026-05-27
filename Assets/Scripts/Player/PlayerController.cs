@@ -4,13 +4,14 @@ using System.Linq;
 using Core.Events;
 using Core;
 using TMPro;
+using Unity.Netcode;
 
 /// <summary>
 /// PlayerController là script trung tâm quản lý tất cả các khía cạnh của Player: Di chuyển, Air System, Trạng thái (chết, bơi, leo thang), và tương tác với các Ability khác (Ladder, Zipline, v.v.).
 /// Nó kết hợp dữ liệu từ PlayerMotor (vật lý và trạng thái) và Player
 /// </summary>
 [RequireComponent(typeof(PlayerInputHandler), typeof(PlayerMotor))]
-public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerControllerAttributes
+public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlayerControllerAttributes
 {
     [System.Serializable]
     public struct GibMapping
@@ -23,10 +24,12 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
     private PlayerMotor _motor;
     private PlayerAnimator _playerAnimator;
     private Rigidbody2D _rb;
-    private Collider2D _collider;
     private IPlayerAbility[] _abilities;
 
     [Header("UI & Name Tag")]
+    // Biến đồng bộ tên qua mạng, đảm bảo Client nhìn thấy đúng tên của Host và ngược lại
+    public NetworkVariable<Unity.Collections.FixedString32Bytes> NetworkPlayerName = new(
+        "", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     [SerializeField] private TMP_Text _nameTagText;
     [SerializeField] private bool _keepNameTagReadable = true;
 
@@ -52,23 +55,31 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
     private float _bonusAirMaxCap; // Dung tích tối đa của bình khí bonus hiện tại
     private float _originalGravityScale;
     private float _outOfFloodTimer = 0f; // Timer đếm thời gian khi ra khỏi nước
-    private bool _isDead = false;
+    // Đồng bộ trạng thái chết và nguyên nhân chết qua mạng
+    public NetworkVariable<bool> NetworkIsDead = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<DeathReason> NetworkDeathReason = new(DeathReason.Drowned, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    // Đồng bộ trạng thái AFK và Spectating
+    public NetworkVariable<bool> IsAFK { get; } = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<bool> IsSpectating { get; } = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private bool _isDeadSingleplayer = false; // Backing field cho Singleplayer
+    private bool _isDeathEffectsExecuted = false; // Đảm bảo hiệu ứng nổ chỉ chạy 1 lần
     private bool _isAbilityEnabled = true;
     private bool _isInfiniteAir = false;
     private bool _isInfiniteJump = false;
     private bool _isInvincible = false;
     private float _jumpCooldown = 0f; // Cooldown để ngăn spam lệnh nhảy khi giữ phím
-    private DeathReason _lastDeathReason = DeathReason.Drowned; // Mặc định là chết đuối
+    private DeathReason _lastDeathReasonSingleplayer = DeathReason.Drowned;
     private float _currentAirChangeRate = 0f; // Biến lưu tốc độ thay đổi khí hiện tại
 
     private Vector2 _currentMoveInput;
     private bool _isTryingToJumpOutOfWater;
 
     // Thực thi interface IPlayer: Cho phép bên ngoài đọc trạng thái chết
-    public bool IsDead => _isDead;
+    public bool IsDead => IsSpawned ? NetworkIsDead.Value : _isDeadSingleplayer;
 
     public bool IsZiplining => _motor != null && _motor.IsZiplining;
-    public DeathReason LastDeathReason => _lastDeathReason;
+    public DeathReason LastDeathReason => IsSpawned ? NetworkDeathReason.Value : _lastDeathReasonSingleplayer;
     public bool IsClinging => _motor != null && _motor.IsClinging;
     public bool IsSwimming => _motor != null && _motor.IsSwimming; // Trạng thái bơi được lấy từ PlayerMotor
     public bool IsSubmerged => _motor != null && _motor.IsSubmerged; // Trạng thái ngập trong nước
@@ -89,7 +100,6 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
         _motor = GetComponent<PlayerMotor>();
         _playerAnimator = GetComponent<PlayerAnimator>();
         _rb = GetComponent<Rigidbody2D>();
-        _collider = GetComponent<Collider2D>();
         
         _baseAir = _maxAir;
         _bonusAir = 0f;
@@ -103,24 +113,83 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
 
     private void Start()
     {
+        // Nếu không phải object mạng (Singleplayer), ẩn nametag ngay lập tức
+        if (!IsSpawned && _nameTagText != null)
+        {
+            _nameTagText.gameObject.SetActive(false);
+        }
+    }
+
+    public override void OnNetworkSpawn()
+    {
+         // Chỉ chạy logic khởi tạo khi object được sinh ra trên mạng
+        if (IsOwner)
+        {
+            // Ẩn nametag của bản thân trong Multiplayer
+            if (_nameTagText != null) _nameTagText.gameObject.SetActive(false);
+
+            // Gán tên từ Profile cục bộ lên NetworkVariable để đồng bộ cho người khác
+            string myName = DataManager.Instance != null ? DataManager.Instance.Profile.PlayerName : "Player";
+            NetworkPlayerName.Value = myName;
+            
+            GameplayEvents.TriggerLocalPlayerSpawned(this);
+        }
+
+        // Đăng ký vào danh sách chung của Manager (cho cả Local và Proxy)
+        GameplayEvents.TriggerPlayerJoined(this);
+        
+        // Đăng ký sự kiện thay đổi tên để cập nhật UI
+        NetworkPlayerName.OnValueChanged += (oldVal, newVal) => { UpdateNameTag(newVal.ToString()); };
+        
+        // Đồng bộ hiệu ứng chết cho Proxies
+        NetworkIsDead.OnValueChanged += OnDeathStateChanged;
+
+        // Các trạng thái AFK/Spectating sẽ được MultiplayerManager lắng nghe và cập nhật UI
+        // Không cần lắng nghe ở đây
+
+
+        // Xử lý trường hợp người chơi vào phòng sau khi ai đó đã chết
+        if (NetworkIsDead.Value)
+        {
+            ExecuteDeathEffects(NetworkDeathReason.Value, false);
+        }
+
         UpdateNameTag();
     }
 
-    /// <summary>
-    /// Đồng bộ tên từ dữ liệu lưu trữ lên UI trên đầu Player.
-    /// </summary>
-    public void UpdateNameTag()
+    public override void OnNetworkDespawn()
     {
-        if (_nameTagText == null) return;
+        // Báo cho hệ thống biết người chơi này đã thực sự thoát (Despawn)
+        GameplayEvents.TriggerPlayerLeft(this);
+    }
 
-        // Lấy tên từ DataManager (Singleton giữ PlayerProfile)
-        if (DataManager.Instance != null && DataManager.Instance.Profile != null)
+    private void OnDeathStateChanged(bool oldVal, bool newVal)
+    {
+        if (newVal)
         {
-            _nameTagText.text = DataManager.Instance.Profile.PlayerName;
+            ExecuteDeathEffects(NetworkDeathReason.Value, true);
         }
         else
         {
-            _nameTagText.text = "Player"; // Fallback nếu data chưa load
+            PerformReviveComponents(); // Khi NetworkIsDead trở thành false, mọi người đều hiện lại Sprite
+        }
+    }
+
+    private void UpdateNameTag(string name = "")
+    {
+        if (_nameTagText == null) return;
+        
+        // Ưu tiên dùng giá trị từ NetworkVariable, nếu chưa có thì lấy tạm giá trị hiện tại
+        string displayName = string.IsNullOrEmpty(name) ? NetworkPlayerName.Value.ToString() : name;
+        
+        if (string.IsNullOrEmpty(displayName))
+        {
+            // Fallback nếu chưa kịp sync
+            _nameTagText.text = IsOwner && DataManager.Instance != null ? DataManager.Instance.Profile.PlayerName : "Loading...";
+        }
+        else
+        {
+            _nameTagText.text = displayName;
         }
     }
 
@@ -130,7 +199,7 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
         _isAbilityEnabled = true;
         foreach (var ability in _abilities)
         {
-            if (ability != this) ability.EnableAbility();
+            if (!ReferenceEquals(ability, this)) ability.EnableAbility();
         }
         if (_motor != null) _motor.ResetGravityScale();
     }
@@ -140,7 +209,7 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
         _isAbilityEnabled = false;
         foreach (var ability in _abilities)
         {
-            if (ability != this) ability.DisableAbility();
+            if (!ReferenceEquals(ability, this)) ability.DisableAbility();
         }
         if (_rb != null) _rb.linearVelocity = Vector2.zero;
         if (_motor != null) _motor.SetGravityScale(0f);
@@ -175,6 +244,20 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
         
         Debug.Log($"[DevTool] Player teleported to {position}");
     }
+
+    public void ToggleAFKStatus()
+    {
+        if (!IsSpawned || !IsOwner) return;
+        IsAFK.Value = !IsAFK.Value;
+        Debug.Log($"[PlayerController] Player {NetworkPlayerName.Value} AFK status: {IsAFK.Value}");
+    }
+
+    public void ToggleSpectateStatus()
+    {
+        if (!IsSpawned || !IsOwner) return;
+        IsSpectating.Value = !IsSpectating.Value;
+        Debug.Log($"[PlayerController] Player {NetworkPlayerName.Value} Spectating status: {IsSpectating.Value}");
+    }
     #endregion
 
     private void OnEnable()
@@ -189,7 +272,13 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
 
     void Update()
     {
-        if (_isDead || !_isAbilityEnabled) return;
+        // CẬP NHẬT VISUAL: Đảm bảo Name Tag không bị lật ngược (Chạy cho cả Local Player và Proxies)
+        HandleNameTagReadability();
+
+        // Chỉ chặn nếu là Object mạng và không phải chủ sở hữu. Singleplayer (IsSpawned = false) vẫn chạy tiếp.
+        if (IsSpawned && !IsOwner) return;
+
+        if (IsDead || !_isAbilityEnabled) return;
 
         // Giảm cooldown nhảy
         if (_jumpCooldown > 0) _jumpCooldown -= Time.deltaTime;
@@ -197,23 +286,33 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
         // Đồng bộ trạng thái nhấn phím nhảy sang Motor để Animator có thể sử dụng
         _motor.JumpInput = _input.JumpInput;
 
-        Vector2 input = _input.MoveInput;
+        Vector2 input = Vector2.zero;
         _isTryingToJumpOutOfWater = false;
 
-        // Nếu đang bơi, sử dụng Space để bơi lên và Shift để lặn xuống
         if (_motor.IsSwimming)
         {
-            float vertical = 0f;
+            // BƠI: A/D ngang từ Move, Space/Shift từ Jump/Dive để lên/xuống
+            input.x = _input.MoveInput.x; // A/D bơi ngang
+            
+            float vertical = 0f; // Không dùng W/S khi bơi
             if (_input.JumpInput)
             {
-                vertical += 1f; // Space -> Bơi lên (Up)
+                vertical = 1f; // Space -> bơi lên
                 _isTryingToJumpOutOfWater = true;
             }
-            if (_input.DiveInput) vertical -= 1f; // Shift -> Lặn xuống (Down)
-            input.y = vertical; // Ghi đè trục Y của MoveInput (W/S)
+            if (_input.DiveInput) vertical = -1f; // Shift -> lặn xuống
+            input.y = vertical;
+        }
+        else if (_motor.IsClimbing)
+        {
+            // LEO THANG: Sử dụng Action Ladder riêng biệt (W/S)
+            input = _input.LadderInput;
         }
         else
         {
+            // TRÊN CẠN: MoveInput bây giờ đã được config chỉ có A/D
+            input = _input.MoveInput;
+            
             // Logic nhảy (bao gồm Infinite Jump)
             // Điều kiện nhảy: Giữ phím + Hết cooldown + (Chạm đất HOẶC bật InfJump)
             // Không cho phép nhảy khi: Đang bơi, Đang leo thang, Đang đu dây (để tránh phá vỡ logic vật lý riêng của các ability này)
@@ -238,9 +337,6 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
 
         _currentMoveInput = input;
         HandleAirSystem();
-        
-        // Đảm bảo Name Tag không bị lật ngược khi Player lật localScale
-        HandleNameTagReadability();
     }
 
     private void HandleNameTagReadability()
@@ -256,7 +352,10 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
 
     void FixedUpdate()
     {
-        if (_isDead || !_isAbilityEnabled) return;
+        // Chỉ chặn nếu là Object mạng và không phải chủ sở hữu.
+        if (IsSpawned && !IsOwner) return;
+
+        if (IsDead || !_isAbilityEnabled) return;
 
         _motor.SetAttemptingToJumpOutOfWater(_isTryingToJumpOutOfWater);
 
@@ -277,7 +376,7 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
             _bonusAir = amount;       // Nạp đầy bonus air theo dung tích mới
 
             // Tìm UI Manager thông qua Interface để tránh lỗi tham chiếu chéo giữa các Assembly (.asmdef)
-            var uiManager = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).OfType<IGameplayUIManager>().FirstOrDefault();
+            var uiManager = Object.FindObjectsByType<MonoBehaviour>().OfType<ICommonUIManager>().FirstOrDefault();
             uiManager?.ShowNotification($"Got {amount:F0} Air!", new Color(0.3f, 0.8f, 1f)); // Màu xanh dương nhạt
 
             return true; // Đã nhận khí thành công
@@ -407,9 +506,27 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
 
     public void Die(DeathReason reason = DeathReason.Drowned)
     {
-        if (_isDead) return;
-        _lastDeathReason = reason;
-        _isDead = true;
+        if (IsDead) return;
+        if (IsSpawned && !IsOwner) return; // Chỉ Owner mới có quyền quyết định mình chết
+
+        if (IsSpawned)
+        {
+            NetworkDeathReason.Value = reason;
+            NetworkIsDead.Value = true;
+            // Callback OnDeathStateChanged sẽ tự gọi ExecuteDeathEffects cho tất cả mọi người
+        }
+        else
+        {
+            _isDeadSingleplayer = true;
+            _lastDeathReasonSingleplayer = reason;
+            ExecuteDeathEffects(reason, true);
+        }
+    }
+
+    private void ExecuteDeathEffects(DeathReason reason, bool spawnGibs)
+    {
+        if (_isDeathEffectsExecuted) return;
+        _isDeathEffectsExecuted = true;
 
         // 1. Lưu vận tốc cuối cùng để tạo quán tính (đang chạy mà chết thì xác phải văng đi)
         Vector2 deathVelocity = _rb != null ? _rb.linearVelocity : Vector2.zero;
@@ -430,12 +547,15 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
             col.enabled = false;
         }
 
-        // Cập nhật thống kê chết và kiểm tra thành tựu
-        DataManager.Instance.Profile.RegisterDeath();
-        GameplayEvents.TriggerPlayerDied();
+        // Chỉ cập nhật thống kê nếu là Local Player (Owner của chính mình)
+        if (IsOwner || !IsSpawned)
+        {
+            DataManager.Instance.Profile.RegisterDeath();
+            GameplayEvents.TriggerPlayerDied();
+        }
 
         // 5. Hiệu ứng nổ mảnh vụn (Gibs)
-        if (_gibPrefab != null && _gibMappings != null)
+        if (spawnGibs && _gibPrefab != null && _gibMappings != null)
         {
             // Lấy index của layer từ LayerMask để gán cho GameObject
             int layerIndex = 0;
@@ -497,9 +617,63 @@ public class PlayerController : MonoBehaviour, IPlayer, IAirRefillable, IPlayerC
         // 6. Ngắt các script điều khiển khác
         foreach (var ability in _abilities)
         {
-            if (ability != (IPlayerAbility)this) ability.DisableAbility();
+            if (!ReferenceEquals(ability, this)) ability.DisableAbility();
         }
 
         this.enabled = false; // Ngắt chính script PlayerController này
+    }
+
+    /// <summary>
+    /// Revive player sau khi đã chết (dùng cho respawn).
+    /// Đảo ngược tất cả các tác động của Die() method.
+    /// </summary>
+    public void Revive()
+    {
+        if (IsSpawned)
+        {
+            if (!IsOwner) return; // Chỉ Owner mới có quyền ghi vào NetworkVariable
+            NetworkIsDead.Value = false;
+            // PerformReviveComponents() sẽ được gọi tự động qua OnDeathStateChanged
+        }
+        else
+        {
+            _isDeadSingleplayer = false;
+            PerformReviveComponents();
+        }
+    }
+
+    /// <summary>
+    /// Thực hiện các thao tác bật lại linh kiện (Animator, Sprite, Physics) cho cả Owner và Proxy.
+    /// </summary>
+    private void PerformReviveComponents()
+    {
+        _isDeathEffectsExecuted = false;
+
+        if (_playerAnimator != null) _playerAnimator.enabled = true;
+
+        if (_rb != null)
+        {
+            _rb.simulated = true;
+            _rb.linearVelocity = Vector2.zero;
+        }
+
+        foreach (var col in GetComponents<Collider2D>())
+        {
+            col.enabled = true;
+        }
+
+        SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>();
+        foreach (var sr in renderers) sr.enabled = true;
+
+        _baseAir = _maxAir;
+        _bonusAir = 0f;
+        _bonusAirMaxCap = 0f;
+
+        foreach (var ability in _abilities)
+        {
+            if (ability != (IPlayerAbility)this) ability.EnableAbility();
+        }
+
+        this.enabled = true;
     }
 }

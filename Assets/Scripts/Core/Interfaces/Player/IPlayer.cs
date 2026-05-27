@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Netcode;
 
 namespace Core.Interfaces 
 {
@@ -8,6 +9,7 @@ namespace Core.Interfaces
         Explosion,      // Died due to explosion (e.g., from an explosive button)
         FellOffWorld,   // Fell below kill Y threshold
         TimeOut,        // Exceeded max time (though this is a game over, not player death)
+        Reset,
         Other           // Generic or unknown reason
     }
 
@@ -18,6 +20,9 @@ namespace Core.Interfaces
     public interface IPlayer : IPlayerAbility
     {
         bool IsDead { get; }
+        NetworkVariable<bool> IsAFK { get; } // Trạng thái AFK của người chơi
+        NetworkVariable<bool> IsSpectating { get; } // Trạng thái Spectating của người chơi
+
 
         bool IsZiplining { get; }
         IFloodZone CurrentFlood { get; } // Thêm để FloodController có thể truy vấn
@@ -29,6 +34,7 @@ namespace Core.Interfaces
         GameObject gameObject { get; } // Cho phép truy cập GameObject của player
         DeathReason LastDeathReason { get; } // Lý do chết gần nhất
         void Die(DeathReason reason = DeathReason.Drowned); // Hàm để các manager bên ngoài (như MapManager) có thể ép player chết
+        void Revive(); // Hàm để revive player sau khi đã chết (dùng cho respawn)
         void SetInvincible(bool isInvincible); // Set trạng thái bất tử (không trừ khí/không chết do môi trường)
 
         // Thêm properties để MapManager đọc thông số hiển thị UI mà không cần truy cập PlayerController
@@ -44,5 +50,8 @@ namespace Core.Interfaces
         void SetInfiniteJump(bool enabled);
 
         void Teleport(Vector3 position);
+
+        void ToggleAFKStatus();
+        void ToggleSpectateStatus();
     }
 }

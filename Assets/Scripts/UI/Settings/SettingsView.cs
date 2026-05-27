@@ -87,5 +87,7 @@ namespace UI
             SettingsManager.Instance.GoalLocator = value;
             SettingsManager.Instance.ApplySettings();
         }
+
+        //TODO: Bổ sung nút VisiblePlayers, cụ thể nằm trong mục 5.6 của MultiplayerDesign.md
     }
 }

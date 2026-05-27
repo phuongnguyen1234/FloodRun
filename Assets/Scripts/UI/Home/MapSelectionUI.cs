@@ -391,7 +391,7 @@ public class MapSelectionUI : MonoBehaviour, IEndDragHandler, IBeginDragHandler,
         Debug.Log($"Map selected: {mapData.Name}");
         
         // Tìm ILevelLoader thông qua interface để tránh phụ thuộc trực tiếp vào class HomeManager
-        var loader = FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<ILevelLoader>().FirstOrDefault();
+        var loader = FindObjectsByType<Component>().OfType<ILevelLoader>().FirstOrDefault();
         loader?.LoadLevel(mapData);
     }
 

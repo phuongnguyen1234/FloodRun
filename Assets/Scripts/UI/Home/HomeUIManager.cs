@@ -3,6 +3,7 @@ using Core;
 using Core.Interfaces;
 using UnityEngine.UI;
 using TMPro;
+using System;
 
 /// <summary>
 /// Quản lý giao diện người dùng chính của Home Screen, bao gồm:
@@ -23,12 +24,20 @@ namespace UI
     [SerializeField] private GameObject _homeScreen;
     [SerializeField] private GameObject _mapSelectionScreen; // Vẫn là màn hình tĩnh
     [SerializeField] private GameObject _loadingScreen; // Panel Loading overlay
+    [SerializeField] private GameObject _joiningRoomLoadingScreen; // Panel Loading khi join game (tách biệt để dễ quản lý)
 
     [Header("Dynamic Screens (Prefabs)")]
     [SerializeField] private GameObject _progressPrefab;
     [SerializeField] private GameObject _characterPrefab;
     [SerializeField] private GameObject _multiplayerPrefab; // Multiplayer giờ là Prefab
     [SerializeField] private Transform _uiCanvasRoot;
+
+        [Header("Global Modals")]
+        [SerializeField] private NotificationModalUI _notificationPrefab;
+        [SerializeField] private ConfirmationModalUI _confirmationPrefab;
+        
+        private NotificationModalUI _notificationInstance;
+        private ConfirmationModalUI _confirmationInstance;
 
     [Header("Loading Screen Details")]
     [SerializeField] private Image _loadingPreviewImage;
@@ -147,6 +156,11 @@ namespace UI
         if (_loadingScreen != null) _loadingScreen.SetActive(show);
     }
 
+    public void ShowJoiningGameLoadingScreen(bool show)
+    {
+        if (_joiningRoomLoadingScreen != null) _joiningRoomLoadingScreen.SetActive(show);
+    }
+
     public void SetupLoadingScreen(MapData data)
     {
         if (data == null) return;
@@ -176,6 +190,26 @@ namespace UI
 
         if (_loadingDifficultyText != null)
             _loadingDifficultyText.text = data.Difficulty.ToString("F1");
+    }
+
+    public void ShowNotification(string message, Action onClose = null)
+    {
+        if (_notificationInstance == null)
+        {
+            _notificationInstance = Instantiate(_notificationPrefab, _uiCanvasRoot);
+        }
+        _notificationInstance.ShowMessage(message, onClose);
+        _notificationInstance.transform.SetAsLastSibling(); // Luôn trên cùng
+    }
+
+    public void AskConfirmation(string message, Action onYes)
+    {
+        if (_confirmationInstance == null)
+        {
+            _confirmationInstance = Instantiate(_confirmationPrefab, _uiCanvasRoot);
+        }
+        _confirmationInstance.Setup(message, onYes);
+        _confirmationInstance.transform.SetAsLastSibling();
     }
 
     public void PlayClickSound()
