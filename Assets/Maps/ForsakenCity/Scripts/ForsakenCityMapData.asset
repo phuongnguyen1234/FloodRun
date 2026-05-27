@@ -18,7 +18,7 @@ MonoBehaviour:
 
 
 '
-  Difficulty: 5.2
+  Difficulty: 4.9
   MapDuration: 110
   ButtonNumber: 4
   MapPreviewImage: {fileID: -7956361835015383230, guid: f259ac4a88b41f545a4a541582f99797, type: 3}
