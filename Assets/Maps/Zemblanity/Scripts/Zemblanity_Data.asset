@@ -1,3 +1,26 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:1785fa0ac60cb7a8941c330d2b2764b4bc0896b6c8217481104e9dd061bda50d
-size 899
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 617946ca0553ff345b7c386184b3a557, type: 3}
+  m_Name: Zemblanity_Data
+  m_EditorClassIdentifier: Core::Core.MapData
+  Name: Zemblanity
+  Author: PhamThanhSon
+  Description: 'You''re lost in an unknown woods. Make your way out of it
+
+    V1.0'
+  Difficulty: 1.2
+  MapDuration: 70
+  ButtonNumber: 4
+  MapPreviewImage: {fileID: 7564661104763682667, guid: e72dae73fdf829f49b60ecd16be2a519, type: 3}
+  MapPrefab: {fileID: 1637740676321180219, guid: 45db6b5fe71229a4eb4b15751cb31e81, type: 3}
+  BackgroundMusic: {fileID: 8300000, guid: 085be8bc03777bc49b5d96a4a75039e0, type: 3}
+  EnableDevTools: 1
