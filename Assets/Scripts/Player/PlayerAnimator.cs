@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Netcode;
 
 /// <summary>
 /// PlayerAnimator chịu trách nhiệm cập nhật các tham số của Animator dựa trên trạng thái của PlayerMotor và Rigidbody2D.
@@ -6,7 +7,7 @@ using UnityEngine;
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(PlayerMotor))]
 [RequireComponent(typeof(Rigidbody2D))]
-public class PlayerAnimator : MonoBehaviour
+public class PlayerAnimator : NetworkBehaviour
 {
     private Animator _animator;
     private PlayerMotor _motor;
@@ -57,11 +58,6 @@ public class PlayerAnimator : MonoBehaviour
     {
         _animator.SetTrigger(_animIDDoJump);
 
-        // FIX: Ép trực tiếp tham số để Animator "nhảy" state ngay trong frame này,
-        // tránh việc đi qua Entry -> Idle của Sub-machine Locomotion.
-        _animator.SetBool(_animIDGrounded, false);
-        _animator.SetFloat(_animIDVerticalVelocity, 10f);
-        
         // CỰC KỲ QUAN TRỌNG: Ép các biến đệm mặt đất về 0 ngay lập tức
         // Điều này chặn việc Animator tự động chuyển ngược về Idle/Run ngay trong frame đầu tiên
         _stableStateGraceTimer = 0;
@@ -70,12 +66,54 @@ public class PlayerAnimator : MonoBehaviour
 
     void Update()
     {
-        // Cập nhật các tham số của Animator dựa trên trạng thái của Motor và Rigidbody
-        UpdateAnimationParameters();
+        // Chỉ Owner mới tính toán và set parameter cho Animator
+        // NetworkAnimator sẽ tự đồng bộ các tham số này sang các máy khách khác
+        if (!IsSpawned || IsOwner)
+        {
+            UpdateAnimationParameters();
+        }
 
-        // Cập nhật Sprite Label (Back, Side_Right, v.v.)
+        // Visuals (Sprite swap + Rotation) cần chạy trên tất cả các máy để ai cũng thấy đúng hướng/loại sprite
         _motor.UpdateSpriteLabels();
+        
+        // FIX: Sync visual rotation cho proxy (flip + swimming rotation)
+        if (IsSpawned && !IsOwner)
+        {
+            SyncProxyVisuals();
+        }
+        
         _wasGotorGrounded = _motor.IsGrounded; // Cập nhật trạng thái grounded của motor cho frame tiếp theo
+    }
+    
+    /// <summary>
+    /// Đồng bộ visual của proxy dựa trên NetworkVariable từ Owner
+    /// </summary>
+    private void SyncProxyVisuals()
+    {
+        // Sync Flip (Scale X)
+        if (_motor._useScaleFlip)
+        {
+            Vector3 currentScale = transform.localScale;
+            float targetScaleX = _motor.IsFacingRight ? Mathf.Abs(currentScale.x) : -Mathf.Abs(currentScale.x);
+            if (!Mathf.Approximately(currentScale.x, targetScaleX))
+            {
+                currentScale.x = targetScaleX;
+                transform.localScale = currentScale;
+            }
+        }
+        
+        // Sync Rotation (Swimming + Water Exit Reset)
+        // FIX: Luôn sync rotation, không chỉ khi IsSwimming, vì ta cần sync cả rotation reset (90°) khi lên khỏi nước
+        if (_motor._visualsRoot != null)
+        {
+            float targetRotZ = _motor.VisualsRotationZ;
+            Quaternion targetRot = Quaternion.Euler(0, 0, targetRotZ);
+            _motor._visualsRoot.localRotation = Quaternion.Lerp(
+                _motor._visualsRoot.localRotation,
+                targetRot,
+                Time.deltaTime * 15f
+            );
+        }
     }
 
     private void UpdateAnimationParameters()

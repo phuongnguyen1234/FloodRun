@@ -3,12 +3,14 @@ using UnityEngine.Events;
 using Core.Interfaces;
 using Core;
 using UnityEngine.U2D.Animation;
+using Unity.Netcode;
+using Core.Events;
 
 /// <summary>
 /// PlayerMotor chịu trách nhiệm quản lý tất cả logic liên quan đến di chuyển
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
-public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
+public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttributes
 {
     [SerializeField] private float _speed = 8f;
     [SerializeField] private float _exitFloodForce = 12f;                       // Lực đẩy khi thoát khỏi nước
@@ -23,13 +25,16 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     [SerializeField] private float _jumpForce = 11.5f;
     [Header("Visuals Root")]
     [Tooltip("Transform chứa toàn bộ Sprite/Xương của nhân vật. Chúng ta sẽ xoay cái này thay vì xoay Rigidbody khi bơi.")]
-    [SerializeField] private Transform _visualsRoot;
+    [SerializeField] public Transform _visualsRoot; // Public để PlayerAnimator đọc cho proxy
     [Tooltip("Lực đẩy riêng khi thực hiện nhảy vô hạn trên không")]
     [SerializeField] private float _infJumpForce = 12f;
 
     [Tooltip("Chiều rộng của Collider khi đang Slide. Nên nhỏ hơn hoặc bằng 1 để chui vừa khe 1 grid.")]
     [SerializeField] private float _slideWidth = 0.8f;
     
+    [Tooltip("Tỉ lệ giảm chiều cao khi trượt (Đồng bộ từ SlideAbility).")]
+    [SerializeField] private float _slideHeightRatio = 0.5f;
+
     [Header("Movement Smoothing")]
     [Range(0, .3f)] [SerializeField] private float _groundSmoothing = .05f;      // Độ mượt khi di chuyển (nhạy)
     [Range(0, .5f)] [SerializeField] private float _swimSmoothing = .15f;        // Độ mượt khi bơi (có quán tính nước)
@@ -67,14 +72,36 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     [SerializeField] private string _climbLabel = "Back";
 
     [Tooltip("Nếu Sprite trong Library đã vẽ sẵn hướng Trái/Phải, hãy tắt cái này để tránh lật 2 lần")]
-    [SerializeField] private bool _useScaleFlip = false;
+    [SerializeField] public bool _useScaleFlip = false; // Public để PlayerAnimator đọc cho proxy
 
     private SpriteResolver[] _spriteResolvers;
     private string _currentLabel;
 
     private Rigidbody2D _rb;
-    private bool _facingRight = true;
-    public bool IsFacingRight => _facingRight;
+
+    // Đồng bộ các trạng thái quan trọng cho Visuals
+    private NetworkVariable<bool> _facingRight = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _facingRightLocal = true;
+    public bool IsFacingRight => IsSpawned ? _facingRight.Value : _facingRightLocal;
+
+    // Đồng bộ rotation của visuals khi bơi cho tất cả player (proxy)
+    private NetworkVariable<float> _visualsRotationZ = new NetworkVariable<float>(90f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public float VisualsRotationZ => IsSpawned ? _visualsRotationZ.Value : 90f;
+
+    private NetworkVariable<bool> _isSwimming = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _isSwimmingLocal = false;
+    private NetworkVariable<bool> _isClimbing = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _isClimbingLocal = false;
+    private NetworkVariable<bool> _isGrounded = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _isGroundedLocal = false;
+    private NetworkVariable<bool> _isClinging = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _isClingingLocal = false;
+    private NetworkVariable<bool> _isSliding = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _isSlidingLocal = false;
+    private NetworkVariable<bool> _isDiving = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _isDivingLocal = false;
+    private NetworkVariable<bool> _isZiplining = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private bool _isZipliningLocal = false;
 
     private Vector3 _velocity = Vector3.zero;
     public float OriginalGravityScale => _originalGravityScale;
@@ -93,17 +120,45 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
 
     public IFloodZone CurrentFlood { get; private set; }
 
-    public bool IsGrounded { get; private set; }
+    public bool IsGrounded 
+    { 
+        get => IsSpawned ? _isGrounded.Value : _isGroundedLocal; 
+        private set { if (IsSpawned && IsOwner) _isGrounded.Value = value; _isGroundedLocal = value; } 
+    }
     public float JumpForce => _jumpForce;
     public float InfJumpForce => _infJumpForce;
-    public bool IsSwimming { get; private set; }
+    public bool IsSwimming 
+    { 
+        get => IsSpawned ? _isSwimming.Value : _isSwimmingLocal; 
+        private set { if (IsSpawned && IsOwner) _isSwimming.Value = value; _isSwimmingLocal = value; } 
+    }
     public bool IsSubmerged { get; private set; } // True khi player ngập trong nước/flood (dựa vào swim trigger)
-    public bool IsClinging { get; private set; }
-    public bool IsSliding { get; private set; }
-    public bool IsDiving { get; private set; }
-    public bool IsZiplining { get; private set; }
+    public bool IsClinging 
+    { 
+        get => IsSpawned ? _isClinging.Value : _isClingingLocal; 
+        private set { if (IsSpawned && IsOwner) _isClinging.Value = value; _isClingingLocal = value; } 
+    }
+    public bool IsSliding 
+    { 
+        get => IsSpawned ? _isSliding.Value : _isSlidingLocal; 
+        private set { if (IsSpawned && IsOwner) _isSliding.Value = value; _isSlidingLocal = value; } 
+    }
+    public bool IsDiving 
+    { 
+        get => IsSpawned ? _isDiving.Value : _isDivingLocal; 
+        private set { if (IsSpawned && IsOwner) _isDiving.Value = value; _isDivingLocal = value; } 
+    }
+    public bool IsZiplining 
+    { 
+        get => IsSpawned ? _isZiplining.Value : _isZipliningLocal; 
+        private set { if (IsSpawned && IsOwner) _isZiplining.Value = value; _isZipliningLocal = value; } 
+    }
     public bool IsTouchingLadder { get; private set; } // Trạng thái đang chạm vào vùng thang (Trigger)
-    public bool IsClimbing { get; private set; } // Trạng thái leo thang
+    public bool IsClimbing 
+    { 
+        get => IsSpawned ? _isClimbing.Value : _isClimbingLocal; 
+        private set { if (IsSpawned && IsOwner) _isClimbing.Value = value; _isClimbingLocal = value; } 
+    }
     public bool IsDead { get; set; } // Trạng thái chết (được set từ Controller)
 
     // Variables để restore trạng thái collider
@@ -134,14 +189,16 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     public void UpdateSpriteLabels()
     {
         string targetLabel = _idleLabel;
+        float speed = Mathf.Abs(_rb.linearVelocity.x);
 
+        // FIX: Thêm IsClinging vào điều kiện chọn nhãn Side để quay mặt ra ngoài tường dù speed = 0
         if (IsClimbing)
         {
             targetLabel = _climbLabel;
         }
-        else if (Mathf.Abs(_rb.linearVelocity.x) > 0.1f || IsSwimming)
+        else if (speed > 0.1f || IsSwimming || IsClinging)
         {
-            targetLabel = _facingRight ? _rightLabel : _leftLabel;
+            targetLabel = IsFacingRight ? _rightLabel : _leftLabel;
         }
 
         if (_currentLabel == targetLabel) return;
@@ -170,11 +227,21 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     public void DisableAbility() 
     {
         _isAbilityEnabled = false;
-        // Dọn dẹp sạch trạng thái Flood để tránh lỗi logic khi Teleport hoặc Reset
+        
+        // Reset các trạng thái vật lý và dọn dẹp flood
         _activeFloodZones.Clear();
         _floodColliders.Clear();
+        
+        // Reset tất cả các flags trạng thái để tránh lỗi animation khi hồi sinh
         IsSwimming = false;
         IsSubmerged = false;
+        IsClinging = false;
+        IsSliding = false;
+        IsDiving = false;
+        IsClimbing = false;
+        IsZiplining = false;
+        
+        ResetCollider(); // Đảm bảo collider và rotation trở về mặc định
         CurrentFlood = null;
     }
     #endregion
@@ -182,6 +249,9 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
+        
+        // Đảm bảo ban đầu luôn là Dynamic để Singleplayer hoạt động bình thường
+        _rb.bodyType = RigidbodyType2D.Dynamic;
         
         // Lưu lại thông số ban đầu của Collider
         if (_bodyCollider != null)
@@ -225,14 +295,68 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
             OnExitWaterEvent = new UnityEvent();
     }
 
+    public override void OnNetworkSpawn()
+    {
+        // Nếu là chủ sở hữu (hoặc Singleplayer): Dynamic để tính vật lý
+        // Nếu là máy khách khác: Kinematic để máy đó không tự tính vật lý cho nhân vật của mình
+        _rb.bodyType = IsOwner ? RigidbodyType2D.Dynamic : RigidbodyType2D.Kinematic;
+        
+        if (IsOwner)
+        {
+            _rb.gravityScale = _originalGravityScale;
+            
+            // Đồng bộ trạng thái hiện tại (nếu có) lên mạng ngay khi spawn
+            _facingRight.Value = _facingRightLocal;
+            _isSwimming.Value = _isSwimmingLocal;
+            _isClimbing.Value = _isClimbingLocal;
+            _isGrounded.Value = _isGroundedLocal;
+            _isClinging.Value = _isClingingLocal;
+            _isSliding.Value = _isSlidingLocal;
+            _isDiving.Value = _isDivingLocal;
+            _isZiplining.Value = _isZipliningLocal;
+            _visualsRotationZ.Value = 90f; // Rotation mặc định
+        }
+
+        // Đăng ký callback để đồng bộ Collider cho Proxy
+        _isSliding.OnValueChanged += (oldVal, newVal) => {
+            if (!IsOwner) { if (newVal) ResizeCollider(_slideHeightRatio, true); else ResetCollider(); }
+        };
+        _isSwimming.OnValueChanged += (oldVal, newVal) => {
+            if (!IsOwner) { if (newVal) ResizeCollider(0f, false); else ResetCollider(); }
+        };
+
+        // Thông báo cho MultiplayerManager biết Local Player đã được spawn thành công
+        if (IsOwner && TryGetComponent<IPlayer>(out var player))
+        {
+            GameplayEvents.TriggerLocalPlayerSpawned(player);
+        }
+    }
+
     void FixedUpdate()
     {
+        // Tránh việc các máy khách (Proxy) tự tính toán va chạm/mặt đất cho nhân vật của người khác
+        if (IsSpawned && !IsOwner) return;
+
+        // FIX: Đảm bảo Singleplayer luôn là Dynamic để chuyển động và nhảy bình thường
+        // NetworkRigidbody2D có thể auto-set kinematic, nên phải override nó mỗi frame cho singleplayer
+        // NHƯNG: Nếu đang bám tường (IsClinging), thì WallJumpAbility sẽ set Kinematic, đừng override nó
+        if (!IsSpawned && !IsClinging)
+            _rb.bodyType = RigidbodyType2D.Dynamic;
+
         if (!_isAbilityEnabled) return;
 
         UpdateGroundNormal(); // Cập nhật pháp tuyến mặt đất mỗi frame vật lý
 
         // Giảm cooldown chặn mặt đất
         if (_groundingCooldown > 0) _groundingCooldown -= Time.fixedDeltaTime;
+
+        // CẢI TIẾN: Cập nhật lại vùng Flood chủ đạo mỗi frame vật lý nếu đang chạm nhiều vùng nước.
+        // Điều này đảm bảo nếu một trong các vùng nước thay đổi loại (ví dụ: từ Water sang Acid), 
+        // người chơi sẽ nhận diện được sự thay đổi về Drain Rate ngay lập tức.
+        if (_activeFloodZones.Count > 1)
+        {
+            UpdateCurrentFloodAndState();
+        }
 
         bool wasGrounded = IsGrounded;
         IsGrounded = false;
@@ -344,6 +468,11 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
                 Time.fixedDeltaTime * 800f
             );        
         }
+        
+        // FIX: Đồng bộ rotation cho proxy
+        float currentZ = _visualsRoot.localRotation.eulerAngles.z;
+        if (IsSpawned && IsOwner)
+            _visualsRotationZ.Value = currentZ;
     }
 
     // Bắn tia Raycast xuống dưới để lấy vector pháp tuyến (độ nghiêng) của sàn
@@ -439,14 +568,16 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
             // CẢI TIẾN: Khi bơi, ưu tiên Flip theo vận tốc thực tế của Rigidbody.
             // Nếu bơi chạm dốc và bị đẩy lùi, nhân vật sẽ tự động quay mặt về hướng trượt.
             float flipReference = Mathf.Abs(_rb.linearVelocity.x) > 0.5f ? _rb.linearVelocity.x : input.x;
-            if (flipReference > 0.01f && !_facingRight) Flip();
-            else if (flipReference < -0.01f && _facingRight) Flip();
+            // FIX: Dùng IsFacingRight property thay vì _facingRight.Value để đồng nhất với singleplayer
+            if (flipReference > 0.01f && !IsFacingRight) Flip();
+            else if (flipReference < -0.01f && IsFacingRight) Flip();
         }
         else
         {
             // Trên cạn: Quay mặt theo phím nhấn để phản hồi tức thì.
-            if (input.x > 0 && !_facingRight) Flip();
-            else if (input.x < 0 && _facingRight) Flip();
+            // FIX: Dùng IsFacingRight property thay vì _facingRight.Value để đồng nhất với singleplayer
+            if (input.x > 0 && !IsFacingRight) Flip();
+            else if (input.x < 0 && IsFacingRight) Flip();
         }
         
         // Nếu đang bị khóa di chuyển (do WallJump, Slide), giảm timer và bỏ qua logic di chuyển
@@ -465,7 +596,7 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
                 _bodyCollider.sharedMaterial = _slipperyMaterial;
             if (_feetCollider != null)
                 _feetCollider.sharedMaterial = _slipperyMaterial;
-
+            
             float targetSwimX = input.x * _speed;
             // FIX: Ngăn chặn triệt để việc Collider đâm xuyên/giật khi bơi sát tường.
             // Nếu đang nhấn phím di chuyển vào tường, ta chủ động set target velocity về 0
@@ -650,9 +781,30 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     /// Thông báo cho Animator và các hệ thống khác rằng một cú nhảy đã xảy ra.
     /// Dùng cho các Ability tự áp dụng lực nhảy riêng (như WallJump).
     /// </summary>
-    public void NotifyJumpTriggered() 
+    public void NotifyJumpTriggered()
+    {
+        if (IsSpawned && IsOwner)
+        {
+            NotifyJumpTriggeredServerRpc();
+        }
+        else if (!IsSpawned) // Singleplayer
+        {
+            _groundingCooldown = 0.15f;
+            OnJumpTriggered?.Invoke();
+        }
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void NotifyJumpTriggeredServerRpc()
     {
         _groundingCooldown = 0.15f; // Khóa nhận diện mặt đất trong 0.15s
+        NotifyJumpTriggeredClientRpc();
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void NotifyJumpTriggeredClientRpc()
+    {
+        // This will run on all clients (including the owner)
         OnJumpTriggered?.Invoke();
     }
 
@@ -890,8 +1042,18 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     /// </summary>
     public void Flip()
 	{
+        // FIX: Thêm guard để tránh flip lặp lại nếu đã facing hướng đó
+        // Kiểm tra xem direction có thực sự cần đổi không
+        bool newVal = !IsFacingRight;
+        if (IsSpawned && _facingRight.Value == newVal) return; // Đã facing hướng này rồi, bỏ qua
+        if (!IsSpawned && _facingRightLocal == newVal) return;
+
+        // FIX: Kiểm tra quyền ghi trước (chỉ Owner mới được phép set network variable)
+        if (IsSpawned && !IsOwner) return; // Proxy không được flip
+        
         // Đảo chiều trạng thái quay mặt
-        _facingRight = !_facingRight;
+        if (IsSpawned) _facingRight.Value = newVal;
+        _facingRightLocal = newVal;
 
         if (_useScaleFlip)
         {
@@ -906,6 +1068,8 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
     /// </summary>
     public void SetClinging(bool isClinging)
     {
+        // FIX: Kiểm tra quyền ghi (chỉ Owner mới được phép)
+        if (IsSpawned && !IsOwner) return;
         IsClinging = isClinging;
     }
 
@@ -976,29 +1140,35 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
             return;
         }
 
-        if (_floodColliders.TryGetValue(CurrentFlood, out Collider2D dominantFloodCollider))
-        {
-            // Logic FE2: Bơi nếu Torso chìm. 
-            // Sử dụng cạnh trên (top) của Trigger làm điểm quyết định.
-            Vector2 checkPoint;
-            
-            if (_swimTriggerCollider != null)
-            {
-                // Lấy điểm cao nhất của Trigger (vùng cổ)
-                checkPoint = new Vector2(_swimTriggerCollider.bounds.center.x, _swimTriggerCollider.bounds.max.y);
-            }
-            else
-            {
-                // Fallback nếu không có trigger riêng: lấy vị trí khoảng 75% chiều cao thân
-                checkPoint = (Vector2)_bodyCollider.bounds.center + Vector2.up * (_bodyCollider.size.y * 0.25f);
-            }
+        // CẢI TIẾN: Thay vì chỉ kiểm tra vùng Flood "chủ đạo", ta kiểm tra tất cả các vùng đang chạm.
+    // Điều này giúp việc bơi qua 2 khối nước đặt cạnh nhau mượt mà hơn, tránh bị ngắt bơi ở khe tiếp giáp.
+    bool submergedInAny = false;
 
-            IsSubmerged = dominantFloodCollider.OverlapPoint(checkPoint);
+    // Xác định điểm kiểm tra (checkPoint)
+    Vector2 checkPoint;
+    if (_swimTriggerCollider != null)
+        {
+            // Lấy điểm cao nhất của Trigger (vùng cổ/đầu)
+        checkPoint = new Vector2(_swimTriggerCollider.bounds.center.x, _swimTriggerCollider.bounds.max.y);
         }
         else
         {
-            IsSubmerged = false;
+        checkPoint = (Vector2)_bodyCollider.bounds.center + Vector2.up * (_bodyCollider.size.y * 0.25f);
         }
+
+        foreach (var flood in _activeFloodZones)
+    {
+        if (_floodColliders.TryGetValue(flood, out Collider2D col))
+        {
+            if (col != null && col.OverlapPoint(checkPoint))
+            {
+                submergedInAny = true;
+                break;
+            }
+        }
+    }
+
+    IsSubmerged = submergedInAny;
     }
 
     private void UpdateCurrentFloodAndState()
@@ -1048,6 +1218,9 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        // Chỉ chủ sở hữu mới có quyền tính toán và cập nhật trạng thái bơi lên mạng
+        if (IsSpawned && !IsOwner) return;
+
         // FIX: Dùng GetComponentInParent để tìm IFloodZone ngay cả khi script nằm ở object cha của Collider
         IFloodZone flood = other.GetComponentInParent<IFloodZone>();
         if (flood != null && !_activeFloodZones.Contains(flood))
@@ -1060,6 +1233,8 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
 
     private void OnTriggerStay2D(Collider2D other)
     {
+        if (IsSpawned && !IsOwner) return;
+
         // Cần thiết cho trường hợp Teleport thẳng vào vùng Flood
         IFloodZone flood = other.GetComponentInParent<IFloodZone>();
         if (flood != null && !_activeFloodZones.Contains(flood))
@@ -1072,6 +1247,8 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
 
     private void OnTriggerExit2D(Collider2D other)
     {
+        if (IsSpawned && !IsOwner) return;
+
         // FIX: Tương tự, dùng GetComponentInParent để xác định vùng vừa thoát
         IFloodZone flood = other.GetComponentInParent<IFloodZone>();
         if (flood != null && _activeFloodZones.Contains(flood))
@@ -1104,6 +1281,14 @@ public class PlayerMotor : MonoBehaviour, IPlayerAbility, IPlayerMotorAttributes
 
         // Dù có reset collider hay không, trạng thái bơi ngang phải được tắt khi ra khỏi nước.
         _isSwimHorizontal = false;
+        
+        // FIX: Reset visualsRoot về tư thế đứng thẳng (90 độ) khi lên khỏi nước
+        if (_visualsRoot != null)
+            _visualsRoot.localRotation = Quaternion.Euler(0, 0, 90f);
+        
+        // Cập nhật network variable để proxy cũng thấy rotation reset
+        if (IsSpawned && IsOwner)
+            _visualsRotationZ.Value = 90f;
 
         // FIX: Ưu tiên dùng floodOverride (nếu có) để phát tiếng khi CurrentFlood đã bị null do ra khỏi trigger
         IFloodZone floodToPlay = floodOverride != null ? floodOverride : CurrentFlood;

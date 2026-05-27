@@ -274,7 +274,7 @@ public class MapManager : MonoBehaviour, IMapManager
 
     public Transform GetNearestExitTransform(Vector3 playerPosition)
     {
-        ExitRegion[] exits = Object.FindObjectsByType<ExitRegion>(FindObjectsSortMode.None);
+        ExitRegion[] exits = Object.FindObjectsByType<ExitRegion>();
         if (exits.Length == 0) return null;
 
         Transform closest = null;

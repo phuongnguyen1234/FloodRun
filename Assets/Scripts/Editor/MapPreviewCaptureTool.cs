@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -130,7 +131,7 @@ namespace EditorTools
         {
             if (_captureCamera == null)
             {
-                _captureCamera = FindObjectsByType<Camera>(FindObjectsSortMode.None)
+                _captureCamera = FindObjectsByType<Camera>()
                     .FirstOrDefault(c => c.name == "PreviewCaptureCamera");
             }
 
@@ -298,3 +299,4 @@ namespace EditorTools
         }
     }
 }
+#endif

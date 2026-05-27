@@ -81,6 +81,7 @@ GameObject:
   - component: {fileID: 7323944146424705785}
   - component: {fileID: 745403804474973529}
   - component: {fileID: 479814438375985929}
+  - component: {fileID: 5504630237118353544}
   - component: {fileID: 6634324505349431533}
   - component: {fileID: 7664050727573425531}
   - component: {fileID: 1261875866234627915}
@@ -89,6 +90,9 @@ GameObject:
   - component: {fileID: 3684775757700946467}
   - component: {fileID: 6234162547833087925}
   - component: {fileID: 3739865018710673040}
+  - component: {fileID: 2476841695079872035}
+  - component: {fileID: 6118609805542603034}
+  - component: {fileID: 5450615391674834396}
   m_Layer: 7
   m_Name: Player
   m_TagString: Player
@@ -462,6 +466,31 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &5504630237118353544
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1211683872267545562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 2222251896
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &6634324505349431533
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -474,6 +503,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f8ac8abd382d924c90b523f4e540d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Player::PlayerMotor
+  ShowTopMostFoldoutHeaderGroup: 1
   _speed: 6
   _exitFloodForce: 12
   _bodyCollider: {fileID: 2450440764590350937}
@@ -483,6 +513,7 @@ MonoBehaviour:
   _visualsRoot: {fileID: 8507364654961222875}
   _infJumpForce: 12
   _slideWidth: 0.8
+  _slideHeightRatio: 0.5
   _groundSmoothing: 0.1
   _swimSmoothing: 0.1
   _swimRotationSpeed: 25
@@ -519,6 +550,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c530a7c0ae9b194cbccd9fcc0e1f374, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Player::PlayerAnimator
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &1261875866234627915
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -543,11 +575,50 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6773ceade52bbea4d94c0b8788cb67fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Player::PlayerController
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkPlayerName:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue:
+      utf8LengthInBytes: 0
+      bytes:
+        offset0000:
+          byte0000: 0
+          byte0001: 0
+          byte0002: 0
+          byte0003: 0
+          byte0004: 0
+          byte0005: 0
+          byte0006: 0
+          byte0007: 0
+          byte0008: 0
+          byte0009: 0
+          byte0010: 0
+          byte0011: 0
+          byte0012: 0
+          byte0013: 0
+          byte0014: 0
+          byte0015: 0
+        byte0016: 0
+        byte0017: 0
+        byte0018: 0
+        byte0019: 0
+        byte0020: 0
+        byte0021: 0
+        byte0022: 0
+        byte0023: 0
+        byte0024: 0
+        byte0025: 0
+        byte0026: 0
+        byte0027: 0
+        byte0028: 0
+        byte0029: 0
   _nameTagText: {fileID: 3359250863719528896}
   _keepNameTagReadable: 1
   _maxAir: 100
-  _bonusAirEmptySound: {fileID: 8300000, guid: 531f330d2692f2e4584d0caba456b1c6, type: 3}
-  _playerDeathSound: {fileID: 8300000, guid: 9583a139e16cf864b92fb1a700d85d46, type: 3}
+  _bonusAirEmptySound: {fileID: 8300000, guid: 42328842fb8745247a69cfcbabc31597, type: 3}
+  _playerDeathSound: {fileID: 8300000, guid: fdf2b47b786a86845bb276ef6b38ca82, type: 3}
   _deathExplosionSound: {fileID: 0}
   _gibPrefab: {fileID: 1620210117744658857, guid: 826bf0cc0f1dfde45984743bc6429a72, type: 3}
   _gibMappings:
@@ -566,6 +637,16 @@ MonoBehaviour:
   _gibLayer:
     serializedVersion: 2
     m_Bits: 256
+  NetworkIsDead:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
+  NetworkDeathReason:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
 --- !u!114 &4715545568130325091
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -578,6 +659,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9cf03b6c26e830948a7f3270c94d428d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Player::WallJumpAbility
+  ShowTopMostFoldoutHeaderGroup: 1
   _wallLayer:
     serializedVersion: 2
     m_Bits: 8192
@@ -586,8 +668,8 @@ MonoBehaviour:
   _jumpOffForce: {x: 10, y: 10}
   _wallJumpLockTime: 0.25
   _clingOffset: 0.35
-  _wallClingSound: {fileID: 8300000, guid: f921eee3456e76f4580aeadff50a2c89, type: 3}
-  _wallJumpSound: {fileID: 8300000, guid: c3079de0f91733a4d84d440e09c9b643, type: 3}
+  _wallClingSound: {fileID: 8300000, guid: fb205829c9d12cd4ca41644caa234fc0, type: 3}
+  _wallJumpSound: {fileID: 8300000, guid: 244091f628653304aaa0c612e4b72c56, type: 3}
 --- !u!114 &3684775757700946467
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -600,14 +682,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0b97641164c37047af0dd0df752a0f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Player::SlideAbility
+  ShowTopMostFoldoutHeaderGroup: 1
   _slideSpeed: 6
   _maxSlideTime: 0.5
   _slideCooldown: 0.1
   _heightReductionRatio: 0.45
   _diveSpeed: 30
   _postDiveSlideDelay: 0.1
-  _slideSound: {fileID: 8300000, guid: b6a07626f16609344ad2688d8b222124, type: 3}
-  _diveSound: {fileID: 8300000, guid: e29527c8d5b93c743839df0595a6b818, type: 3}
+  _slideSound: {fileID: 8300000, guid: c891d5d3ea469ee468d39de38f6c9fdc, type: 3}
+  _diveSound: {fileID: 8300000, guid: 354fa44cb0149c04c9174efabe1477ee, type: 3}
   _slideParticles: {fileID: 2730751228623216842}
 --- !u!114 &6234162547833087925
 MonoBehaviour:
@@ -621,15 +704,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0fd0beb8f89f52046935389bf99310f3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Player::ZiplineAbility
+  ShowTopMostFoldoutHeaderGroup: 1
   _ziplineLayer:
     serializedVersion: 2
     m_Bits: 2048
   _launcherLockTime: 0.3
   _ziplineAnchor: {fileID: 734472085970483876}
   _slideEffect: {fileID: 1228673030328946047}
-  _ziplineConnectSound: {fileID: 8300000, guid: c3079de0f91733a4d84d440e09c9b643, type: 3}
-  _ziplineSlideLoopSound: {fileID: 8300000, guid: e11bc1fb892b1a4429e8774fc85be01c, type: 3}
-  _ziplineDetachSound: {fileID: 8300000, guid: f921eee3456e76f4580aeadff50a2c89, type: 3}
+  _ziplineConnectSound: {fileID: 8300000, guid: 244091f628653304aaa0c612e4b72c56, type: 3}
+  _ziplineSlideLoopSound: {fileID: 8300000, guid: 7ef774a14188fc84b8239823383f770c, type: 3}
+  _ziplineDetachSound: {fileID: 8300000, guid: fb205829c9d12cd4ca41644caa234fc0, type: 3}
 --- !u!114 &3739865018710673040
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -642,12 +726,161 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2d582d6301ae7141a200bbd777aacbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Player::LadderClimbAbilityNew
+  ShowTopMostFoldoutHeaderGroup: 1
   _climbSpeed: 5
   _jumpOffForce: 11.5
   _ladderLayer:
     serializedVersion: 2
     m_Bits: 4096
   _topSnapThreshold: 0.1
+--- !u!114 &2476841695079872035
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1211683872267545562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a542c0f2bf5730041aca6b9bcaeabdd4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Player::Multiplayer.ClientNetworkTransform
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 1
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 2
+  RotationInterpolationType: 2
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 1
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
+--- !u!114 &6118609805542603034
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1211683872267545562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a3aa502d09209d4395a8d021a8b656f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Player::Core.Multiplayer.OwnerNetworkAnimator
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
+  AuthorityMode: 1
+  m_Animator: {fileID: 745403804474973529}
+  TransitionStateInfoList:
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 1617723388
+    DestinationState: 587691724
+    TransitionDuration: 0
+    TriggerNameHash: 413958001
+    TransitionIndex: 0
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 342712792
+    DestinationState: 587691724
+    TransitionDuration: 0.02
+    TriggerNameHash: 413958001
+    TransitionIndex: 3
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 992729264
+    DestinationState: 587691724
+    TransitionDuration: 0
+    TriggerNameHash: 413958001
+    TransitionIndex: 1
+  AnimatorParameterEntries:
+    ParameterEntries:
+    - name: Speed
+      NameHash: -823668238
+      Synchronize: 1
+      ParameterType: 1
+    - name: IsGrounded
+      NameHash: 507951781
+      Synchronize: 1
+      ParameterType: 4
+    - name: VerticalVelocity
+      NameHash: -1380605809
+      Synchronize: 1
+      ParameterType: 1
+    - name: IsSwimming
+      NameHash: 1389764929
+      Synchronize: 1
+      ParameterType: 4
+    - name: IsClinging
+      NameHash: 1672037098
+      Synchronize: 1
+      ParameterType: 4
+    - name: IsSliding
+      NameHash: -1809564513
+      Synchronize: 1
+      ParameterType: 4
+    - name: IsZiplining
+      NameHash: 1074728990
+      Synchronize: 1
+      ParameterType: 4
+    - name: IsClimbing
+      NameHash: 332908552
+      Synchronize: 1
+      ParameterType: 4
+    - name: ClimbSpeed
+      NameHash: 1147975790
+      Synchronize: 1
+      ParameterType: 1
+    - name: JumpInput
+      NameHash: 2005780713
+      Synchronize: 1
+      ParameterType: 4
+    - name: DoJump
+      NameHash: 413958001
+      Synchronize: 1
+      ParameterType: 9
+  AnimatorParametersExpanded: 0
+--- !u!114 &5450615391674834396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1211683872267545562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80d7c879794dfda4687da0e400131852, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkRigidbody2D
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkRigidbodyBaseExpanded: 0
+  UseRigidBodyForMotion: 1
+  AutoUpdateKinematicState: 1
+  AutoSetKinematicOnDespawn: 1
 --- !u!1 &1776421307666142869
 GameObject:
   m_ObjectHideFlags: 0

@@ -40,8 +40,10 @@ public class MapDatabaseEditor : Editor
             }
         }
 
-        // Sắp xếp theo tên cho gọn (Map_01, Map_02...)
-        database.AllMaps = database.AllMaps.OrderBy(m => m.Name).ToList();
+        // Sắp xếp theo độ khó tăng dần, sau đó theo tên tăng dần
+        database.AllMaps = database.AllMaps
+                                   .OrderBy(m => m.Difficulty)
+                                   .ThenBy(m => m.Name).ToList();
 
         EditorUtility.SetDirty(database); // Đánh dấu để Unity lưu file lại
         Debug.Log($"Đã tìm thấy và cập nhật {database.AllMaps.Count} map vào Database!");

@@ -1,9 +1,10 @@
 using UnityEngine;
+using Unity.Netcode;
 
 /// <summary>
 /// Khả năng trượt (Slide) và lao xuống (Air Dive) của người chơi.
 /// </summary>
-public class SlideAbility : MonoBehaviour, IPlayerAbility
+public class SlideAbility : NetworkBehaviour, IPlayerAbility
 {
     [Header("Settings")]
     [SerializeField] private float _slideSpeed = 12f;
@@ -66,6 +67,8 @@ public class SlideAbility : MonoBehaviour, IPlayerAbility
 
     private void Update()
     {
+        if (IsSpawned && !IsOwner) return;
+
         if (!_isAbilityEnabled) return;
 
         // Nếu người chơi đã thả phím, reset cờ chặn để cho phép trượt lần sau
@@ -127,6 +130,8 @@ public class SlideAbility : MonoBehaviour, IPlayerAbility
 
     private void FixedUpdate()
     {
+        if (IsSpawned && !IsOwner) return;
+
         // Di chuyển logic trượt sang FixedUpdate để vật lý ổn định hơn, tránh kẹt khi chui qua khe hẹp
         if (_isAbilityEnabled && _isSliding)
         {

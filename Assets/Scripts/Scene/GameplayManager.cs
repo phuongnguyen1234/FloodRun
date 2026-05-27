@@ -38,6 +38,10 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
     public List<IPlayer> AllPlayers { get; private set; } = new List<IPlayer>();
     public IPlayer LocalPlayer { get; private set; }
 
+    // IGameLoopManager implementation
+    public bool IsHost => true; // SP luôn là host
+    public bool IsMultiplayer => false; // SP không phải MP
+
     private IGameplayUIManager _uiManager;
     private IMapManager _mapManager;
 
@@ -62,14 +66,14 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         // Vì Scene.asmdef chỉ tham chiếu Core, nên nó thấy IGameplayUIManager chứ không thấy class GameplayUIManager
         if (_uiManager == null)
         {
-            _uiManager = FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<IGameplayUIManager>().FirstOrDefault();
+            _uiManager = FindObjectsByType<Component>().OfType<IGameplayUIManager>().FirstOrDefault();
         }
     }
 
     private void OnEnable()
     {
         // Đăng ký lắng nghe sự kiện hoàn thành level
-        GameplayEvents.OnLevelCompleted += OnLevelCompletedHandler;
+        GameplayEvents.OnLevelCompleted += OnLevelCompletedHandler; // Still handles for SP
         GameplayEvents.OnInfiniteAirToggleRequested += ToggleInfiniteAir;
         GameplayEvents.OnInfiniteJumpToggleRequested += ToggleInfiniteJump;
         GameplayEvents.OnTeleportToNextButtonRequested += TeleportToNextButton;
@@ -123,7 +127,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         }
 
         // 1. Tìm lại MapManager mới (vì Map vừa được Instantiate)
-        _mapManager = FindObjectsByType<Component>(FindObjectsSortMode.None).OfType<IMapManager>().FirstOrDefault();
+        _mapManager = FindObjectsByType<Component>().OfType<IMapManager>().FirstOrDefault();
 
         if (_mapManager == null)
         {
@@ -193,8 +197,13 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         if (_uiManager != null)
         {
             _uiManager.UpdatePersonalTime(CurrentLevelTime);
-            _uiManager.UpdateLevelProgress(_levelProgressTime); // Slider sẽ dừng nếu _levelProgressTime không tăng
+            _uiManager.UpdateTimeSlider(_levelProgressTime, _maxLevelTime); 
             UpdateLocalPlayerAirUI();
+
+            // Cập nhật số lượng player còn sống (SP: 1 hoặc 0)
+            int aliveCount = (LocalPlayer != null && !LocalPlayer.IsDead) ? 1 : 0;
+            _uiManager.UpdateAlivePlayerCount(aliveCount, 1);
+            
             UpdateButtonProgressUI(); // Thêm cập nhật số nút
         }
 
@@ -302,14 +311,9 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
 
     private IEnumerator RestartLevelRoutine()
     {
-        // Phát nhạc Loading khi Restart
-        if (BackgroundMusicManager.Instance != null && _loadingMusic != null)
-        {
-            var source = BackgroundMusicManager.Instance.GetAudioSource();
-            source.clip = _loadingMusic;
-            source.loop = true;
-            source.Play();
-        }
+        // Phát nhạc Loading khi Restart với fade nhanh
+        if (BackgroundMusicManager.Instance != null)
+            BackgroundMusicManager.Instance.FadeTo(_loadingMusic, 0.25f);
 
         // 1. Hiển thị Loading UI ngay tại scene hiện tại trước khi reload
         if (_uiManager != null && LevelManager.SelectedMap != null)
@@ -338,16 +342,11 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
     private IEnumerator BackToMainMenuRoutine()
     {
         // Phát nhạc Loading khi quay về Home
-        if (BackgroundMusicManager.Instance != null && _loadingMusic != null)
-        {
-            var source = BackgroundMusicManager.Instance.GetAudioSource();
-            source.clip = _loadingMusic;
-            source.loop = true;
-            source.Play();
-        }
+        if (BackgroundMusicManager.Instance != null)
+            BackgroundMusicManager.Instance.FadeTo(_loadingMusic, 0.25f);
         
         // 1. Hiển thị Loading Screen của Gameplay HUD trước khi thoát
-        _uiManager?.ShowBackToHomeLoadingScreen();
+        _uiManager?.ShowBackToMainMenuLoadingScreen();
 
         Time.timeScale = 1f; // Reset thời gian để quá trình load không bị đứng (nếu đang pause)
         LevelManager.ReturnToMapSelection = true;
@@ -447,19 +446,8 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         // QUẢN LÝ NHẠC: Chuyển từ nhạc Loading sang nhạc Map khi game bắt đầu
         if (BackgroundMusicManager.Instance != null)
         {
-            AudioSource source = BackgroundMusicManager.Instance.GetAudioSource();
             AudioClip mapMusic = _mapManager?.GetMapMusic();
-
-            if (mapMusic != null)
-            {
-                source.clip = mapMusic;
-                source.loop = true;
-                source.Play();
-            }
-            else
-            {
-                source.Stop(); // Dừng nhạc Loading nếu map không có nhạc riêng
-            }
+            BackgroundMusicManager.Instance.FadeTo(mapMusic, 0.5f);
         }
 
         // Báo cho MapManager biết để kích hoạt nhạc, nước, event
@@ -568,11 +556,14 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         }
     }
 
-    private void OnLevelCompletedHandler(MonoBehaviour triggerComponent)
+    private void OnLevelCompletedHandler(IPlayer playerWhoCompleted)
     {
         if (!IsGameActive) return;
         IsGameActive = false;
         Time.timeScale = 1f; // Tránh treo game ở màn hình Victory
+
+        // Hiển thị lá cờ hoàn thành cá nhân giống MP
+        _uiManager?.ShowPlayerFinishFlag(true);
 
         foreach (var p in AllPlayers)
         {

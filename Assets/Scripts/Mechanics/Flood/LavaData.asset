@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Flood::FloodTypeData
   Type: 1
   FloodSprite: {fileID: -4544338722142618783, guid: f99b3a708926fd34b855386adfa90f2b, type: 3}
-  SplashSound: {fileID: 8300000, guid: 0e45ae38abf893f48988fdfcc18953aa, type: 3}
+  SplashSound: {fileID: 8300000, guid: b60637666596b494194984a4bae48c5a, type: 3}
   AirDrainRate: 75
   FloodColor: {r: 1, g: 0.44705883, b: 0, a: 1}
   NoSwim: 0

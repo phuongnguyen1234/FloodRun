@@ -202,7 +202,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 2094852713
-  m_SortingLayer: 9
+  m_SortingLayer: 10
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: ae05a1ffc3e378f4888a119297d9119b, type: 3}
@@ -293,7 +293,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 2094852713
-  m_SortingLayer: 9
+  m_SortingLayer: 10
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: -7860807266885339288, guid: 52e1416de1badac41b32bb14f9124739, type: 3}
@@ -384,7 +384,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 2094852713
-  m_SortingLayer: 9
+  m_SortingLayer: 10
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: 3857121e7231e5f4e9183238567763ca, type: 3}
@@ -500,6 +500,7 @@ GameObject:
   - component: {fileID: 552015387157976230}
   - component: {fileID: 6548555594691629820}
   - component: {fileID: 6026643054628617691}
+  - component: {fileID: -556533146360553225}
   m_Layer: 9
   m_Name: Button
   m_TagString: Untagged
@@ -694,11 +695,11 @@ MonoBehaviour:
     m_Bits: 128
   _explosionEffectPrefab: {fileID: 725748389856807714, guid: 4bda94453d2ca7444a0fff05b2d425f5, type: 3}
   _warningAreaObject: {fileID: 5831609452510143919}
-  _activationSound: {fileID: 8300000, guid: dc038e72aea8fcc4296490829b5fd6b9, type: 3}
-  _warningSound: {fileID: 8300000, guid: 97b1f39549f313649877c6503107f9f6, type: 3}
-  _timeUpSound: {fileID: 8300000, guid: bbd6d92766a0034458ea85fa219c0d64, type: 3}
+  _activationSound: {fileID: 8300000, guid: baf3e073f09fd2349bda4f9444398beb, type: 3}
+  _warningSound: {fileID: 8300000, guid: 90efbf31e5e00b0419da6e9375f452da, type: 3}
+  _timeUpSound: {fileID: 8300000, guid: f24b8739580a43f4ba5eeff62c552471, type: 3}
   _timeUpLeadTime: 0.5
-  _explosionSound: {fileID: 8300000, guid: 53d7cbf47562d3d4f9a6d66f50b00e4a, type: 3}
+  _explosionSound: {fileID: 8300000, guid: 586f4cc5a9d4fdb45970ca2c996d0847, type: 3}
   OnButtonActivated:
     m_PersistentCalls:
       m_Calls: []
@@ -706,6 +707,31 @@ MonoBehaviour:
   references:
     version: 2
     RefIds: []
+--- !u!114 &-556533146360553225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6986104789163843340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 1241062202
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1 &8547405357533451755
 GameObject:
   m_ObjectHideFlags: 0
