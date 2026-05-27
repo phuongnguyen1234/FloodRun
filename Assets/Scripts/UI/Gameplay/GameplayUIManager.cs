@@ -169,12 +169,14 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
     {
         if (_playerFinishFlag != null) _playerFinishFlag.SetActive(show);
 
-        // Khi cờ hoàn thành hiện lên, ẩn số lượng người chơi
-        if (_playerCountText != null) _playerCountText.gameObject.SetActive(!show);
-        if (_playerCountIcon != null) _playerCountIcon.gameObject.SetActive(!show);
+        // Khi cờ hoàn thành hiện lên, xóa text số lượng người chơi (giữ icon)
+        if (_playerCountText != null && show)
+        {
+            _playerCountText.text = "";
+        }
 
         // Đảm bảo trạng thái ban đầu khi cờ ẩn
-        if (!show && _prevAliveCount != -1) // Chỉ hiện lại nếu đã có giá trị trước đó
+        if (!show && _playerCountText != null && _prevAliveCount != -1)
             UpdateAlivePlayerCount(_prevAliveCount, 1); // Cập nhật lại để hiện số đúng
     }
 
@@ -287,6 +289,10 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
     public void UpdateAlivePlayerCount(int current, int total)
     {
         if (_playerCountText == null) return;
+
+        // Nếu đang hiển thị cờ hoàn thành cá nhân, không cập nhật text số người chơi
+        // vì icon lá cờ đang đè lên vị trí này
+        if (_playerFinishFlag != null && _playerFinishFlag.activeSelf) return;
 
         if (current != _prevAliveCount && _prevAliveCount != -1)
         {

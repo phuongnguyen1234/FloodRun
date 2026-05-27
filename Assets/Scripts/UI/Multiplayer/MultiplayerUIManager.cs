@@ -86,7 +86,6 @@ namespace UI.Multiplayer
         [SerializeField] private GameObject _joiningRoomLoadingPanel;
         [SerializeField] private GameObject _backToMainMenuLoadingPanel;
 
-        [SerializeField] private NotificationModalUI _notificationModalPrefab; // Prefab cho NotificationModal
         [Header("Map Loading Details")]
         [SerializeField] private Image _loadingPreviewImage;
         [Tooltip("Định dạng: <Tên map> [<Tier>] - <Tác giả>")]
@@ -169,8 +168,8 @@ namespace UI.Multiplayer
         /// </summary>
         public void ShowNotificationModal(string message, Action onClose = null)
         {
-            if (_notificationInstance == null && _notificationModalPrefab != null)
-                _notificationInstance = Instantiate(_notificationModalPrefab, transform);
+            if (_notificationInstance == null && _notificationPrefab != null)
+                _notificationInstance = Instantiate(_notificationPrefab, transform);
             if (_notificationInstance != null) _notificationInstance.ShowMessage(message, onClose);
         }
 
@@ -203,9 +202,15 @@ namespace UI.Multiplayer
         {
             if (_playerFinishFlag != null) _playerFinishFlag.SetActive(show);
 
-            // Khi cờ hoàn thành cá nhân hiện lên, ẩn phần đếm số lượng player để tránh che khuất
-            if (_playerCountText != null) _playerCountText.gameObject.SetActive(!show);
-            if (_playerCountIcon != null) _playerCountIcon.gameObject.SetActive(!show);
+            // Khi cờ hoàn thành cá nhân hiện lên, xóa text số lượng player để nhường chỗ cho icon cờ (giữ icon player)
+            if (_playerCountText != null && show)
+            {
+                _playerCountText.text = "";
+            }
+
+            // Đảm bảo hiện lại số lượng người chơi chính xác khi cờ ẩn đi (ví dụ khi hồi sinh)
+            if (!show && _playerCountText != null && _prevAliveCount != -1)
+                UpdateAlivePlayerCount(_prevAliveCount, 0); 
         }
 
         public void UpdateAirUI(float currentAir, float bonusAir, float bonusMax, float rate)
@@ -414,6 +419,10 @@ namespace UI.Multiplayer
         public void UpdateAlivePlayerCount(int current, int total)
         {
             if (_playerCountText == null) return;
+
+            // Nếu đang hiển thị cờ hoàn thành, không cập nhật text số người còn sống
+            // để tránh việc con số xuất hiện đè lên icon lá cờ
+            if (_playerFinishFlag != null && _playerFinishFlag.activeSelf) return;
 
             // Hiệu ứng Pulse đỏ khi số lượng thay đổi (người chết hoặc thoát)
             if (current != _prevAliveCount && _prevAliveCount != -1)

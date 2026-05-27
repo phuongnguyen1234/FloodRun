@@ -43,9 +43,19 @@ namespace UI
 
             // Lắng nghe sự kiện shutdown để bật lại nút nếu host thất bại
             if (NetworkManager.Singleton != null) {
-                NetworkManager.Singleton.OnClientDisconnectCallback += (id) => SetInteractions(true);
+                NetworkManager.Singleton.OnClientDisconnectCallback += OnDisconnectResetUI;
             }
         }
+
+        private void OnDestroy()
+        {
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.OnClientDisconnectCallback -= OnDisconnectResetUI;
+            }
+        }
+
+        private void OnDisconnectResetUI(ulong id) => SetInteractions(true);
 
         private void OnPasscodeToggleChanged(bool isOn)
         {

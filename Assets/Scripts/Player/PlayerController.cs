@@ -111,11 +111,23 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         _abilities = GetComponents<IPlayerAbility>();
     }
 
+    private void Start()
+    {
+        // Nếu không phải object mạng (Singleplayer), ẩn nametag ngay lập tức
+        if (!IsSpawned && _nameTagText != null)
+        {
+            _nameTagText.gameObject.SetActive(false);
+        }
+    }
+
     public override void OnNetworkSpawn()
     {
          // Chỉ chạy logic khởi tạo khi object được sinh ra trên mạng
         if (IsOwner)
         {
+            // Ẩn nametag của bản thân trong Multiplayer
+            if (_nameTagText != null) _nameTagText.gameObject.SetActive(false);
+
             // Gán tên từ Profile cục bộ lên NetworkVariable để đồng bộ cho người khác
             string myName = DataManager.Instance != null ? DataManager.Instance.Profile.PlayerName : "Player";
             NetworkPlayerName.Value = myName;
