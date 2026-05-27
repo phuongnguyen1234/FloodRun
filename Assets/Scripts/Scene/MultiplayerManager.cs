@@ -70,6 +70,13 @@ using System.Linq; // For FindObjectsByType with LINQ
             if (Instance == null) Instance = this;
             else Destroy(gameObject);
 
+            // Ensure there's a MultiplayerDisconnectHandler in the scene to handle client-side disconnect UI
+            if (FindObjectOfType<MultiplayerDisconnectHandler>() == null)
+            {
+                var go = new GameObject("MultiplayerDisconnectHandler");
+                go.AddComponent<Core.MultiplayerDisconnectHandler>();
+            }
+
             // Khởi tạo NetworkList với quyền mặc định
             PlayerDataList = new NetworkList<PlayerNetworkData>(
                 new List<PlayerNetworkData>(), 

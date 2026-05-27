@@ -27,11 +27,9 @@ namespace UI
         private Coroutine _autoRefreshCoroutine;
         private Dictionary<string, RoomItemUI> _roomItemMap = new Dictionary<string, RoomItemUI>();
 
-        private void Start()
+        private void OnEnable()
         {
             LANDiscovery.Instance.StartListening();
-
-            // Đăng ký sự kiện cập nhật từ LANDiscovery để refresh ngay lập tức
             LANDiscovery.Instance.OnRoomsUpdated += RefreshRoomList;
 
             // Cấu hình InputField cho Room ID (chỉ cho phép nhập số và tối đa 6 ký tự giống CreateRoom)
@@ -52,7 +50,6 @@ namespace UI
             if (_manualJoinButton != null)
                 _manualJoinButton.onClick.AddListener(JoinRoom);
 
-            // Đăng ký sự kiện để biết khi nào kết nối thất bại để hiện lại nút
             if (NetworkManager.Singleton != null)
             {
                 NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
