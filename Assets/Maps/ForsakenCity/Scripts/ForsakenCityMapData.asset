@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 617946ca0553ff345b7c386184b3a557, type: 3}
+  m_Name: ForsakenCityMapData
+  m_EditorClassIdentifier: Core::Core.MapData
+  Name: Forsaken City
+  Author: NTDzVEKNY
+  Description: '
+
+
+'
+  Difficulty: 5.2
+  MapDuration: 110
+  ButtonNumber: 4
+  MapPreviewImage: {fileID: -7956361835015383230, guid: f259ac4a88b41f545a4a541582f99797, type: 3}
+  MapPrefab: {fileID: 5330293211370870075, guid: 508ecfc428ddbaf46a49604f040a4fbf, type: 3}
+  BackgroundMusic: {fileID: 8300000, guid: c47f245887d8ded4486de545ebd59bb2, type: 3}
+  EnableDevTools: 1
