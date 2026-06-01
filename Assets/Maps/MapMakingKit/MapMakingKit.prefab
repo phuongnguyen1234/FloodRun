@@ -11542,6 +11542,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5475723180215508370}
+  - component: {fileID: -6023091574213199812}
   - component: {fileID: 2371245202065034874}
   m_Layer: 0
   m_Name: MapMakingKit
@@ -11570,6 +11571,31 @@ Transform:
   - {fileID: 4275373605160291490}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &-6023091574213199812
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1637740676321180219}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 3893828674
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &2371245202065034874
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11582,6 +11608,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5cbc733e8daa7374a8da4d1895e61ec7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Map::MapManager
+  ShowTopMostFoldoutHeaderGroup: 1
   _mapData: {fileID: 11400000, guid: 67ed5aec827d9fb4091a6744fe6fc1db, type: 2}
   _playerSpawn: {fileID: 7399147346020674260}
   _floodManagerObjects:
@@ -11880,6 +11907,7 @@ MonoBehaviour:
   _cameraTransform: {fileID: 0}
   _parallaxMultiplierX: 0.85
   _infiniteHorizontal: 1
+  _teleportThreshold: 50
 --- !u!1 &3321705389181527134
 GameObject:
   m_ObjectHideFlags: 0
@@ -14723,6 +14751,7 @@ MonoBehaviour:
   _cameraTransform: {fileID: 0}
   _parallaxMultiplierX: 0.01
   _infiniteHorizontal: 1
+  _teleportThreshold: 50
 --- !u!1 &5966606681765323931
 GameObject:
   m_ObjectHideFlags: 0
@@ -15269,6 +15298,7 @@ MonoBehaviour:
   _cameraTransform: {fileID: 0}
   _parallaxMultiplierX: 0.55
   _infiniteHorizontal: 1
+  _teleportThreshold: 50
 --- !u!1 &6516516528378710455
 GameObject:
   m_ObjectHideFlags: 0
@@ -15376,6 +15406,7 @@ MonoBehaviour:
   _cameraTransform: {fileID: 0}
   _parallaxMultiplierX: 0.3
   _infiniteHorizontal: 1
+  _teleportThreshold: 50
 --- !u!1 &6721341677526237874
 GameObject:
   m_ObjectHideFlags: 0
@@ -17299,6 +17330,7 @@ MonoBehaviour:
   _cameraTransform: {fileID: 0}
   _parallaxMultiplierX: 0.95
   _infiniteHorizontal: 1
+  _teleportThreshold: 50
 --- !u!1 &9091105078960104722
 GameObject:
   m_ObjectHideFlags: 0
@@ -20198,7 +20230,7 @@ PrefabInstance:
       objectReference: {fileID: -4544338722142618783, guid: f99b3a708926fd34b855386adfa90f2b, type: 3}
     - target: {fileID: 3586424971873970939, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_Color.a
-      value: 1
+      value: 0.75686276
       objectReference: {fileID: 0}
     - target: {fileID: 3586424971873970939, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_Color.g
@@ -20212,6 +20244,10 @@ PrefabInstance:
       propertyPath: _floodProfile
       value: 
       objectReference: {fileID: 11400000, guid: 6ffcc85ecc7a5cf4883e788d9eb1a12b, type: 2}
+    - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: _stages.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4210039763436084017, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_LocalPosition.x
       value: -12
@@ -20513,8 +20549,16 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: _stages.Array.data[0].TargetLocalPosition.y
+      value: -48
+      objectReference: {fileID: 0}
+    - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: _stages.Array.data[0].TargetWorldPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: _stages.Array.data[1].TargetLocalPosition.y
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: _stages.Array.data[1].TargetWorldPosition.y
@@ -20526,7 +20570,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4210039763436084017, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -48
+      value: -51
       objectReference: {fileID: 0}
     - target: {fileID: 4210039763436084017, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_LocalPosition.z

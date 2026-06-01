@@ -12,7 +12,7 @@ public class MapAction_UnityEvent : MapAction
     [Tooltip("Sử dụng danh sách này để kéo các Component/Hàm bạn muốn thực thi.")]
     public UnityEvent Event;
 
-    public override void Execute(IMapManager manager)
+    public override void Execute(IMapManager manager, float elapsedTime = 0f)
     {
         if (Event != null)
         {

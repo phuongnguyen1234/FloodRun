@@ -6,6 +6,7 @@ using Core;
 using System.Collections.Generic;
 using Core.Events;
 using System.Linq;
+using Unity.Netcode;
 
 /// <summary>
 /// ButtonController là script chính để điều khiển hành vi của nút bấm trong game.
@@ -76,6 +77,8 @@ public class ButtonController : MonoBehaviour, IInteractable, IButtonController
     private Color _colorRed;
     private Color _colorDark; // Màu xám đậm cho trạng thái Activated
 
+    private IMapManager _cachedMapManager;
+
     // Thực thi interface IInteractable
     public bool CanInteract => _currentState == ButtonState.Normal;
 
@@ -93,14 +96,17 @@ public class ButtonController : MonoBehaviour, IInteractable, IButtonController
 
         if (OnButtonActivated == null)
             OnButtonActivated = new UnityEvent();
-
-        // Thiết lập trạng thái ban đầu
-        SetState(_initialState);
         
         if (_warningAreaObject != null)
         {
             _warningAreaObject.SetActive(false);
         }
+    }
+
+    private void Start()
+    {
+        // Thử cache sớm, nếu null cũng không sao, hàm GetMapManager sẽ lo liệu sau
+        _cachedMapManager = GetMapManager();
     }
 
     private void OnValidate()
@@ -215,6 +221,21 @@ public class ButtonController : MonoBehaviour, IInteractable, IButtonController
     }
 
     /// <summary>
+    /// Tìm kiếm MapManager thông qua Interface để tránh phụ thuộc trực tiếp vào class MapManager.
+    /// Caching lại để tối ưu hiệu suất cho các lần gọi sau.
+    /// </summary>
+    private IMapManager GetMapManager()
+    {
+        if (_cachedMapManager == null)
+        {
+            _cachedMapManager = FindObjectsByType<MonoBehaviour>()
+                .OfType<IMapManager>()
+                .FirstOrDefault();
+        }
+        return _cachedMapManager;
+    }
+
+    /// <summary>
     /// Thực thi từ IInteractable. 
     /// Có thể được gọi từ Trigger hoặc từ một hệ thống Raycast/Input của Player.
     /// </summary>
@@ -222,49 +243,81 @@ public class ButtonController : MonoBehaviour, IInteractable, IButtonController
     {
         if (!CanInteract) return;
 
-        // 1. Emit Event ra bên ngoài NGAY LẬP TỨC
-        // Điều này đảm bảo ButtonSequenceManager nhận được tín hiệu và chuyển sang nút tiếp theo 
-        // mà không cần đợi nút này nổ xong.
-        OnButtonActivated.Invoke();
-
-        // 2. Thực thi danh sách MapActions (nếu có)
-        if (_actions.Count > 0)
-        {
-            var manager = FindObjectsByType<Component>().OfType<IMapManager>().FirstOrDefault();
-            foreach (var action in _actions)
-            {
-                if (action != null) StartCoroutine(action.ExecuteRoutine(manager));
-            }
-        }
-
-        // Cập nhật thống kê và kiểm tra thành tựu
+        // 1. Thống kê và Event (Chỉ chạy 1 lần khi Player thực sự chạm vào)
         DataManager.Instance.Profile.RegisterButtonPress();
         GameplayEvents.TriggerButtonPressed();
 
-        // 2. Xử lý logic nổ hoặc kích hoạt thường
-        if (_isExplosive)
+        // 2. Gửi yêu cầu kích hoạt lên đầu não MapManager
+        IMapManager manager = GetMapManager();
+        if (manager != null)
         {
-            StartCoroutine(ExplosionProcess());
+            // Manager sẽ quyết định khi nào nút này thực sự được "Activate" 
+            // (Ví dụ: Server xác nhận hoặc kiểm tra đúng thứ tự)
+            manager.TriggerCurrentButton();
         }
         else
         {
-            // Logic thường: Chuyển state và phát âm thanh
-            SetState(ButtonState.Activated);
-            if (_audioSource != null && _activationSound != null)
-            {
-                _audioSource.pitch = _activationPitch;
-                // Lấy âm lượng SFX từ SettingsManager
-                float volume = (SettingsManager.Instance != null) ? SettingsManager.Instance.SfxVolume : 1f;
-                _audioSource.PlayOneShot(_activationSound, volume);
-            }
+            // Fallback cho môi trường test/sandbox không có MapManager
+            Activate();
+        }
+    }
+
+    /// <summary>
+    /// Thực thi kích hoạt nút (Visual + Logic). 
+    /// Được gọi bởi ButtonSequenceManager để tránh vòng lặp.
+    /// </summary>
+    public void Activate()
+    {
+        if (!CanInteract) return;
+
+        ButtonState nextState = _isExplosive ? ButtonState.Warning : ButtonState.Activated;
+        
+        // Cập nhật trạng thái và hình ảnh ngay lập tức
+        SetState(nextState); 
+        TriggerActivationLogic(nextState);
+    }
+
+    private void TriggerActivationLogic(ButtonState state)
+    {
+        // Logic này chạy khi nút đã được xác nhận kích hoạt
+        
+        // 1. Thông báo cho ButtonSequenceManager (để mở cửa/nút tiếp theo)
+        OnButtonActivated?.Invoke();
+
+        // 2. Map Actions & Stats
+        if (_actions.Count > 0)
+        {
+            IMapManager manager = GetMapManager();
+            foreach (var action in _actions)
+                if (action != null) StartCoroutine(action.ExecuteRoutine(manager));
+        }
+
+        // Logic cộng Stats đã được chuyển lên hàm Interact() để đảm bảo 
+        // người chơi nào ấn thì người đó nhận, thay vì chỉ Server nhận.
+
+        // 3. Xử lý Audio/Explosion
+        if (state == ButtonState.Warning)
+        {
+            StartCoroutine(ExplosionProcess());
+        }
+        else if (state == ButtonState.Activated && !_isExplosive)
+        {
+            PlayActivationAudio();
+        }
+    }
+
+    private void PlayActivationAudio()
+    {
+        if (_audioSource != null && _activationSound != null)
+        {
+            _audioSource.pitch = _activationPitch;
+            float volume = (SettingsManager.Instance != null) ? SettingsManager.Instance.SfxVolume : 1f;
+            _audioSource.PlayOneShot(_activationSound, volume);
         }
     }
 
     private IEnumerator ExplosionProcess()
     {
-        // Chuyển sang trạng thái cảnh báo (Sprite đỏ, hiện vùng tròn)
-        SetState(ButtonState.Warning);
-
         float volume = (SettingsManager.Instance != null) ? SettingsManager.Instance.SfxVolume : 1f;
 
         // Play Warning Audio (ticking)
@@ -333,19 +386,22 @@ public class ButtonController : MonoBehaviour, IInteractable, IButtonController
             }
         }
 
-        // Gây sát thương
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, _explosionRadius, _targetLayer);
-        foreach (var hit in hits)
-        {
-            // Tìm Interface IPlayer để gọi hàm Die (hoặc IPlayerAbility nếu muốn đảm bảo trúng Player)
-            if (hit.TryGetComponent(out IPlayer player))
-            {
-                player.Die(DeathReason.Explosion);
-            }
-        }
+        // Kiểm tra quyền Server hoặc SP
+        bool isServer = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
+        bool isOffline = NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening;
 
-        // Cuối cùng chuyển sang trạng thái đã kích hoạt
-        SetState(ButtonState.Activated);
+        if (isServer || isOffline)
+        {
+            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, _explosionRadius, _targetLayer);
+            foreach (var hit in hits)
+            {
+                if (hit.TryGetComponent(out IPlayer player))
+                {
+                    player.Die(DeathReason.Explosion);
+                }
+            }
+            SetState(ButtonState.Activated);
+        }
     }
 
     private void OnDrawGizmosSelected()

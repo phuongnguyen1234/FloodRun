@@ -380,3 +380,37 @@
 1. **6.6 - Chat spam prevention:** Implement 1 msg/1s rate limit per player
 2. **6.12 - Load testing:** Test max 6 players + stress test concurrent rooms
 3. **UI button states:** Clarify which buttons need cross-client sync (if any)
+
+# Luồng logic gameloop:
+
+- Gồm 3 state chính:
+
+* Intermission: giai đoạn đợi ít nhất 1 player active
+* Voting: 10s bình chọn map
+* Playing: quá trình chơi chính, diễn ra theo round
+
+- Thứ tự gameloop:
+
+* Hiện nút vote
+* Ấn nút mở modal VoteMapModal
+* Sau 10s, lấy ra map để chơi
+* Check lại danh sách player active lần nữa, nếu > 0 thì chuyển sang bước tiếp theo, không thì quay về intermission
+* Hiện loading map panel cho active player
+* Xóa map round trước nếu có
+* Load map
+* Teleport active player
+* SetInvincible(true) cho active player
+* Khóa input active player
+* Ổn định camera
+* Gán camera cho background map
+* Khởi tạo danh sách player
+* Ẩn loading map panel
+* Đếm ngược 3s
+* Bắt đầu round
+* Nếu player win round/chet/thoát phòng/reset, cập nhật danh sách và check lại điều kiện kết thúc round
+* Kết thúc round nếu hết thời gian max của map/tất cả player hoàn thành công việc (tức là win map hoặc thất bại)
+* Tính toán độ khó tiếp theo
+* Quay về vote map
+
+- Nút Vote map và modal vote là toàn cục, không phụ thuộc HUD
+- LobbyHUD và GameplayHUD phụ thuộc trạng thái IsInLobby của player

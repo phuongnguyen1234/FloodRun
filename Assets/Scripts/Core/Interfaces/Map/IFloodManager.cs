@@ -5,6 +5,7 @@ namespace Core.Interfaces
     public interface IFloodManager
     {
         void StartFlood();
+        void SyncToMapTime();
         void ChangeFloodType(BaseFloodTypeData newType);
         void StopFlood();
         void PauseFlood(float duration);

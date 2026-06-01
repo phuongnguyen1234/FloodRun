@@ -5920,7 +5920,7 @@ PrefabInstance:
     - target: {fileID: 4698356404770415949, guid: 9e551dd716a4fde4abf5d86be5370ea4, type: 3}
       propertyPath: _unlockedSound
       value: 
-      objectReference: {fileID: 8300000, guid: b255dbd0797e2c2489fc726502ac92de, type: 3}
+      objectReference: {fileID: 8300000, guid: 681d4280725608244840e95f5ca3abf4, type: 3}
     - target: {fileID: 4698356404770415949, guid: 9e551dd716a4fde4abf5d86be5370ea4, type: 3}
       propertyPath: _displayDuration
       value: 3
