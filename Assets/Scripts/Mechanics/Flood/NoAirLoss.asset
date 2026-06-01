@@ -16,10 +16,10 @@ MonoBehaviour:
   FloodSprite: {fileID: -4544338722142618783, guid: f99b3a708926fd34b855386adfa90f2b, type: 3}
   SplashSound: {fileID: 8300000, guid: 6a6d86cf5e60948499f121af78d64ca1, type: 3}
   AirDrainRate: 0
-  FloodColor: {r: 1, g: 1, b: 1, a: 1}
+  FloodColor: {r: 1, g: 1, b: 1, a: 0.75686276}
   NoSwim: 0
   ApplyDepthMultiplier: 0
   DepthMultiplierFactor: 0.5
   FadeAlphaOnSwim: 1
-  TargetSwimAlpha: 0.5
+  TargetSwimAlpha: 0.4
   AlphaTransitionSpeed: 1.5

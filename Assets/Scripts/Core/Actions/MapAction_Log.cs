@@ -8,7 +8,7 @@ using Core.Interfaces;
 public class MapAction_Log : MapAction
 {
     public string Message;
-    public override void Execute(IMapManager manager)
+    public override void Execute(IMapManager manager, float elapsedTime = 0f)
     {
         Debug.Log($"<color=yellow>[Timeline]</color> {Message}");
     }

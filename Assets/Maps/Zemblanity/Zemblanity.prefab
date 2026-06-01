@@ -3072,6 +3072,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5475723180215508370}
+  - component: {fileID: -4206232639876357834}
   - component: {fileID: 2371245202065034874}
   m_Layer: 0
   m_Name: Zemblanity
@@ -3103,6 +3104,31 @@ Transform:
   - {fileID: 1279896438692294051}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &-4206232639876357834
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1637740676321180219}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 3764832032
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &2371245202065034874
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3115,6 +3141,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5cbc733e8daa7374a8da4d1895e61ec7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Map::MapManager
+  ShowTopMostFoldoutHeaderGroup: 1
   _mapData: {fileID: 11400000, guid: 109572de057195748b4d1274698735ad, type: 2}
   _playerSpawn: {fileID: 7399147346020674260}
   _floodManagerObjects:
@@ -8890,6 +8917,7 @@ MonoBehaviour:
   _cameraTransform: {fileID: 0}
   _parallaxMultiplierX: 0.95
   _infiniteHorizontal: 1
+  _teleportThreshold: 50
 --- !u!1 &2759461736695362918
 GameObject:
   m_ObjectHideFlags: 0
@@ -11085,6 +11113,7 @@ MonoBehaviour:
   _cameraTransform: {fileID: 0}
   _parallaxMultiplierX: 0.95
   _infiniteHorizontal: 1
+  _teleportThreshold: 50
 --- !u!1 &4122105164371900151
 GameObject:
   m_ObjectHideFlags: 0
@@ -19455,6 +19484,7 @@ MonoBehaviour:
   _cameraTransform: {fileID: 0}
   _parallaxMultiplierX: 0.95
   _infiniteHorizontal: 1
+  _teleportThreshold: 50
 --- !u!1 &8950730480460710226
 GameObject:
   m_ObjectHideFlags: 0

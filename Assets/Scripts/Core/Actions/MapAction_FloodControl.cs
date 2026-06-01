@@ -21,7 +21,7 @@ public class MapAction_FloodControl : MapAction
     [Tooltip("Dùng cho lệnh 'AdjustPosition'")]
     public float offset;
 
-    public override void Execute(IMapManager manager)
+    public override void Execute(IMapManager manager, float elapsedTime = 0f)
     {
         if (TargetFloodObject == null)
         {
@@ -45,7 +45,11 @@ public class MapAction_FloodControl : MapAction
                 floodManager.StopFlood();
                 break;
             case CommandType.Pause:
-                if (duration > 0) floodManager.PauseFlood(duration);
+                // CẢI TIẾN: Tính toán lại thời gian chờ dựa trên elapsedTime (dành cho người join muộn)
+                float actualDuration = duration - elapsedTime;
+                if (actualDuration > 0) {
+                    floodManager.PauseFlood(actualDuration);
+                }
                 break;
             case CommandType.AdjustPosition:
                 floodManager.AdjustFloodPosition(offset);

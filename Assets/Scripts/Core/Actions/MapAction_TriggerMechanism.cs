@@ -6,7 +6,7 @@ public class MapAction_TriggerMechanism : MapAction
 {
     public IInteractable TargetMechanism;
 
-    public override void Execute(IMapManager manager)
+    public override void Execute(IMapManager manager, float elapsedTime = 0f)
     {
         if (TargetMechanism != null)
         {

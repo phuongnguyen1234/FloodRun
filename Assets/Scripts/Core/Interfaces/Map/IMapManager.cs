@@ -7,6 +7,7 @@ namespace Core.Interfaces
     public interface IMapManager
     {
         MapData GetMapData();
+        double GetMapStartTime();
         float GetMaxMapTime();
         Vector3 GetPlayerSpawnPosition();
         Vector3 GetPlayerSpawnCenter();
@@ -45,6 +46,11 @@ namespace Core.Interfaces
         List<T> GetMapObjectsByID<T>(string id) where T : class;
 
         float GetKillYThreshold();
+
+        void PrepareMapBackgrounds();
+
+        bool IsMapMechanicsStarted();
+
     }
 
     public interface IMapCommandHandler

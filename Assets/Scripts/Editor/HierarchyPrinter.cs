@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using System.Text;
-
+using Mechanics;
 public class HierarchyPrinter
 {
     // Thêm menu item vào chuột phải Hierarchy hoặc menu GameObject trên thanh công cụ

@@ -284,10 +284,22 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         if (target != null)
         {
             LocalPlayer.Teleport(target.position);
+            CameraHelper.WarpToTarget(_vcam, LocalPlayer as MonoBehaviour);
         }
         else Debug.LogWarning("[DevTool] Cannot teleport: No active button found or sequence complete.");
     }
-
+/// <summary>
+    /// Dịch chuyển camera tức thời đến vị trí của Local Player.
+    /// </summary>
+    private void WarpCamera()
+    {
+        if (_vcam != null && LocalPlayer is MonoBehaviour playerMono)
+        {
+            Vector3 targetPos = playerMono.transform.position;
+            targetPos.z = _vcam.transform.position.z; // Giữ nguyên độ sâu Z của camera
+            _vcam.ForceCameraPosition(targetPos, _vcam.transform.rotation);
+        }
+    }
     public void SetPaused(bool paused)
     {
         // Chỉ cho phép pause khi đã vào màn chơi (tránh pause lúc đang loading)
@@ -402,6 +414,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         }
 
         LocalPlayer.Teleport(worldPos);
+        CameraHelper.WarpToTarget(_vcam, LocalPlayer as MonoBehaviour);
     }
 
     private IEnumerator GameStartSequence()
@@ -411,6 +424,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
 
         // Đợi thêm 1 frame để đảm bảo hệ thống vật lý và camera đã ổn định
         yield return new WaitForEndOfFrame();
+        CameraHelper.WarpToTarget(_vcam, LocalPlayer as MonoBehaviour);
 
         if (_uiManager != null)
         {
@@ -422,6 +436,10 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         {
             p.DisableAbility();
         }
+
+        // Reset Parallax mốc (0,0,0) cho Map vừa Instantiate
+        // Gọi tại đây để Camera ổn định vị trí trước khi tính Delta Parallax
+        if (_mapManager != null) _mapManager.PrepareMapBackgrounds();
 
         // Bước 3: Đếm ngược
         float timeLeft = _startCountdownTime;

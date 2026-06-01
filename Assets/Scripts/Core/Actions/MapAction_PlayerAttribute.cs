@@ -24,7 +24,7 @@ public class MapAction_PlayerAttribute : MapAction
     [Tooltip("Giá trị số sẽ được sử dụng cho hành động. Không áp dụng cho ResetGravityScale.")]
     public float Value;
 
-    public override void Execute(IMapManager manager)
+    public override void Execute(IMapManager manager, float elapsedTime = 0f)
     {
         // Tìm GameLoopManager thông qua Interface để lấy LocalPlayer
         var gameplay = Object.FindObjectsByType<Component>().OfType<IGameLoopManager>().FirstOrDefault();
