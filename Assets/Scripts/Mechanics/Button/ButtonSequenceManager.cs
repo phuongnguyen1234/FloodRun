@@ -44,8 +44,9 @@ public class ButtonSequenceManager : MonoBehaviour, IButtonSequenceManager
 
     public void TriggerCurrentButton()
     {
+        // CẢI TIẾN: Gọi hàm Activate() thay vì Interact() để tránh tạo vòng lặp vô hạn
         if (_currentIndex >= 0 && _currentIndex < _buttons.Count)
-            _buttons[_currentIndex].Interact();
+            _buttons[_currentIndex].Activate();
     }
 
     private int _currentIndex = 0;

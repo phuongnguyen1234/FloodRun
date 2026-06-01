@@ -19,14 +19,15 @@ public abstract class MapAction
     /// Hàm thực thi logic chính.
     /// </summary>
     /// <param name="manager">Tham chiếu đến MapManager để dùng Coroutine hoặc truy cập global state.</param>
-    public abstract void Execute(IMapManager manager);
+    public abstract void Execute(IMapManager manager, float elapsedTime = 0f);
 
     /// <summary>
     /// Wrapper để hỗ trợ delay tự động.
     /// </summary>
-    public IEnumerator ExecuteRoutine(IMapManager manager)
+    public IEnumerator ExecuteRoutine(IMapManager manager, float catchUpTime = 0f)
     {
-        if (Delay > 0) yield return new WaitForSeconds(Delay);
-        Execute(manager);
+        float actualDelay = Mathf.Max(0, Delay - catchUpTime);
+        if (actualDelay > 0) yield return new WaitForSeconds(actualDelay);
+        Execute(manager, Mathf.Max(0, catchUpTime - Delay));
     }
 }

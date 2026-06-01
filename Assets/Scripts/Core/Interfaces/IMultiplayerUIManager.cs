@@ -65,5 +65,15 @@ namespace Core.Interfaces
         /// <param name="message"></param>
         /// <param name="onClose"></param>
         void ShowNotificationModal(string message, Action onClose);
+
+        /// <summary>
+        /// Mở modal vote map khi host bắt đầu giai đoạn vote.
+        /// </summary>
+        void OpenVotingModal();
+
+        /// <summary>
+        /// Bật/Tắt hiển thị nút mở Modal Vote.
+        /// </summary>
+        void SetVotingButtonVisible(bool visible);
     }
 }

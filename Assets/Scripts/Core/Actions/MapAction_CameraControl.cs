@@ -42,8 +42,12 @@ public class MapAction_CameraControl : MapAction
     [Tooltip("Transform mới mà camera sẽ Follow hoặc LookAt.")]
     public Transform NewTarget;
 
-    public override void Execute(IMapManager manager)
+    public override void Execute(IMapManager manager, float elapsedTime = 0f)
     {
+        // Trong Multiplayer, mỗi người chơi có Camera riêng.
+        // Timeline chạy đồng bộ trên mọi máy, nên hàm này sẽ được gọi trên mọi Client.
+        // Chúng ta không check IsServer ở đây vì muốn ai cũng thấy rung/chuyển cam.
+
         switch (CameraCommand)
         {
             case Command.Shake:

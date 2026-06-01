@@ -59,12 +59,14 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
     public NetworkVariable<bool> NetworkIsDead = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public NetworkVariable<DeathReason> NetworkDeathReason = new(DeathReason.Drowned, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     // Đồng bộ trạng thái AFK và Spectating
-    public NetworkVariable<bool> IsAFK { get; } = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<bool> IsAFK { get; } = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public NetworkVariable<bool> IsSpectating { get; } = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<bool> IsInLobby { get; } = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     private bool _isDeadSingleplayer = false; // Backing field cho Singleplayer
     private bool _isDeathEffectsExecuted = false; // Đảm bảo hiệu ứng nổ chỉ chạy 1 lần
     private bool _isAbilityEnabled = true;
+    private bool _isInputBlocked = false;
     private bool _isInfiniteAir = false;
     private bool _isInfiniteJump = false;
     private bool _isInvincible = false;
@@ -193,6 +195,18 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         }
     }
 
+    public void SetInputBlocked(bool blocked)
+    {
+        _isInputBlocked = blocked;
+        if (blocked)
+        {
+            // Khi khóa input, đưa các giá trị điều khiển về 0 ngay lập tức
+            _currentMoveInput = Vector2.zero;
+            _isTryingToJumpOutOfWater = false;
+            if (_motor != null) _motor.JumpInput = false;
+        }
+    }
+
     #region IPlayerAbility Implementation
     public void EnableAbility()
     {
@@ -278,7 +292,10 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         // Chỉ chặn nếu là Object mạng và không phải chủ sở hữu. Singleplayer (IsSpawned = false) vẫn chạy tiếp.
         if (IsSpawned && !IsOwner) return;
 
-        if (IsDead || !_isAbilityEnabled) return;
+        // CẢI TIẾN: Hệ thống sinh tồn (Air) phải luôn chạy, kể cả khi đang mở Modal hoặc Loading
+        HandleAirSystem();
+
+        if (IsDead || !_isAbilityEnabled || _isInputBlocked) return;
 
         // Giảm cooldown nhảy
         if (_jumpCooldown > 0) _jumpCooldown -= Time.deltaTime;
@@ -336,7 +353,6 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         }
 
         _currentMoveInput = input;
-        HandleAirSystem();
     }
 
     private void HandleNameTagReadability()

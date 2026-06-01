@@ -91,6 +91,34 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2028278140227082763}
     m_Modifications:
+    - target: {fileID: 1186097221252333366, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1186097221252333366, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1186097221252333366, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 8481551250092378157}
+    - target: {fileID: 1186097221252333366, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1186097221252333366, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnConfirmClick
+      objectReference: {fileID: 0}
+    - target: {fileID: 1186097221252333366, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: UI.Multiplayer.VoteMapModal, UI
+      objectReference: {fileID: 0}
+    - target: {fileID: 1186097221252333366, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 2167521379753924601, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -203,6 +231,17 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 7414595613775889992}
   m_SourcePrefab: {fileID: 100100000, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
+--- !u!114 &1104913678392169819 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1186097221252333366, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
+  m_PrefabInstance: {fileID: 2242981737306761837}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6572912384319730568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!224 &6412115642515709729 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5178230505728144716, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
@@ -427,6 +466,9 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 6412115642515709729}
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 9049946006361217378, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8481551250092378157}
     - targetCorrespondingSourceObject: {fileID: 4235813400385173504, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3461845539367572308}
@@ -467,3 +509,37 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 2849524232687119173, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
   m_PrefabInstance: {fileID: 4300496782149955918}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &5060272436166141996 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9049946006361217378, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+  m_PrefabInstance: {fileID: 4300496782149955918}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8481551250092378157
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5060272436166141996}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 125f29661e2850a42a7cee13cd5d933b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UI::UI.Multiplayer.VoteMapModal
+  _headerText: {fileID: 6500301518496925413}
+  _mapGrid: {fileID: 6463472391080419070}
+  _mapSelectionPrefab: {fileID: 2021861469566790606, guid: 3f7317787517b4e49ac8fe5d6c3b2dd2, type: 3}
+  _confirmButton: {fileID: 1104913678392169819}
+  _mapDatabase: {fileID: 11400000, guid: e054ffa83d13d7046aa4e5a9ed6e86f3, type: 2}
+  _palette: {fileID: 11400000, guid: 3cd5c2851e58e1a4793845e05bf1626e, type: 2}
+--- !u!114 &6500301518496925413 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7033455777062008747, guid: 0407e69d818a2804299cc469d6b0bec3, type: 3}
+  m_PrefabInstance: {fileID: 4300496782149955918}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI

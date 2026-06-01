@@ -2,12 +2,15 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Core.Data;
+using Unity.Netcode;
 using Core.Interfaces;
 using System.Linq;
 using UnityEngine.Events;
 using DG.Tweening;
 
-/// <summary>
+namespace Mechanics
+{
+    /// <summary>
 /// FloodController là một MonoBehaviour quản lý quá trình dâng nước trong game, bao gồm:
 /// - Di chuyển flood qua nhiều stage với các thiết lập khác nhau (vị trí, tốc độ, âm thanh, loại flood...)
 /// - Cho phép thay đổi loại flood (Water, Acid, Lava...) trong runtime với hiệu ứng chuyển đổi mượt mà (fade out -> change type -> fade in).
@@ -31,8 +34,8 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
         public bool NoMovement = false;
         
         [Header("Movement")]
-        [Tooltip("Vị trí đích đến trong World Space (dùng empty object để copy tọa độ cho dễ)")]
-        public Vector3 TargetWorldPosition;
+        [Tooltip("Vị trí đích đến trong Local Space (tương đối với object cha)")]
+        public Vector3 TargetLocalPosition;
         [Tooltip("Tốc độ di chuyển đến đích")]
         public float MoveSpeed = 1.0f;
 
@@ -83,7 +86,7 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
     [SerializeField] private bool _autoStart = false; // Mặc định false để MapManager kiểm soát, hoặc dùng event
 
     [Tooltip("Nếu true, Flood sẽ giữ nguyên trục Z (độ sâu) hiện tại khi di chuyển, bất kể TargetWorldPosition có Z là bao nhiêu. Rất hữu ích cho game 2D.")]
-    [SerializeField] private bool _lockZAxis = true;
+    [SerializeField] private bool _lockLocalZAxis = true;
 
     [Header("Type Change Transitions")]
     [Tooltip("Thời gian để transition giữa 2 loại flood (fade out -> change -> fade in).")]
@@ -119,6 +122,7 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
     private bool _isChangingType = false; // Cờ ngăn Update can thiệp khi đang đổi loại
     private Tween _fadeTween; // Lưu lại tween để quản lý
     private int _currentStageIndex = -1; // Theo dõi stage đang thực hiện
+    private Vector3 _initialLocalPosition; // Lưu vị trí gốc để tính toán timeline chuẩn xác
 
     private void Awake()
     {
@@ -126,6 +130,7 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
         _collider = GetComponent<BoxCollider2D>();
         _audioSource = GetComponent<AudioSource>();
         _defaultAlpha = _spriteRenderer.color.a;
+        _initialLocalPosition = transform.localPosition;
 
         // Tìm IGameLoopManager trong Scene (có thể là GameplayManager hoặc MultiplayerManager)
         // Việc này giải quyết vấn đề "không thấy MapManager.cs" giữa các Assembly.
@@ -209,10 +214,20 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
     /// </summary>
     public void StartFlood()
     {
-        if (!_isRunning)
         {
             _isRunning = true;
             BuildAndStartSequence();
+        }
+    }
+
+    /// <summary>
+    /// Hàm bổ sung để MapManager gọi khi cần đồng bộ cho người chơi Join muộn.
+    /// </summary>
+    public void SyncToMapTime()
+    {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        {
+            SyncFloodToNetworkTime();
         }
     }
 
@@ -233,6 +248,27 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
     {
         _floodSequence?.Pause();
         DOVirtual.DelayedCall(duration, () => _floodSequence?.Play());
+    }
+
+    /// <summary>
+    /// Đồng bộ vị trí của Flood dựa trên thời gian thực tế đã trôi qua của trận đấu.
+    /// Rất quan trọng cho Spectators hoặc người chơi Join muộn.
+    /// </summary>
+    private void SyncFloodToNetworkTime()
+    {
+        if (_floodSequence == null) return;
+        
+        // Lấy IMapManager từ cha để biết thời điểm map bắt đầu chạy thực tế
+        IMapManager mapManager = GetComponentInParent<IMapManager>();
+        if (mapManager == null) return;
+
+        double elapsedTime = NetworkManager.Singleton.ServerTime.Time - mapManager.GetMapStartTime();
+        if (elapsedTime > 0.5f) // Chỉ sync (Goto) nếu thực sự tham gia muộn hơn 0.5s để tránh lỗi khởi tạo DOTween
+        {
+            _isRunning = true;
+            // Nhảy đến thời điểm hiện tại và thực thi tất cả các callback/event ở giữa
+            _floodSequence.Goto((float)elapsedTime, true);
+        }
     }
 
     /// <summary>
@@ -258,19 +294,19 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
         // Trường hợp 1: Đang chạy một Stage cụ thể
         if (_isRunning && _currentStageIndex >= 0 && _currentStageIndex < _stages.Count)
         {
-            Vector3 target = _stages[_currentStageIndex].TargetWorldPosition;
+            Vector3 target = _stages[_currentStageIndex].TargetLocalPosition;
             
             // Tính hướng trên 2D để tránh sai số Z làm lệch Vector.normalized
-            Vector2 dir2D = (new Vector2(target.x, target.y) - new Vector2(transform.position.x, transform.position.y)).normalized;
+            Vector2 dir2D = (new Vector2(target.x, target.y) - new Vector2(transform.localPosition.x, transform.localPosition.y)).normalized;
             if (dir2D != Vector2.zero) return new Vector3(dir2D.x, dir2D.y, 0);
         }
         
         // Trường hợp 2: Game chưa bắt đầu hoặc đang trong StartDelay, nhìn vào Stage đầu tiên
         if (_stages.Count > 0)
         {
-            Vector3 target = _stages[0].TargetWorldPosition;
+            Vector3 target = _stages[0].TargetLocalPosition;
             
-            Vector2 dir2D = (new Vector2(target.x, target.y) - new Vector2(transform.position.x, transform.position.y)).normalized;
+            Vector2 dir2D = (new Vector2(target.x, target.y) - new Vector2(transform.localPosition.x, transform.localPosition.y)).normalized;
             if (dir2D != Vector2.zero) return new Vector3(dir2D.x, dir2D.y, 0);
         }
 
@@ -361,6 +397,12 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
     private void BuildAndStartSequence()
     {
         _floodSequence = DOTween.Sequence();
+        
+        // FIX: Luôn bắt đầu tính toán từ vị trí Local mặc định của Prefab
+        // Điều này đảm bảo Timeline là cố định, không đổi dù Transform hiện tại đang ở đâu.
+        Vector3 lastStageTarget = _initialLocalPosition; 
+
+        bool isServer = NetworkManager.Singleton == null || NetworkManager.Singleton.IsServer;
 
         foreach (var stage in _stages)        {
             // 1. Delay
@@ -381,9 +423,14 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
             // 3. Movement
             if (!stage.NoMovement)
             {
-                float duration = stage.InstantMove ? 0 : Vector3.Distance(transform.position, stage.TargetWorldPosition) / Mathf.Max(0.1f, stage.MoveSpeed);
+                Vector3 target = stage.TargetLocalPosition;
+                if (_lockLocalZAxis) target.z = transform.localPosition.z;
+
+                // FIX: Tính duration dựa trên lastStageTarget (Điểm mốc trước đó)
+                // thay vì Vector3.Distance(transform.localPosition, target)
+                float duration = stage.InstantMove ? 0 : Vector3.Distance(lastStageTarget, target) / Mathf.Max(0.1f, stage.MoveSpeed);
                 
-                var moveTween = transform.DOMove(stage.TargetWorldPosition, duration).SetEase(Ease.Linear);
+                var moveTween = transform.DOLocalMove(target, duration).SetEase(Ease.Linear);
                 
                 // Xử lý đổi type giữa chừng (MidMove)
                 if (stage.MidMoveChangeType != null)
@@ -399,6 +446,8 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
                 {
                     _floodSequence.Append(moveTween);
                 }
+
+                lastStageTarget = target;
             }
 
             // 4. Complete Event
@@ -420,16 +469,19 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
         if (_stages == null || _stages.Count == 0) return;
 
         Gizmos.color = Color.cyan;
-        Vector3 currentPos = transform.position;
+        // Bắt đầu vẽ từ vị trí thế giới của object
+        Vector3 currentWorldPos = transform.position;
 
         foreach (var stage in _stages)
         {
-            Vector3 target = stage.TargetWorldPosition;
-            if (_lockZAxis) target.z = currentPos.z; // Visualize đúng theo logic Lock Z
+            // Chuyển đổi tọa độ local của Stage sang tọa độ thế giới để Gizmos vẽ đúng chỗ
+            Vector3 targetWorldPos = transform.parent != null 
+                ? transform.parent.TransformPoint(stage.TargetLocalPosition) 
+                : stage.TargetLocalPosition;
 
-            Gizmos.DrawLine(currentPos, target);
-            Gizmos.DrawWireSphere(target, 0.3f);
-            currentPos = target;
+            Gizmos.DrawLine(currentWorldPos, targetWorldPos);
+            Gizmos.DrawWireSphere(targetWorldPos, 0.3f);
+            currentWorldPos = targetWorldPos;
         }
     }
     
@@ -439,7 +491,7 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
     {
         if (_stages.Count > 0)
         {
-            _stages[_stages.Count - 1].TargetWorldPosition = transform.position;
+            _stages[_stages.Count - 1].TargetLocalPosition = transform.localPosition;
         }
     }
 
@@ -460,4 +512,6 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
         // Công thức: 1 + (Depth * Factor)
         return 1.0f + (depth * DepthMultiplierFactor);
     }
+}
+
 }

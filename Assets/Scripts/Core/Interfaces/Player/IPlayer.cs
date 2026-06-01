@@ -22,6 +22,7 @@ namespace Core.Interfaces
         bool IsDead { get; }
         NetworkVariable<bool> IsAFK { get; } // Trạng thái AFK của người chơi
         NetworkVariable<bool> IsSpectating { get; } // Trạng thái Spectating của người chơi
+        NetworkVariable<bool> IsInLobby { get; } // Vị trí hiện tại của người chơi
 
 
         bool IsZiplining { get; }
@@ -53,5 +54,7 @@ namespace Core.Interfaces
 
         void ToggleAFKStatus();
         void ToggleSpectateStatus();
+
+        void SetInputBlocked(bool isBlocked); // Hàm để khóa/mở khóa input của player, dùng khi mở modal hoặc trong các tình huống đặc biệt khác
     }
 }

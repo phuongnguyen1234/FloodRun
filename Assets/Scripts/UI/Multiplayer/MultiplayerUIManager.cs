@@ -35,6 +35,7 @@ namespace UI.Multiplayer
         [SerializeField] private Sprite _spectateSprite;
         [SerializeField] private Sprite _stopSpectateSprite;
         [SerializeField] private GameObject _spectateControls;
+
         [Space]
         [SerializeField] private Color _playActiveColor = Color.white;
         [SerializeField] private Color _playAfkColor = Color.yellow;
@@ -43,7 +44,7 @@ namespace UI.Multiplayer
 
         [Header("Gameplay HUD (Common with SP)")]
         [SerializeField] private TMP_Text _personalTimeText;
-        [SerializeField] private TMP_Text _maxTimeText;
+        [SerializeField] private TMP_Text _bestRecordTimeText;
         [SerializeField] private TMP_Text _floatNotificationText;
         [Tooltip("Cờ hoàn thành map cho người chơi cục bộ")]
         [SerializeField] private GameObject _playerFinishFlag;
@@ -69,6 +70,8 @@ namespace UI.Multiplayer
 
         [Header("Multiplayer Systems")]
         [SerializeField] private GameObject _votingPanel;
+        [SerializeField] private VoteMapModal _voteMapModal;
+        [SerializeField] private Button _openVoteModalButton;
         [SerializeField] private GameObject _chatPanel;
         [Space]
         [SerializeField] private GameObject _chatLinePrefab;
@@ -98,6 +101,8 @@ namespace UI.Multiplayer
         [SerializeField] private DifficultyPalette _palette;
         [SerializeField] private AudioClip _clickSound;
         [SerializeField] private AudioSource _uiAudioSource;
+        [SerializeField] private Color _timerNormalColor = Color.white;
+        [SerializeField] private Color _timerVoteColor = Color.yellow;
 
         private NotificationModalUI _notificationInstance;
         private ConfirmationModalUI _confirmationInstance;
@@ -130,6 +135,11 @@ namespace UI.Multiplayer
             if (_logicManager != null)
             {
                 if (_roomInfoModal != null) _roomInfoModal.SetManager(_logicManager);
+                if (_voteMapModal != null) 
+                {
+                    _voteMapModal.SetManager(_logicManager);
+                    _voteMapModal.gameObject.SetActive(false);
+                }
                 // Bạn có thể gán cho các modal khác ở đây (ví dụ: ChatModal, VoteModal...)
                 // if (_chatModal != null) _chatModal.SetManager(logicManager);
             }
@@ -146,8 +156,51 @@ namespace UI.Multiplayer
             
             _prevActivatedCount = 0;
             _prevAliveCount = 0;
+
+            if (_openVoteModalButton != null)
+            {
+                _openVoteModalButton.onClick.AddListener(OpenVotingModal);
+            }
         }
 
+        private void Update()
+        {
+            if (_logicManager == null) return;
+
+            // GLOBAL TIMER SLIDER: Cập nhật slider thời gian dựa trên trạng thái game (Global)
+            var state = _logicManager.GetCurrentGameState();
+            if (state == GameState.Voting)
+            {
+                UpdateTimeSlider(_logicManager.NetworkTime.Value, 10f, true);
+            }
+        }
+
+        public void OpenVotingModal()
+        {
+            if (_voteMapModal == null) return;
+            _voteMapModal.gameObject.SetActive(true);
+            _voteMapModal.Setup();
+        }
+
+        public void SetVotingButtonVisible(bool visible)
+        {
+            if (_openVoteModalButton != null)
+                _openVoteModalButton.gameObject.SetActive(visible);
+
+            // FIX: Kích hoạt panel Voting để Slider Global (nếu nằm trong đây) có thể hiển thị và chạy
+            if (_votingPanel != null)
+                _votingPanel.SetActive(visible);
+
+            // Nếu bắt đầu đợt vote mới (visible = true), reset trạng thái vote của local player
+            if (visible && _voteMapModal != null)
+            {
+                _voteMapModal.ResetVoteStatus();
+            }
+
+            // Đảm bảo Modal luôn đóng khi trạng thái Voting thay đổi (bắt đầu hoặc kết thúc)
+            // Người chơi sẽ phải click nút Vote thủ công để mở lại.
+            if (_voteMapModal != null) _voteMapModal.gameObject.SetActive(false);
+        }
 
 
         #region ICommonUIManager Implementation
@@ -185,17 +238,33 @@ namespace UI.Multiplayer
 
         public void SetMaxTime(float time)
         {
-            if (_maxTimeText != null)
-                _maxTimeText.text = $"Target: {FormatTime(time)}";
-            if (_timeSlider != null) _timeSlider.maxValue = time; // Set max value for the slider
+            if (_bestRecordTimeText != null)
+                _bestRecordTimeText.text = $"{FormatTime(time)}";
+            
+            if (_timeSlider != null) 
+            {
+                _timeSlider.maxValue = time;
+                // Lưu ý: value của slider sẽ được cập nhật liên tục trong hàm Update() thông qua NetworkTime
+            }
         }
 
         /// <summary>
-        /// MP không dùng record time, nhưng phải implement vì kế thừa IGameplayHUDUI.
+        /// Hiển thị personal record (best time) giống như singleplayer.
         /// </summary>
         public void SetRecordTime(float time)
         {
-            // MP không hiển thị record time
+            if (_bestRecordTimeText != null)
+            {
+                // Nếu time <= 0 (chưa có record), hiển thị "-"
+                if (time <= 0f)
+                {
+                    _bestRecordTimeText.text = "-";
+                }
+                else
+                {
+                    _bestRecordTimeText.text = FormatTime(time);
+                }
+            }
         }
 
         public void ShowPlayerFinishFlag(bool show)
@@ -276,9 +345,6 @@ namespace UI.Multiplayer
             {
                 StopCoroutine(nameof(PulseButtonRoutine));
                 StartCoroutine(PulseButtonRoutine());
-                
-                // Thông báo floating text cho local player
-                ShowNotification($"Pressed Button {current}", new Color(1f, 1f, 0.7f)); 
             }
             _prevActivatedCount = current;
 
@@ -319,8 +385,11 @@ namespace UI.Multiplayer
                 _timeSlider.maxValue = maxTime;
                 _timeSlider.value = currentTime;
 
-                // Thay đổi màu slider dựa vào phase
-                // (Có thể thêm logic highlight khác nếu cần)
+                if (_timeSlider.fillRect != null)
+                {
+                    var img = _timeSlider.fillRect.GetComponent<Image>();
+                    if (img != null) img.color = isVotePhase ? _timerVoteColor : _timerNormalColor;
+                }
             }
         }
 
@@ -560,23 +629,30 @@ namespace UI.Multiplayer
 
         public void SetHUDMode(bool isGameplay)
         {
-            if (_lobbyHUD != null) _lobbyHUD.SetActive(!isGameplay);
-            if (_gameplayHUD != null) _gameplayHUD.SetActive(isGameplay);
-
-            // Tự động đóng các modal khi vào gameplay
-            if (isGameplay) HideAllModals();
+            // Cập nhật HUD dựa trên trạng thái tham gia thực tế của người chơi
+            UpdateGameplayHUDVisibility();
         }
 
         public void UpdatePlayStatus(bool isAFK)
         {
-            if (_playStatusText != null)
-                _playStatusText.text = isAFK ? "AFK" : "Play";
+            // ACTION ORIENTED: Đang AFK thì hiện nút "Play" để vào game, đang Active thì hiện "Pause" để nghỉ.
+            if (_playStatusText != null) 
+            {
+                _playStatusText.text = isAFK ? "Play" : "Pause";
+            }
 
             if (_playStatusIcon != null)
             {
-                _playStatusIcon.sprite = isAFK ? _pauseSprite : _playSprite;
-                _playStatusIcon.color = isAFK ? _playAfkColor : _playActiveColor;
+                // Nếu đang AFK -> hiện Icon Play (Hành động: Click để Active)
+                _playStatusIcon.sprite = isAFK ? _playSprite : _pauseSprite;
+                _playStatusIcon.color = isAFK ? _playActiveColor : _playAfkColor;
             }
+        }
+
+        public void OnGamePanelStartClick()
+        {
+            PlayClickSound();
+            _logicManager?.RequestStartGame();
         }
 
         public void UpdateSpectateStatus(bool isSpectating)
@@ -663,6 +739,32 @@ namespace UI.Multiplayer
         }
 
         #endregion
+
+        /// <summary>
+        /// Cập nhật trạng thái hiển thị của GameplayHUD dựa trên trạng thái game và trạng thái AFK của người chơi cục bộ.
+        /// </summary>
+        private void UpdateGameplayHUDVisibility()
+        {
+            if (_logicManager == null || _gameplayHUD == null) return;
+
+            GameState currentState = _logicManager.GetCurrentGameState();
+            IPlayer localPlayer = _logicManager.LocalPlayer;
+            if (localPlayer == null) return;
+
+            // Người chơi chỉ thấy GameplayHUD nếu:
+            // - Game đang Playing
+            // - Và quan trọng nhất: HỌ KHÔNG Ở TRONG LOBBY
+            bool isParticipating = currentState == GameState.Playing && !localPlayer.IsInLobby.Value;
+
+            if (_gameplayHUD != null) _gameplayHUD.SetActive(isParticipating);
+            if (_lobbyHUD != null) _lobbyHUD.SetActive(!isParticipating);
+            
+            // Khi ở màn hình Gameplay, luôn ẩn Voting Panel để tránh đè phím
+            if (isParticipating) SetVotingButtonVisible(false);
+
+            // Tự động đóng các modal khi vào gameplay
+            if (isParticipating) HideAllModals();
+        }
     }
     
 }

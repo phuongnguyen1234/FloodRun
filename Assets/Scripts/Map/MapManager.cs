@@ -6,6 +6,8 @@ using Core.Interfaces; // Dùng Interface thay vì class cụ thể
 using UnityEngine.Events; // Thêm namespace để dùng UnityEvent
 using Core;
 using Core.Events;
+using Unity.Netcode;
+using System.Linq;
 
 /// <summary>
 /// Định nghĩa một sự kiện sẽ được kích hoạt tại một thời điểm cụ thể trong màn chơi.
@@ -36,7 +38,7 @@ public class TimedMapEvent
 /// - Cung cấp các phương thức để tương tác với map (TriggerCurrentButton, GetNextButtonTransform, v.v.)
 /// Khi cần sử dụng, truy cập qua giao diện IMapManager (thuộc Core)
 /// </summary>
-public class MapManager : MonoBehaviour, IMapManager
+public class MapManager : NetworkBehaviour, IMapManager
 {
     public static MapManager Instance { get; private set; }
 
@@ -60,8 +62,12 @@ public class MapManager : MonoBehaviour, IMapManager
     // State Variables
     public bool IsExitUnlocked { get; private set; } = false;
 
-    // MapManager giờ chỉ quản lý timeline nội bộ
-    private float _mapLocalTime = 0f; 
+    [Header("Network Sync")]
+    private NetworkVariable<double> _netStartTime = new NetworkVariable<double>(0);
+    private NetworkVariable<bool> _netIsMapActive = new NetworkVariable<bool>(false);
+    private NetworkVariable<int> _netButtonProgress = new NetworkVariable<int>(0);
+    private double _localStartTime; 
+
     private bool _isMapActive = false;
     private bool _timelinesHalted = false;
     private bool _isPaused = false;
@@ -72,11 +78,20 @@ public class MapManager : MonoBehaviour, IMapManager
     // Registry lưu trữ các object theo ID để truy cập nhanh (O(1))
     private Dictionary<string, List<MonoBehaviour>> _objectRegistry = new Dictionary<string, List<MonoBehaviour>>();
 
+     /// <summary>
+    /// Trả về true nếu các cơ chế của map (timeline, flood, v.v.) đã bắt đầu.
+    /// </summary>
+    public bool IsMapMechanicsStarted() => _isMapActive;
+
     private void Awake()
     {
-        // Singleton Pattern đơn giản
         if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        else if (Instance != this) 
+        {
+            // Trong Multiplayer, khi Instantiate Map mới, Map cũ có thể chưa kịp huỷ (Destroy chạy cuối frame)
+            // Việc Destroy Map mới sẽ làm hỏng toàn bộ logic. Ta cần ghi đè Instance!
+            Instance = this;
+        }
 
         // Đảm bảo MapManager luôn dùng đúng dữ liệu đã được chọn từ LevelManager
         if (LevelManager.SelectedMap != null)
@@ -117,20 +132,6 @@ public class MapManager : MonoBehaviour, IMapManager
     {
         if (_mapData == null) return;
 
-        // 1. Kiểm tra số lượng nút bấm
-        // Lưu ý: Cách đếm này phụ thuộc vào việc ButtonSequenceManager quản lý nút như thế nào.
-        // Ở đây ta giả định ButtonSequenceManager quản lý các nút là con của nó hoặc có list.
-        // Nếu bạn dùng interface IButtonSequenceManager, bạn có thể cần cast về class cụ thể hoặc thêm property Count vào Interface.
-        // Đây là ví dụ đếm số lượng object con có component IButtonTrigger trong manager object
-        /*
-        int actualButtonCount = _buttonSequenceManagerObject.GetComponentsInChildren<IButtonTrigger>().Length;
-        if (actualButtonCount != _mapData.ButtonNumber)
-        {
-            Debug.LogWarning($"[Map Data Mismatch] MapData khai báo {_mapData.ButtonNumber} nút, nhưng tìm thấy {actualButtonCount} nút trong scene!");
-        }
-        */
-
-        // 2. Cảnh báo nếu MapData có nhạc nhưng AudioSource không tìm thấy
         if (_mapData.BackgroundMusic != null && BackgroundMusicManager.Instance == null)
         {
             Debug.LogWarning("[Audio Missing] MapData có nhạc nền nhưng không tìm thấy BackgroundMusicManager trong Scene!");
@@ -153,13 +154,47 @@ public class MapManager : MonoBehaviour, IMapManager
         // Việc đó do GameplayManager gọi
     }
 
+    public override void OnNetworkSpawn()
+    {
+        // 1. Lắng nghe trạng thái Map để kích hoạt cho Client
+        _netIsMapActive.OnValueChanged += (oldVal, newVal) => {
+            if (newVal) StartLocalMechanics();
+        };
+
+        if (_netIsMapActive.Value)
+        {
+            StartLocalMechanics();
+        }
+
+        // 2. Đồng bộ tiến độ nút cho Late Joiner
+        if (_netButtonProgress.Value > 0)
+        {
+            SyncButtonProgressToCurrent(_netButtonProgress.Value);
+        }
+
+        // 3. Lắng nghe thay đổi tiến độ từ Server
+        _netButtonProgress.OnValueChanged += (oldVal, newVal) => {
+            if (!IsServer) SyncButtonProgressToCurrent(newVal);
+            if (newVal > oldVal) { // Chỉ khi tiến độ tăng lên
+                var uiManager = FindObjectsByType<MonoBehaviour>().OfType<IMultiplayerUIManager>().FirstOrDefault();
+                uiManager?.ShowNotification($"Pressed Button {newVal}", new Color(1f, 1f, 0.7f));
+            }
+        };
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        _netIsMapActive.OnValueChanged -= (oldVal, newVal) => {};
+        _netButtonProgress.OnValueChanged -= (oldVal, newVal) => {};
+    }
+
     private void Update()
     {
         // Nếu map chưa active hoặc timeline đã bị Halt thì không chạy tiếp
         if (!_isMapActive || _timelinesHalted || _isPaused) return;
 
-        // MapManager chỉ quan tâm đến timeline sự kiện của Map
-        _mapLocalTime += Time.deltaTime;
+        // Nếu là NetworkObject nhưng chưa Spawn (chưa vào trận MP) thì không chạy Update này
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening && !IsSpawned) return;
 
         // Xử lý các sự kiện theo timeline của map
         ProcessTimeline();
@@ -173,28 +208,63 @@ public class MapManager : MonoBehaviour, IMapManager
         _isPaused = paused;
     }
 
+    
+
     /// <summary>
     /// Gọi từ GameplayManager khi đếm ngược xong
     /// </summary>
     public void StartMapMechanics()
     {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        {
+            if (!IsServer) return;
+            _netStartTime.Value = NetworkManager.Singleton.ServerTime.Time;
+            _netIsMapActive.Value = true;
+            
+            // CẢI TIẾN: Host gọi ngay để tránh độ trễ 1 network tick (tránh DOTween tính sai elapsedTime)
+            StartLocalMechanics();
+        }
+        else
+        {
+            _localStartTime = Time.timeAsDouble;
+            StartLocalMechanics();
+        }
+    }
+
+    /// <summary>
+    /// Logic thực thi thực tế (Visual/Flood/Timeline) chạy trên cả SP và MP
+    /// </summary>
+    private void StartLocalMechanics()
+    {
+        if (_isMapActive) return; // Chống chạy 2 lần do OnValueChanged của NetworkVariable
         _isMapActive = true;
-        _mapLocalTime = 0f;
-        
-        // Reset timeline
+
+        // Reset trạng thái sự kiện
         foreach (var timedEvent in _mapTimelineEvents)
         {
             timedEvent.HasTriggered = false;
         }
 
-        // CẢI TIẾN: Chỉ bắt đầu dâng nước nếu Timeline không bị tạm dừng (Halt)
-        // Điều này ngăn việc Flood tự khởi động nếu người chơi đã bấm Halt trong lúc đếm ngược.
+        // KÍCH HOẠT FLOOD: Đưa logic này từ PrepareMapBackgrounds về đây
+        // để đảm bảo nước chỉ dâng SAU khi đếm ngược kết thúc.
         if (!_timelinesHalted)
         {
             foreach (var flood in _floodManagers)
             {
                 flood.StartFlood();
+                
+                // Đồng bộ thời gian cho người vào sau (Multiplayer)
+                if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+                    flood.SyncToMapTime();
             }
+        }
+    }
+
+    public void PrepareMapBackgrounds()
+    {
+        foreach (var p in GetComponentsInChildren<ParallaxEffect>())
+        {
+            p.ResetOrigin();
         }
     }
 
@@ -228,6 +298,16 @@ public class MapManager : MonoBehaviour, IMapManager
     /// Trả về MapData của màn chơi hiện tại.
     /// </summary>
     public MapData GetMapData() => _mapData;
+
+    public double GetMapStartTime()
+    {
+        // Bỏ check IsSpawned vì nếu MapManager nằm trên child object hoặc chưa kịp đăng ký, nó sẽ fallback về localTime gây lỗi siêu to
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        {
+            return _netStartTime.Value;
+        }
+        return _localStartTime;
+    }
 
     /// <summary>
     /// Trả về nhạc nền được cấu hình cho Map này.
@@ -294,7 +374,36 @@ public class MapManager : MonoBehaviour, IMapManager
 
     public void TriggerCurrentButton()
     {
-        _buttonSequenceManager?.TriggerCurrentButton();
+        if (IsSpawned && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        {
+            TriggerButtonServerRpc();
+        }
+        else
+        {
+            // Singleplayer
+            _buttonSequenceManager?.TriggerCurrentButton();
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void TriggerButtonServerRpc()
+    {
+        if (_buttonSequenceManager != null)
+        {
+            _buttonSequenceManager.TriggerCurrentButton();
+            _netButtonProgress.Value = _buttonSequenceManager.CurrentIndex;
+        }
+    }
+
+    private void SyncButtonProgressToCurrent(int targetIndex)
+    {
+        if (_buttonSequenceManager == null) return;
+        
+        // Đồng bộ hóa sequence cục bộ cho đến khi khớp với Server
+        while (_buttonSequenceManager.CurrentIndex < targetIndex)
+        {
+            _buttonSequenceManager.TriggerCurrentButton();
+        }
     }
 
     public void HaltMapTimelines()
@@ -343,33 +452,68 @@ public class MapManager : MonoBehaviour, IMapManager
     }
 
     /// <summary>
-    /// Duyệt qua danh sách các sự kiện trong timeline và kích hoạt chúng nếu đến giờ.
+    /// Kiểm tra các sự kiện đã bị lỡ (dành cho người join muộn)
     /// </summary>
-    private void ProcessTimeline()
+    private void CheckForMissedEvents()
     {
-        foreach (var timedEvent in _mapTimelineEvents)
-        {
-            if (!timedEvent.HasTriggered && _mapLocalTime >= timedEvent.TriggerTime)
-            {
-                Debug.Log($"Map Timeline Event: Kích hoạt '{timedEvent.EventName}' tại {_mapLocalTime:F2}s.");
-                timedEvent.OnTimeReached?.Invoke();
-                
-                // Thực thi danh sách Actions
-                foreach (var action in timedEvent.Actions)
-                {
-                    if (action != null) StartCoroutine(ExecuteDelayedAction(action, this));
-                }
+        if (NetworkManager.Singleton == null) return;
 
+        double currentTime = NetworkManager.Singleton.ServerTime.Time - _netStartTime.Value;
+        
+        // Sắp xếp timeline theo thời gian để kích hoạt đúng thứ tự
+        var sortedEvents = _mapTimelineEvents.OrderBy(e => e.TriggerTime).ToList();
+
+        foreach (var timedEvent in sortedEvents)
+        {
+            // Nếu thời gian đã trôi qua điểm trigger, kích hoạt ngay lập tức (với bù trừ delay)
+            if (!timedEvent.HasTriggered && currentTime >= timedEvent.TriggerTime)
+            {
+                ExecuteEvent(timedEvent, (float)currentTime);
                 timedEvent.HasTriggered = true;
             }
         }
     }
 
-    private IEnumerator ExecuteDelayedAction(MapAction action, IMapManager manager)
+    /// <summary>
+    /// Duyệt qua timeline dựa trên thời gian thực tế của Server.
+    /// </summary>
+    private void ProcessTimeline()
     {
-        if (action == null) yield break;
-        if (action.Delay > 0) yield return new WaitForSeconds(action.Delay);
-        action.Execute(manager);
+        double currentTime;
+        // Bỏ check IsSpawned để đảm bảo luôn dùng ServerTime trong môi trường Multiplayer
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        {
+            currentTime = NetworkManager.Singleton.ServerTime.Time - _netStartTime.Value;
+        }
+        else
+        {
+            currentTime = Time.timeAsDouble - _localStartTime;
+        }
+
+        foreach (var timedEvent in _mapTimelineEvents)
+        {
+            if (!timedEvent.HasTriggered && currentTime >= timedEvent.TriggerTime)
+            {
+                ExecuteEvent(timedEvent, (float)currentTime);
+                timedEvent.HasTriggered = true;
+            }
+        }
+    }
+
+    private void ExecuteEvent(TimedMapEvent timedEvent, float currentTime)
+    {
+        Debug.Log($"Map Timeline Event: Kích hoạt '{timedEvent.EventName}' tại {currentTime:F2}s.");
+        timedEvent.OnTimeReached?.Invoke();
+
+        foreach (var action in timedEvent.Actions)
+        {
+            if (action != null)
+            {
+                // Tính toán lại delay: Nếu join muộn, trừ bớt thời gian đã trôi qua
+                float timeSinceTrigger = currentTime - timedEvent.TriggerTime;
+                StartCoroutine(action.ExecuteRoutine(this, timeSinceTrigger));
+            }
+        }
     }
 
     private void CheckObjectsOutOfBound()
@@ -387,6 +531,9 @@ public class MapManager : MonoBehaviour, IMapManager
                 }
             }
         }
+
+        // Nếu join muộn, kiểm tra ngay các sự kiện đã trôi qua
+        if (IsSpawned && !IsServer) CheckForMissedEvents();
     }
 
     #region Object Registry System

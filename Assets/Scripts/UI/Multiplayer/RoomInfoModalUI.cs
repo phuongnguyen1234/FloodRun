@@ -45,13 +45,13 @@ namespace UI
         {
             SubscribeToManagerEvents(true);
             RefreshUI();
-            _manager?.LocalPlayer?.DisableAbility(); // Khóa input khi hiện modal
+            _manager?.LocalPlayer?.SetInputBlocked(true); // Chỉ khóa phím, giữ nguyên trọng lực
         }
 
         private void OnDisable()
         {
             SubscribeToManagerEvents(false);
-            _manager?.LocalPlayer?.EnableAbility(); // Mở lại input khi đóng modal
+            _manager?.LocalPlayer?.SetInputBlocked(false);
         }
 
         // UI Manager sẽ gọi hàm này ngay khi scene load xong

@@ -20,8 +20,13 @@ public class ParallaxEffect : MonoBehaviour
     [Tooltip("Bật nếu muốn background lặp lại vô tận theo chiều ngang.")]
     [SerializeField] private bool _infiniteHorizontal = true;
 
+    [Tooltip("Nếu camera di chuyển xa hơn mức này trong 1 frame, coi như là Teleport và reset parallax.")]
+    [SerializeField] private float _teleportThreshold = 5f;
+
     private Vector2 _startCameraPosition;
+    private Vector2 _lastCameraPosition;
     private Vector3 _startPosition;
+    private Vector3 _initialLocalPosition;
     private float _textureUnitSizeX;
     private bool _isInitialized = false;
 
@@ -51,25 +56,59 @@ public class ParallaxEffect : MonoBehaviour
             // kích thước của 1 mẫu texture trước khi nó được Tiled.
             _textureUnitSizeX = sprite.rect.width / sprite.pixelsPerUnit;
         }
+
+        _initialLocalPosition = transform.localPosition;
+    }
+
+    /// <summary>
+    /// Reset lại điểm neo của Parallax. Cần gọi khi Camera Teleport đến Map mới.
+    /// </summary>
+    public void ResetOrigin()
+    {
+        if (_cameraTransform == null) return;
+        
+        Vector3 localCameraPos = transform.parent != null 
+            ? transform.parent.InverseTransformPoint(_cameraTransform.position) 
+            : _cameraTransform.position;
+
+        _startCameraPosition = new Vector2(localCameraPos.x, localCameraPos.y);
+        _lastCameraPosition = _startCameraPosition;
+        _startPosition = _initialLocalPosition;
+        _isInitialized = true;
     }
 
     private void LateUpdate()
     {
         if (_cameraTransform == null) return;
 
-        Vector3 currentCameraPos = _cameraTransform.position;
+        // 1. Lấy vị trí World của Camera
+        Vector3 cameraWorldPos = _cameraTransform.position;
+
+        // 2. Chuyển đổi vị trí Camera sang Local Space tương đối với Map (parent của background)
+        Vector3 localCameraPos = transform.parent != null 
+            ? transform.parent.InverseTransformPoint(cameraWorldPos) 
+            : cameraWorldPos;
 
         // Khởi tạo ngay trong frame đầu tiên có camera
         if (!_isInitialized)
         {
-            _startCameraPosition = new Vector2(currentCameraPos.x, currentCameraPos.y);
-            _startPosition = transform.position;
-            _isInitialized = true;
+            ResetOrigin();
         }
 
+        Vector2 currentCamPos2D = new Vector2(localCameraPos.x, localCameraPos.y);
+
+        // CẢI TIẾN: Kiểm tra Teleport dựa trên khoảng cách di chuyển giữa 2 frame (Frame Delta)
+        // Thay vì so sánh với điểm bắt đầu, ta so sánh với frame trước đó.
+        if (Vector2.Distance(currentCamPos2D, _lastCameraPosition) > _teleportThreshold)
+        {
+            ResetOrigin();
+            return; 
+        }
+        _lastCameraPosition = currentCamPos2D;
+
         // Tính toán độ dời của camera so với lúc bắt đầu
-        float deltaX = currentCameraPos.x - _startCameraPosition.x;
-        float deltaY = currentCameraPos.y - _startCameraPosition.y;
+        float deltaX = localCameraPos.x - _startCameraPosition.x;
+        float deltaY = localCameraPos.y - _startCameraPosition.y;
 
         // Vị trí mục tiêu: 
         // X di chuyển chậm hơn camera tùy theo hệ số
@@ -82,12 +121,12 @@ public class ParallaxEffect : MonoBehaviour
         {
             // Tính toán khoảng cách mà Camera đã "vượt qua" texture này
             // (1 - multiplier) chính là tốc độ trôi tương đối của texture trên màn hình
-            float relativeOffset = (currentCameraPos.x * (1 - _parallaxMultiplierX)) % _textureUnitSizeX;
+            float relativeOffset = (localCameraPos.x * (1 - _parallaxMultiplierX)) % _textureUnitSizeX;
             
             // Ép vị trí X của background luôn nằm trong tầm nhìn của Camera dựa trên offset lặp lại
-            targetX = currentCameraPos.x - relativeOffset;
+            targetX = localCameraPos.x - relativeOffset;
         }
 
-        transform.position = new Vector3(targetX, targetY, transform.position.z);
+        transform.localPosition = new Vector3(targetX, targetY, transform.localPosition.z);
     }
 }

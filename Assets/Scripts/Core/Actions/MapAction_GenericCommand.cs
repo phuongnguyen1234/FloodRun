@@ -11,7 +11,7 @@ public class MapAction_GenericCommand : MapAction
     public string TargetID;
     public string Command;
 
-    public override void Execute(IMapManager manager)
+    public override void Execute(IMapManager manager, float elapsedTime = 0f)
     {
         var targets = manager.GetMapObjectsByID<IMapCommandHandler>(TargetID);
         foreach (var t in targets)

@@ -40,14 +40,14 @@ public class MapAction_UIControl : MapAction
     [Tooltip("Tên của trigger trong Animator.")]
     public string AnimationTriggerName;
 
-    public override void Execute(IMapManager manager)
+    public override void Execute(IMapManager manager, float elapsedTime = 0f)
     {
         switch (Command)
         {
             case UICommand.ToggleCanvasGroup:
                 if (TargetCanvasGroup != null && manager != null)
                 {
-                    manager.StartCoroutine(FadeCanvasGroup(TargetCanvasGroup, SetVisible, FadeDuration));
+                    manager.StartCoroutine(FadeCanvasGroup(TargetCanvasGroup, SetVisible, FadeDuration, elapsedTime));
                 }
                 break;
 
@@ -61,16 +61,17 @@ public class MapAction_UIControl : MapAction
         }
     }
 
-    private IEnumerator FadeCanvasGroup(CanvasGroup cg, bool visible, float duration)
+    private IEnumerator FadeCanvasGroup(CanvasGroup cg, bool visible, float duration, float catchUpTime = 0f)
     {
         float startAlpha = cg.alpha;
         float targetAlpha = visible ? 1f : 0f;
         cg.interactable = visible;
         cg.blocksRaycasts = visible;
 
-        if (duration <= 0) { cg.alpha = targetAlpha; yield break; }
+        // Nếu thời gian bù trừ đã vượt quá thời gian animation, nhảy thẳng đến kết quả
+        if (duration <= 0 || catchUpTime >= duration) { cg.alpha = targetAlpha; yield break; }
 
-        float elapsed = 0f;
+        float elapsed = catchUpTime; // Bắt đầu từ thời điểm đã trôi qua
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;

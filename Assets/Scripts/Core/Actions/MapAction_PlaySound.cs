@@ -23,7 +23,7 @@ public class MapAction_PlaySound : MapAction
     [Tooltip("Tần số cắt. Giá trị càng thấp âm thanh càng 'bí' (muffled).")]
     public float LowPassCutoff = 5000f;
 
-    public override void Execute(IMapManager manager)
+    public override void Execute(IMapManager manager, float elapsedTime = 0f)
     {
         if (Clip == null) return;
 

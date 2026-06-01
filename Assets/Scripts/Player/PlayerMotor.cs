@@ -845,6 +845,7 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     public void StartSliding(float heightRatio)
     {
         IsSliding = true;
+        ResetGravityScale(); // Đảm bảo trọng lực hoạt động khi bắt đầu trượt
         ResizeCollider(heightRatio, true); // Trượt: Vẫn dùng tỉ lệ vì cần giữ đáy cố định
     }
 
@@ -1024,6 +1025,7 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     public void StartAirDive(float speed)
     {
         IsDiving = true;
+        ResetGravityScale(); // Đảm bảo trọng lực hoạt động khi lao xuống
         // CẢI TIẾN: Giữ nguyên vận tốc X hiện tại thay vì ép về 0 để không bị khựng ngang đột ngột khi bắt đầu Dive
         _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, -speed);
     }

@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e389ab0c7c1b7a04cb89e2cc29971a1e, type: 3}
   m_Name: Lava
   m_EditorClassIdentifier: Mechanics::FloodTypeData
-  Type: 0
-  FloodSprite: {fileID: 0}
-  SplashSound: {fileID: 0}
-  AirDrainRate: 0
-  FloodColor: {r: 0, g: 0, b: 1, a: 1}
+  Type: 1
+  FloodSprite: {fileID: -4544338722142618783, guid: f99b3a708926fd34b855386adfa90f2b, type: 3}
+  SplashSound: {fileID: 8300000, guid: b60637666596b494194984a4bae48c5a, type: 3}
+  AirDrainRate: 75
+  FloodColor: {r: 0, g: 0.5398091, b: 1, a: 0.6862745}
   NoSwim: 0
   ApplyDepthMultiplier: 0
   DepthMultiplierFactor: 0.5
