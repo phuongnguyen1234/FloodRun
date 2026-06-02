@@ -56,7 +56,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
     // Lưu lại Map instance hiện tại để xóa khi restart/về home (nếu cần)
     private GameObject _currentMapInstance; 
 
-    private float _maxLevelTime = 300f; // Sẽ lấy từ MapManager
+    private float _maxLevelTime = 180f; // Sẽ lấy từ MapManager
 
     private void Awake()
     {
@@ -120,7 +120,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         if (LevelManager.SelectedMap != null)
         {
             // Điền thông tin map vào màn hình loading đang hiển thị sẵn
-            if (_uiManager != null) _uiManager.SetupLoadingScreen(LevelManager.SelectedMap);
+            if (_uiManager != null) _uiManager.SetupMapLoadingScreen(LevelManager.SelectedMap);
 
             // Tự động sinh Map ra Scene nếu chưa có
             _currentMapInstance = Instantiate(LevelManager.SelectedMap.MapPrefab, Vector3.zero, Quaternion.identity, _mapParent);
@@ -134,10 +134,6 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
             Debug.LogError("[GameplayManager] Không tìm thấy MapManager trong Scene!");
             return;
         }
-
-        // 1. Lấy dữ liệu từ Map
-        _maxLevelTime = _mapManager.GetMaxMapTime();
-        if (_uiManager != null) _uiManager.SetMaxTime(_maxLevelTime);
 
         // Load và hiển thị Best Time từ SaveSystem
         PlayerProfile profile = SaveSystem.LoadProfile();
@@ -196,7 +192,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         // 3. Cập nhật UI HUD
         if (_uiManager != null)
         {
-            _uiManager.UpdatePersonalTime(CurrentLevelTime);
+            _uiManager.UpdatePersonalRecord(CurrentLevelTime);
             _uiManager.UpdateTimeSlider(_levelProgressTime, _maxLevelTime); 
             UpdateLocalPlayerAirUI();
 
@@ -331,7 +327,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         if (_uiManager != null && LevelManager.SelectedMap != null)
         {
             _uiManager.ShowLoadingScreen(true);
-            _uiManager.SetupLoadingScreen(LevelManager.SelectedMap);
+            _uiManager.SetupMapLoadingScreen(LevelManager.SelectedMap);
         }
 
         Time.timeScale = 1f;
@@ -650,7 +646,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         }
 
         // Hiển thị thông báo Win màu xanh lá
-        _uiManager?.ShowNotification("Map Completed!", Color.green, 2f);
+        _uiManager?.ShowFloatNotification("Map Completed!", Color.green, 2f);
 
         // 3. Đợi 1 giây trước khi hiện bảng
         yield return new WaitForSeconds(1f);
@@ -703,7 +699,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         // Hiển thị thông báo Lose màu đỏ
         if (showNotification)
         {
-            _uiManager?.ShowNotification(reason, notificationColor, 2f);
+            _uiManager?.ShowFloatNotification(reason, notificationColor, 2f);
         }
 
         yield return new WaitForSeconds(2f);
