@@ -75,5 +75,10 @@ namespace Core.Interfaces
         /// Bật/Tắt hiển thị nút mở Modal Vote.
         /// </summary>
         void SetVotingButtonVisible(bool visible);
+
+        /// <summary>
+        /// Làm sạch các yếu tố Gameplay HUD (lá cờ, đếm ngược, màu sắc thời gian) để chuẩn bị cho round mới.
+        /// </summary>
+        void ResetGameplayHUD();
     }
 }

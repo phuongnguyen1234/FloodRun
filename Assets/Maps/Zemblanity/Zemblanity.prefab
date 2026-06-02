@@ -38133,6 +38133,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PlayerSpawn
       objectReference: {fileID: 0}
+    - target: {fileID: 1976325985271637996, guid: 0db32bd6756514d44bf380c9d486c395, type: 3}
+      propertyPath: _isMapSpawn
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3066305170393781347, guid: 0db32bd6756514d44bf380c9d486c395, type: 3}
       propertyPath: m_LocalPosition.x
       value: 6.03

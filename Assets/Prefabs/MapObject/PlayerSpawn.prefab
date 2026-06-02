@@ -46,3 +46,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Map::PlayerSpawn
   _spawnWidth: 2
   _gizmoColor: {r: 0, g: 1, b: 0, a: 1}
+  _isMapSpawn: 1

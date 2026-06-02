@@ -12,7 +12,7 @@ namespace Core.Interfaces
         /// <summary>
         /// Hiển thị thông báo float trên màn hình.
         /// </summary>
-        void ShowNotification(string message, Color color = default, float duration = 2f);
+        void ShowFloatNotification(string message, Color color = default, float duration = 2f);
 
         /// <summary>
         /// Hiển thị/ẩn loading screen.
@@ -22,7 +22,7 @@ namespace Core.Interfaces
         /// <summary>
         /// Cấu hình loading screen với dữ liệu map.
         /// </summary>
-        void SetupLoadingScreen(MapData data);
+        void SetupMapLoadingScreen(MapData data);
 
         /// <summary>
         /// Hiển thị loading screen khi quay về home/main menu.

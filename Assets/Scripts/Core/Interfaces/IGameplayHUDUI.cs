@@ -9,12 +9,7 @@ namespace Core.Interfaces
         /// <summary>
         /// Cập nhật thời gian cá nhân của player hiện tại.
         /// </summary>
-        void UpdatePersonalTime(float time);
-
-        /// <summary>
-        /// Đặt thời gian tối đa của map.
-        /// </summary>
-        void SetMaxTime(float time);
+        void UpdatePersonalRecord(float time);
 
         /// <summary>
         /// Đặt kỷ lục thời gian (chỉ SP).
@@ -50,5 +45,13 @@ namespace Core.Interfaces
         /// Cập nhật slider thời gian (cho vote map hoặc map timer).
         /// </summary>
         void UpdateTimeSlider(float currentTime, float maxTime, bool isVotePhase = false);
+
+        /// <summary>
+        /// Hiển thị/ẩn cờ hoàn thành cho nút bấm cuối cùng
+        /// </summary>
+        /// <param name="show"></param>
+        void ShowButtonFinishFlag(bool show);
+
+
     }
 }

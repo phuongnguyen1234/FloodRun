@@ -177,7 +177,7 @@ public class MapManager : NetworkBehaviour, IMapManager
             if (!IsServer) SyncButtonProgressToCurrent(newVal);
             if (newVal > oldVal) { // Chỉ khi tiến độ tăng lên
                 var uiManager = FindObjectsByType<MonoBehaviour>().OfType<IMultiplayerUIManager>().FirstOrDefault();
-                uiManager?.ShowNotification($"Pressed Button {newVal}", new Color(1f, 1f, 0.7f));
+                uiManager?.ShowFloatNotification($"Pressed Button {newVal}", new Color(1f, 1f, 0.7f));
             }
         };
     }
@@ -314,7 +314,7 @@ public class MapManager : NetworkBehaviour, IMapManager
     /// </summary>
     public AudioClip GetMapMusic() => _mapData != null ? _mapData.BackgroundMusic : null;
 
-    public float GetMaxMapTime() => _mapData != null ? _mapData.MapDuration : 300f;
+    public float GetMaxMapTime() => _mapData != null ? _mapData.MapDuration : 180f;
 
     public float GetKillYThreshold() => _killYThreshold;
 

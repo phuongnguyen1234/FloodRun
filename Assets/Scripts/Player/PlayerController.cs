@@ -56,7 +56,7 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
     private float _originalGravityScale;
     private float _outOfFloodTimer = 0f; // Timer đếm thời gian khi ra khỏi nước
     // Đồng bộ trạng thái chết và nguyên nhân chết qua mạng
-    public NetworkVariable<bool> NetworkIsDead = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<bool> NetworkIsDead { get; } = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public NetworkVariable<DeathReason> NetworkDeathReason = new(DeathReason.Drowned, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     // Đồng bộ trạng thái AFK và Spectating
     public NetworkVariable<bool> IsAFK { get; } = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -393,7 +393,7 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
 
             // Tìm UI Manager thông qua Interface để tránh lỗi tham chiếu chéo giữa các Assembly (.asmdef)
             var uiManager = Object.FindObjectsByType<MonoBehaviour>().OfType<ICommonUIManager>().FirstOrDefault();
-            uiManager?.ShowNotification($"Got {amount:F0} Air!", new Color(0.3f, 0.8f, 1f)); // Màu xanh dương nhạt
+            uiManager?.ShowFloatNotification($"Got {amount:F0} Air!", new Color(0.3f, 0.8f, 1f)); // Màu xanh dương nhạt
 
             return true; // Đã nhận khí thành công
         }

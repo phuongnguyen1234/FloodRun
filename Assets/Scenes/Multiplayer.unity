@@ -1213,7 +1213,7 @@ GameObject:
   m_Component:
   - component: {fileID: 266076039}
   - component: {fileID: 266076040}
-  - component: {fileID: 266076041}
+  - component: {fileID: 266076042}
   m_Layer: 0
   m_Name: MultiplayerManager
   m_TagString: Untagged
@@ -1261,7 +1261,7 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &266076041
+--- !u!114 &266076042
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1270,20 +1270,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 266076036}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1cfa592c83011bc4fb7131a6e6af73b0, type: 3}
+  m_Script: {fileID: 11500000, guid: 09162b95ea4697d4d868accb78385daa, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Scene::MultiplayerManager
+  m_EditorClassIdentifier: Scene::MultiplayerManagerNew
   ShowTopMostFoldoutHeaderGroup: 1
   CurrentState:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
-  _vcam: {fileID: 1678533167}
+  _lobbyMusic: {fileID: 8300000, guid: 3d31244e24375894c98840e3131b7bfe, type: 3}
   _mapDatabase: {fileID: 11400000, guid: e054ffa83d13d7046aa4e5a9ed6e86f3, type: 2}
   _palette: {fileID: 11400000, guid: 3cd5c2851e58e1a4793845e05bf1626e, type: 2}
+  _vcam: {fileID: 1678533167}
   _lobbySpawn: {fileID: 1750865672}
-  _lobbyMusic: {fileID: 8300000, guid: 3d31244e24375894c98840e3131b7bfe, type: 3}
   _respawnDelay: 3
 --- !u!1 &272054576
 GameObject:
@@ -5584,7 +5584,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 5.5
+  orthographic size: 5
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -9359,7 +9359,7 @@ MonoBehaviour:
     CustomLookAtTarget: 0
   Lens:
     FieldOfView: 60
-    OrthographicSize: 5.5
+    OrthographicSize: 5
     NearClipPlane: 0.3
     FarClipPlane: 1000
     Dutch: 0
@@ -9503,6 +9503,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Map::PlayerSpawn
   _spawnWidth: 2
   _gizmoColor: {r: 0, g: 1, b: 0, a: 1}
+  _isMapSpawn: 0
 --- !u!1 &1761232106 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6452762573493067834, guid: 6e624ed7b52e1c0408ff38dabf653e3c, type: 3}
@@ -21324,7 +21325,7 @@ PrefabInstance:
     - target: {fileID: 1186097221252333366, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 266076041}
+      objectReference: {fileID: 0}
     - target: {fileID: 1186097221252333366, guid: 51d630b9f688dc14da5a6e3c8ac34a1d, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
       value: 2
