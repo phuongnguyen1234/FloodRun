@@ -11,6 +11,9 @@ public class PlayerSpawn : MonoBehaviour
     
     [Header("Visuals")]
     [SerializeField] private Color _gizmoColor = Color.green;
+    [Tooltip("Nếu bật, đây là spawn của map. Nếu tắt, đây là spawn của Lobby (Public).")]
+    [SerializeField] private bool _isMapSpawn = true;
+    public bool IsMapSpawn => _isMapSpawn;
 
     /// <summary>
     /// Trả về một vị trí ngẫu nhiên nằm trên đoạn thẳng spawn.

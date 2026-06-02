@@ -135,6 +135,11 @@ namespace UI.Multiplayer
             if (_logicManager != null)
             {
                 if (_roomInfoModal != null) _roomInfoModal.SetManager(_logicManager);
+                // Đồng bộ settings ban đầu cho slider
+                if (_timeSlider != null) {
+                    _timeSlider.minValue = 0;
+                    _timeSlider.value = 0;
+                }
                 if (_voteMapModal != null) 
                 {
                     _voteMapModal.SetManager(_logicManager);
@@ -160,18 +165,6 @@ namespace UI.Multiplayer
             if (_openVoteModalButton != null)
             {
                 _openVoteModalButton.onClick.AddListener(OpenVotingModal);
-            }
-        }
-
-        private void Update()
-        {
-            if (_logicManager == null) return;
-
-            // GLOBAL TIMER SLIDER: Cập nhật slider thời gian dựa trên trạng thái game (Global)
-            var state = _logicManager.GetCurrentGameState();
-            if (state == GameState.Voting)
-            {
-                UpdateTimeSlider(_logicManager.NetworkTime.Value, 10f, true);
             }
         }
 
@@ -202,6 +195,21 @@ namespace UI.Multiplayer
             if (_voteMapModal != null) _voteMapModal.gameObject.SetActive(false);
         }
 
+        public void ResetGameplayHUD()
+        {
+            // 1. Ẩn các lá cờ hoàn thành (của người chơi và của nút bấm)
+            ShowPlayerFinishFlag(false);
+            ShowButtonFinishFlag(false);
+
+            // 2. Reset các biến tracking hiệu ứng pulse để sẵn sàng cho thông số mới
+            _prevActivatedCount = 0;
+            _prevAliveCount = 0;
+
+            // 3. Reset màu sắc thời gian và xóa text đếm ngược/thông báo
+            if (_personalTimeText != null) _personalTimeText.color = Color.white;
+            SetCountdownText("");
+        }
+
 
         #region ICommonUIManager Implementation
 
@@ -209,7 +217,7 @@ namespace UI.Multiplayer
         /// Hiển thị thông báo tạm thời (floating text).
         /// TODO: Implement với floating text system (color, duration)
         /// </summary>
-        public void ShowNotification(string message, Color color = default, float duration = 2f)
+        public void ShowFloatNotification(string message, Color color = default, float duration = 2f)
         {
             if (_floatNotificationText == null) return;
             if (_notificationCoroutine != null) StopCoroutine(_notificationCoroutine);
@@ -230,22 +238,10 @@ namespace UI.Multiplayer
 
         #region IGameplayHUDUI Implementation
 
-        public void UpdatePersonalTime(float time)
+        public void UpdatePersonalRecord(float time)
         {
             if (_personalTimeText != null)
                 _personalTimeText.text = FormatTime(time);
-        }
-
-        public void SetMaxTime(float time)
-        {
-            if (_bestRecordTimeText != null)
-                _bestRecordTimeText.text = $"{FormatTime(time)}";
-            
-            if (_timeSlider != null) 
-            {
-                _timeSlider.maxValue = time;
-                // Lưu ý: value của slider sẽ được cập nhật liên tục trong hàm Update() thông qua NetworkTime
-            }
         }
 
         /// <summary>
@@ -253,6 +249,9 @@ namespace UI.Multiplayer
         /// </summary>
         public void SetRecordTime(float time)
         {
+            // Reset màu HUD thời gian về mặc định
+            if (_personalTimeText != null) _personalTimeText.color = Color.white;
+
             if (_bestRecordTimeText != null)
             {
                 // Nếu time <= 0 (chưa có record), hiển thị "-"
@@ -349,20 +348,23 @@ namespace UI.Multiplayer
             _prevActivatedCount = current;
 
             // 2. Kiểm tra trạng thái hoàn thành: Hiện lá cờ nếu đã đủ nút
-            bool isFinished = (total > 0 && current >= total);
+            bool isFinished = total > 0 && current >= total;
 
             if (isFinished)
             {
                 _buttonStepText.text = "";
                 if (_finishFlag != null) _finishFlag.SetActive(true);
-                if (_buttonIcon != null) _buttonIcon.gameObject.SetActive(false);
             }
             else
             {
                 _buttonStepText.text = (current + 1).ToString();
                 if (_finishFlag != null) _finishFlag.SetActive(false);
-                if (_buttonIcon != null) _buttonIcon.gameObject.SetActive(true);
             }
+        }
+
+        public void ShowButtonFinishFlag(bool show)
+        {
+            
         }
 
         public void SetCountdownText(string text)
@@ -383,7 +385,7 @@ namespace UI.Multiplayer
             if (_timeSlider != null)
             {
                 _timeSlider.maxValue = maxTime;
-                _timeSlider.value = currentTime;
+                _timeSlider.value = Mathf.Clamp(currentTime, 0, maxTime);
 
                 if (_timeSlider.fillRect != null)
                 {
@@ -578,7 +580,7 @@ namespace UI.Multiplayer
             }
         }
 
-        public void SetupLoadingScreen(MapData data)
+        public void SetupMapLoadingScreen(MapData data)
         {
             if (data == null) return;
 
@@ -751,20 +753,20 @@ namespace UI.Multiplayer
             IPlayer localPlayer = _logicManager.LocalPlayer;
             if (localPlayer == null) return;
 
-            // Người chơi chỉ thấy GameplayHUD nếu:
-            // - Game đang Playing
-            // - Và quan trọng nhất: HỌ KHÔNG Ở TRONG LOBBY
-            bool isParticipating = currentState == GameState.Playing && !localPlayer.IsInLobby.Value;
+            // [HUD Visibility Logic Refactor]
+            // Chỉ hiện Lobby HUD khi người chơi thực sự ở trong Lobby (Intermission/Voting ban đầu).
+            // Nếu đã thắng map nhưng chưa hồi sinh về Lobby, vẫn giữ Gameplay HUD.
+            bool isParticipating = !localPlayer.IsInLobby.Value;
 
             if (_gameplayHUD != null) _gameplayHUD.SetActive(isParticipating);
             if (_lobbyHUD != null) _lobbyHUD.SetActive(!isParticipating);
             
-            // Khi ở màn hình Gameplay, luôn ẩn Voting Panel để tránh đè phím
-            if (isParticipating) SetVotingButtonVisible(false);
+            // Nếu đang trong map chơi, ẩn các icon/nút không cần thiết của Lobby
+            if (_playStatusText != null) _playStatusText.transform.parent.gameObject.SetActive(!isParticipating);
+            if (_spectateStatusText != null) _spectateStatusText.transform.parent.gameObject.SetActive(!isParticipating);
 
             // Tự động đóng các modal khi vào gameplay
             if (isParticipating) HideAllModals();
         }
     }
-    
 }

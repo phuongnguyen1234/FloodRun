@@ -29,7 +29,7 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
     [Tooltip("Text hiển thị số thứ tự nút cần bấm (Ví dụ: 1)")]
     [SerializeField] private TMP_Text _buttonStepText;
     [SerializeField] private Image _buttonIcon;
-    [SerializeField] private GameObject _finishFlag;
+    [SerializeField] private GameObject _buttonFinishFlag;
     [Space]
     [SerializeField] private TMP_Text _playerCountText;
     [SerializeField] private Image _playerCountIcon;
@@ -125,7 +125,7 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
     /// <summary>
     /// Cập nhật text hiển thị thời gian cá nhân trên HUD.
     /// </summary>
-    public void UpdatePersonalTime(float time)
+    public void UpdatePersonalRecord(float time)
     {
         if (_personalTimeText != null) _personalTimeText.text = FormatTime(time);
     }
@@ -139,22 +139,12 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
         if (_timeSlider != null) _timeSlider.maxValue = maxTime; // Ensure max value is set
     }
 
-    public void SetMaxTime(float time)
+    public void SetRecordTime(float time)
     {
         // Reset màu text về mặc định khi bắt đầu level mới
         if (_personalTimeText != null) _personalTimeText.color = _originalPersonalTimeColor;
         if (_personalTimeIcon != null) _personalTimeIcon.color = _originalPersonalTimeIconColor;
 
-        // Thiết lập giới hạn cho slider thời gian
-        if (_timeSlider != null)
-        {
-            _timeSlider.maxValue = time;
-            _timeSlider.value = 0f;
-        }
-    }
-
-    public void SetRecordTime(float time)
-    {
         if (_recordTimeText != null)
         {
             // Chỉ hiển thị thời gian nếu giá trị hợp lệ (lớn hơn 0)
@@ -267,23 +257,28 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
             StartCoroutine(PulseButtonRoutine());
             
             // Tự động thông báo khi bấm nút
-            ShowNotification($"Pressed Button {current}", new Color(1f, 1f, 0.7f)); // Màu vàng nhạt
+            ShowFloatNotification($"Pressed Button {current}", new Color(1f, 1f, 0.7f)); // Màu vàng nhạt
         }
         _prevActivatedCount = current;
 
         // 2. Kiểm tra trạng thái hoàn thành
-        bool isFinished = (total > 0 && current >= total);
+        bool isFinished = total > 0 && current >= total;
 
         if (isFinished)
         {
             _buttonStepText.text = "";
-            if (_finishFlag != null) _finishFlag.SetActive(true);
+            if (_buttonFinishFlag != null) _buttonFinishFlag.SetActive(true);
         }
         else
         {
             _buttonStepText.text = (current + 1).ToString();
-            if (_finishFlag != null) _finishFlag.SetActive(false);
+            if (_buttonFinishFlag != null) _buttonFinishFlag.SetActive(false);
         }
+    }
+
+    public void ShowButtonFinishFlag(bool show)
+    {
+        //TODO: Có thể gộp chung logic hiển thị cờ hoàn thành của nút và người chơi vào một hàm duy nhất để tránh trùng lặp code
     }
 
     public void UpdateAlivePlayerCount(int current, int total)
@@ -541,7 +536,7 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
         GameplayEvents.TriggerTeleportToNextButton();
     }
 
-    public void SetupLoadingScreen(MapData data)
+    public void SetupMapLoadingScreen(MapData data)
     {
         if (data == null) return;
 
@@ -578,7 +573,7 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
         return string.Format("{0:0}:{1:00}.{2:000}", (int)t.TotalMinutes, t.Seconds, t.Milliseconds);
     }
 
-    public void ShowNotification(string message, Color color, float duration = 1f)
+    public void ShowFloatNotification(string message, Color color, float duration = 1f)
     {
         if (_floatNotificationText == null) return;
 

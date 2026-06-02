@@ -11,8 +11,7 @@ using UnityEngine.SceneManagement; // For SceneManager.LoadScene
 using System.Linq; // For FindObjectsByType with LINQ
 
     /// <summary>
-    /// Quản lý vòng lặp Game trong môi trường Multiplayer.
-    /// Điều phối trạng thái: Intermission -> Voting -> Playing -> Intermission.
+    /// Manager của multiplayer nhưng phiên bản này đã cũ vì lỗi gameloop
     /// </summary>
     public class MultiplayerManager : NetworkBehaviour, IMultiplayerManager
     {
@@ -297,7 +296,7 @@ using System.Linq; // For FindObjectsByType with LINQ
                 _uiManager?.ShowPlayerFinishFlag(true);
 
                 // Theo thiết kế: Hiển thị thông báo float khi về đích
-                _uiManager?.ShowNotification("Map Completed!", Color.green, 2f);
+                _uiManager?.ShowFloatNotification("Map Completed!", Color.green, 2f);
                 
                 // CẢI TIẾN: Khi về đích, cho người chơi bất tử và khóa input nhẹ 
                 // để họ có thể đứng yên quan sát những người khác đang bơi lên.
@@ -508,12 +507,12 @@ using System.Linq; // For FindObjectsByType with LINQ
             if (LocalPlayer is NetworkBehaviour nb && _playerFinishTimes.ContainsKey(nb.OwnerClientId))
             {
                 // Hiển thị finish time không đổi
-                _uiManager.UpdatePersonalTime(_playerFinishTimes[nb.OwnerClientId]);
+                _uiManager.UpdatePersonalRecord(_playerFinishTimes[nb.OwnerClientId]);
             }
             else
             {
                 // Cập nhật thời gian và thanh trượt (dùng NetworkTime để đồng bộ)
-                _uiManager.UpdatePersonalTime(_networkTime.Value);
+                _uiManager.UpdatePersonalRecord(_networkTime.Value);
             }
             
             // FIX #6: Thêm null check trước khi gọi GetMaxMapTime
@@ -687,7 +686,7 @@ using System.Linq; // For FindObjectsByType with LINQ
             _mapMechanicsConfirmedStarted = false;
             _playerFinishTimes.Clear();
             
-            _uiManager?.SetupLoadingScreen(mapData);
+            _uiManager?.SetupMapLoadingScreen(mapData);
 
             // Chỉ những người chơi không AFK mới tham gia vào ván đấu
             bool isParticipating = LocalPlayer != null && !LocalPlayer.IsAFK.Value;
@@ -725,7 +724,7 @@ using System.Linq; // For FindObjectsByType with LINQ
 
             if (_mapManager != null)
             {
-                _uiManager?.SetMaxTime(_mapManager.GetMaxMapTime());
+                //_uiManager?.SetMapMaxTime(_mapManager.GetMaxMapTime());
                 
                 // FIX #1: Hiển thị best time giống như singleplayer
                 MapData currentMapData = _mapManager.GetMapData();

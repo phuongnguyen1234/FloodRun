@@ -20,6 +20,7 @@ namespace Core.Interfaces
     public interface IPlayer : IPlayerAbility
     {
         bool IsDead { get; }
+        NetworkVariable<bool> NetworkIsDead { get; }
         NetworkVariable<bool> IsAFK { get; } // Trạng thái AFK của người chơi
         NetworkVariable<bool> IsSpectating { get; } // Trạng thái Spectating của người chơi
         NetworkVariable<bool> IsInLobby { get; } // Vị trí hiện tại của người chơi
