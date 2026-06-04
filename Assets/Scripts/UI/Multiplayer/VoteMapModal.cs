@@ -53,7 +53,7 @@ namespace UI.Multiplayer
             // Header text
             float diff = _manager.Difficulty.Value;
             string tierName = _palette.GetTierFromRating(diff).ToString();
-            _headerText.text = $"Vote a Map [{tierName}: {diff:F2}]";
+            _headerText.text = $"Vote a Map [{tierName}: {diff:0.##}]";
 
             // Spawn 3 map từ NetworkList
             var votingList = _manager.VotingMapNames;

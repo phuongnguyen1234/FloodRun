@@ -80,5 +80,30 @@ namespace Core.Interfaces
         /// Làm sạch các yếu tố Gameplay HUD (lá cờ, đếm ngược, màu sắc thời gian) để chuẩn bị cho round mới.
         /// </summary>
         void ResetGameplayHUD();
+
+        /// <summary>
+        /// Cập nhật text hiển thị khi đang chờ player khác đang load map.
+        /// </summary>
+        /// <param name="text"></param>
+        void SetWaitingForPlayersText(string text);
+
+        /// <summary>
+        /// Cập nhật thông tin bản đồ trên bảng thông tin trong Lobby (map name, preview image, difficulty color, etc.).
+        /// </summary>
+        /// <param name="mapData"></param>
+        /// <param name="difficulty"></param>
+        void UpdateLobbyWorldMapInfo(MapData mapData, float difficulty);
+
+        /// <summary>
+        /// Kiểm tra xem có bất kỳ Modal nào đang mở hay không (để quyết định có nên khóa input của player hay không).
+        /// </summary>    
+        bool IsAnyModalOpen();
+
+        /// <summary>
+        /// Chỉ cập nhật phần độ khó trên bảng Lobby mà không ảnh hưởng đến tên hay ảnh map. 
+        /// Thường được gọi khi kết thúc round để chỉ thay đổi độ khó cho round tiếp theo mà giữ nguyên thông tin map đã chọn.
+        /// </summary>
+        /// <param name="newVal"></param>
+        void UpdateLobbyDifficultyOnly(float newVal);
     }
 }

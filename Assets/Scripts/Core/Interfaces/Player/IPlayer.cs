@@ -13,6 +13,15 @@ namespace Core.Interfaces
         Other           // Generic or unknown reason
     }
 
+    public enum PlayerStatus
+    {
+        Lobby,          // Đang ở khu vực chờ
+        InGame,         // Đang thực sự tham gia chạy đua trong Map
+        Spectating,     // Đang quan sát người khác
+        Finished,       // Đã về đích (đợi round kết thúc)
+        Dead            // Đã chết (đợi respawn về Lobby)
+    }
+
     /// <summary>
     /// Giao diện IPlayer đại diện cho player trong game, cung cấp các thuộc tính và phương thức cần thiết để quản lý trạng thái và hành động của player.
     /// Kế thừa IPlayerAbility để có sẵn hàm Enable/DisableAbility
@@ -20,11 +29,11 @@ namespace Core.Interfaces
     public interface IPlayer : IPlayerAbility
     {
         bool IsDead { get; }
+        bool IsSpawned { get; }
         NetworkVariable<bool> NetworkIsDead { get; }
         NetworkVariable<bool> IsAFK { get; } // Trạng thái AFK của người chơi
-        NetworkVariable<bool> IsSpectating { get; } // Trạng thái Spectating của người chơi
-        NetworkVariable<bool> IsInLobby { get; } // Vị trí hiện tại của người chơi
-
+        NetworkVariable<PlayerStatus> Status { get; } // Trạng thái/Vị trí tổng quát của người chơi
+        
 
         bool IsZiplining { get; }
         IFloodZone CurrentFlood { get; } // Thêm để FloodController có thể truy vấn
@@ -38,6 +47,7 @@ namespace Core.Interfaces
         void Die(DeathReason reason = DeathReason.Drowned); // Hàm để các manager bên ngoài (như MapManager) có thể ép player chết
         void Revive(); // Hàm để revive player sau khi đã chết (dùng cho respawn)
         void SetInvincible(bool isInvincible); // Set trạng thái bất tử (không trừ khí/không chết do môi trường)
+        void ResetAir(); // Reset air về 100 và xóa bonus air
 
         // Thêm properties để MapManager đọc thông số hiển thị UI mà không cần truy cập PlayerController
         float CurrentBaseAir { get; }
@@ -56,6 +66,19 @@ namespace Core.Interfaces
         void ToggleAFKStatus();
         void ToggleSpectateStatus();
 
+        bool IsInputBlocked { get; }
         void SetInputBlocked(bool isBlocked); // Hàm để khóa/mở khóa input của player, dùng khi mở modal hoặc trong các tình huống đặc biệt khác
+
+        /// <summary>Reset trạng thái gameplay khi bắt đầu round mới (MP).</summary>
+        void PrepareForNewRound();
+
+        // --- Attribute Setters (Unify access for Actions) ---
+        void SetSpeed(float speed);
+        void SetJumpForce(float force);
+        void SetGravityScale(float scale);
+        void ResetGravityScale();
+        void SetMaxAir(float max);
+        void AddAir(float amount);
+        void SetFacing(bool faceRight);
     }
 }

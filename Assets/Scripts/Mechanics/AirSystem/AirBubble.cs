@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using Unity.Netcode;
 
 /// <summary>
 /// AirBubble là một Mechanics đơn giản cho phép Player thu thập để bổ sung Air.
@@ -39,6 +40,11 @@ public class AirBubble : MonoBehaviour
     {
         // Nếu đã thu thập rồi thì không xử lý nữa
         if (_isCollected) return;
+
+        // Chỉ cho phép Local Player (người chơi tại máy này) nhặt bubble
+        // Điều này giúp mỗi player trong multiplayer đều có thể tự nhặt bubble của riêng mình
+        if (other.GetComponentInParent<NetworkBehaviour>() is NetworkBehaviour nb && nb.IsSpawned && !nb.IsLocalPlayer)
+            return;
 
         // Thay vì tìm PlayerController, ta tìm bất kỳ ai có interface IAirRefillable
         // Điều này giúp Mechanics không phụ thuộc vào Player (Decoupling)

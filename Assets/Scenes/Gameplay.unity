@@ -3066,7 +3066,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 5.5
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -4033,7 +4033,7 @@ MonoBehaviour:
   _airRateText: {fileID: 927884819}
   _buttonStepText: {fileID: 1691303513}
   _buttonIcon: {fileID: 812121397}
-  _finishFlag: {fileID: 952357374}
+  _buttonFinishFlag: {fileID: 952357374}
   _playerCountText: {fileID: 2244383340322202214}
   _playerCountIcon: {fileID: 2244383340322202213}
   _playerFinishFlag: {fileID: 2244383340322202212}
@@ -6351,7 +6351,7 @@ MonoBehaviour:
     CustomLookAtTarget: 0
   Lens:
     FieldOfView: 60
-    OrthographicSize: 5
+    OrthographicSize: 5.5
     NearClipPlane: 0.3
     FarClipPlane: 1000
     Dutch: 0

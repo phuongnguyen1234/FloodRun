@@ -139,20 +139,20 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
         if (_timeSlider != null) _timeSlider.maxValue = maxTime; // Ensure max value is set
     }
 
-    public void SetRecordTime(float time)
+    public void SetRecordTime(float bestTime, float maxMapTime)
     {
-        // Reset màu text về mặc định khi bắt đầu level mới
         if (_personalTimeText != null) _personalTimeText.color = _originalPersonalTimeColor;
         if (_personalTimeIcon != null) _personalTimeIcon.color = _originalPersonalTimeIconColor;
 
         if (_recordTimeText != null)
-        {
-            // Chỉ hiển thị thời gian nếu giá trị hợp lệ (lớn hơn 0)
-            if (time > 0)
-                _recordTimeText.text = $"{FormatTime(time)}";
-            else
-                _recordTimeText.text = "0:00.000";
-        }
+            _recordTimeText.text = FormatTime(bestTime > 0f ? bestTime : maxMapTime);
+    }
+
+    public void SetPersonalTimeHighlight(bool highlightAsVictory)
+    {
+        Color c = highlightAsVictory ? Color.green : _originalPersonalTimeColor;
+        if (_personalTimeText != null) _personalTimeText.color = c;
+        if (_personalTimeIcon != null) _personalTimeIcon.color = highlightAsVictory ? Color.green : _originalPersonalTimeIconColor;
     }
 
     public void ShowPlayerFinishFlag(bool show)
@@ -262,23 +262,23 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
         _prevActivatedCount = current;
 
         // 2. Kiểm tra trạng thái hoàn thành
-        bool isFinished = total > 0 && current >= total;
+        bool isSequenceFinished = total > 0 && current >= total;
 
-        if (isFinished)
+        if (isSequenceFinished)
         {
             _buttonStepText.text = "";
-            if (_buttonFinishFlag != null) _buttonFinishFlag.SetActive(true);
+            if (_buttonFinishFlag != null) ShowButtonFinishFlag(true);
         }
         else
         {
             _buttonStepText.text = (current + 1).ToString();
-            if (_buttonFinishFlag != null) _buttonFinishFlag.SetActive(false);
+            if (_buttonFinishFlag != null) ShowButtonFinishFlag(false);
         }
     }
 
     public void ShowButtonFinishFlag(bool show)
     {
-        //TODO: Có thể gộp chung logic hiển thị cờ hoàn thành của nút và người chơi vào một hàm duy nhất để tránh trùng lặp code
+        if (_buttonFinishFlag != null) _buttonFinishFlag.SetActive(show);
     }
 
     public void UpdateAlivePlayerCount(int current, int total)
