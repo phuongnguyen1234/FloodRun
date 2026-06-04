@@ -71,7 +71,7 @@ public class ParallaxEffect : MonoBehaviour
             ? transform.parent.InverseTransformPoint(_cameraTransform.position) 
             : _cameraTransform.position;
 
-        _startCameraPosition = new Vector2(localCameraPos.x, localCameraPos.y);
+        _startCameraPosition = (Vector2)localCameraPos;
         _lastCameraPosition = _startCameraPosition;
         _startPosition = _initialLocalPosition;
         _isInitialized = true;
@@ -121,7 +121,7 @@ public class ParallaxEffect : MonoBehaviour
         {
             // Tính toán khoảng cách mà Camera đã "vượt qua" texture này
             // (1 - multiplier) chính là tốc độ trôi tương đối của texture trên màn hình
-            float relativeOffset = (localCameraPos.x * (1 - _parallaxMultiplierX)) % _textureUnitSizeX;
+            float relativeOffset = localCameraPos.x * (1 - _parallaxMultiplierX) % _textureUnitSizeX;
             
             // Ép vị trí X của background luôn nằm trong tầm nhìn của Camera dựa trên offset lặp lại
             targetX = localCameraPos.x - relativeOffset;

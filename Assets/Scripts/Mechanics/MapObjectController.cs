@@ -1,6 +1,5 @@
 using UnityEngine;
 using Core.Interfaces;
-using System.Linq;
 
 /// <summary>
 /// Component tổng quát gắn vào các vật thể trong Map để nhận lệnh từ Actions thông qua ID.
@@ -15,16 +14,28 @@ public class MapObjectController : MonoBehaviour, IMapCommandHandler
 
     private void OnEnable()
     {
-        _mapManager = FindObjectsByType<Component>()
-                            .OfType<IMapManager>()
-                            .FirstOrDefault();
-                            
-        _mapManager?.RegisterMapObject(ObjectID, this);
+        RegisterWithMap();
     }
 
     private void OnDisable()
     {
         _mapManager?.UnregisterMapObject(ObjectID, this);
+        _mapManager = null;
+    }
+
+    private void RegisterWithMap()
+    {
+        _mapManager?.UnregisterMapObject(ObjectID, this);
+
+        _mapManager = GetComponentInParent<IMapManager>();
+        if (_mapManager == null)
+        {
+            var mapRoot = transform.root;
+            if (mapRoot != null)
+                _mapManager = mapRoot.GetComponentInChildren<IMapManager>();
+        }
+
+        _mapManager?.RegisterMapObject(ObjectID, this);
     }
 
     public void HandleCommand(string command)

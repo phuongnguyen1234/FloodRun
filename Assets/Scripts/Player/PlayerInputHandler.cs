@@ -151,7 +151,17 @@ public class PlayerInputHandler : MonoBehaviour, IPlayerAbility, IInputProvider
 
     public void DisableAbility()
     {
+        ClearInputs();
         _inputActions?.Disable();
+    }
+
+    public void ClearInputs()
+    {
+        MoveInput = Vector2.zero;
+        LadderInput = Vector2.zero;
+        JumpInput = false;
+        DiveInput = false;
+        SlideInput = false;
     }
 
     /// <summary>

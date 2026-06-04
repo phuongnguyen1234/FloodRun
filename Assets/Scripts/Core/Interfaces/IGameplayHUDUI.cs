@@ -11,10 +11,15 @@ namespace Core.Interfaces
         /// </summary>
         void UpdatePersonalRecord(float time);
 
+        /// <summary>Đổi màu personal time (ví dụ xanh khi hoàn thành map).</summary>
+        void SetPersonalTimeHighlight(bool highlightAsVictory);
+
         /// <summary>
         /// Đặt kỷ lục thời gian (chỉ SP).
         /// </summary>
-        void SetRecordTime(float time);
+        /// <param name="bestTime">Best time đã lưu; &lt;= 0 nếu chưa có record.</param>
+        /// <param name="maxMapTime">Hiển thị khi chưa có record (thường là MapDuration).</param>
+        void SetRecordTime(float bestTime, float maxMapTime);
 
         /// <summary>
         /// Cập nhật trạng thái hệ thống không khí (air, bonus, rate).

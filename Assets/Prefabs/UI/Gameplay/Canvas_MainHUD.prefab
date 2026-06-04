@@ -173,7 +173,7 @@ GameObject:
   - component: {fileID: 4954994183611656896}
   - component: {fileID: 7119415879408822339}
   m_Layer: 5
-  m_Name: Finish_Flag
+  m_Name: Button_FinishFlag
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2281,7 +2281,7 @@ GameObject:
   - component: {fileID: 2028726528786926681}
   - component: {fileID: 7798106486417181323}
   m_Layer: 5
-  m_Name: Finish_Flag
+  m_Name: Player_FinishFlag
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -39,9 +39,7 @@ public class TimedMapEvent
 /// Khi cần sử dụng, truy cập qua giao diện IMapManager (thuộc Core)
 /// </summary>
 public class MapManager : NetworkBehaviour, IMapManager
-{
-    public static MapManager Instance { get; private set; }
-
+{ // FIX Bug 9: Removed static Instance property
     [Header("References")]
     [Tooltip("Kéo file MapData (ScriptableObject) tương ứng của level này vào đây. Nó sẽ ghi đè các cài đặt mặc định bên dưới.")]
     [SerializeField] private MapData _mapData;
@@ -85,13 +83,7 @@ public class MapManager : NetworkBehaviour, IMapManager
 
     private void Awake()
     {
-        if (Instance == null) Instance = this;
-        else if (Instance != this) 
-        {
-            // Trong Multiplayer, khi Instantiate Map mới, Map cũ có thể chưa kịp huỷ (Destroy chạy cuối frame)
-            // Việc Destroy Map mới sẽ làm hỏng toàn bộ logic. Ta cần ghi đè Instance!
-            Instance = this;
-        }
+        // FIX Bug 9: Removed static Instance logic
 
         // Đảm bảo MapManager luôn dùng đúng dữ liệu đã được chọn từ LevelManager
         if (LevelManager.SelectedMap != null)
@@ -161,6 +153,12 @@ public class MapManager : NetworkBehaviour, IMapManager
             if (newVal) StartLocalMechanics();
         };
 
+        // FIX Bug 8: If client joins mid-round and map is already active, start mechanics immediately
+        if (IsClient && _netIsMapActive.Value)
+        {
+            StartLocalMechanics();
+        };
+
         if (_netIsMapActive.Value)
         {
             StartLocalMechanics();
@@ -175,17 +173,7 @@ public class MapManager : NetworkBehaviour, IMapManager
         // 3. Lắng nghe thay đổi tiến độ từ Server
         _netButtonProgress.OnValueChanged += (oldVal, newVal) => {
             if (!IsServer) SyncButtonProgressToCurrent(newVal);
-            if (newVal > oldVal) { // Chỉ khi tiến độ tăng lên
-                var uiManager = FindObjectsByType<MonoBehaviour>().OfType<IMultiplayerUIManager>().FirstOrDefault();
-                uiManager?.ShowFloatNotification($"Pressed Button {newVal}", new Color(1f, 1f, 0.7f));
-            }
         };
-    }
-
-    public override void OnNetworkDespawn()
-    {
-        _netIsMapActive.OnValueChanged -= (oldVal, newVal) => {};
-        _netButtonProgress.OnValueChanged -= (oldVal, newVal) => {};
     }
 
     private void Update()
@@ -207,8 +195,6 @@ public class MapManager : NetworkBehaviour, IMapManager
     {
         _isPaused = paused;
     }
-
-    
 
     /// <summary>
     /// Gọi từ GameplayManager khi đếm ngược xong
@@ -262,9 +248,15 @@ public class MapManager : NetworkBehaviour, IMapManager
 
     public void PrepareMapBackgrounds()
     {
+        // Tìm camera chính hiện tại trong scene để gán cho các background
+        Camera mainCam = Camera.main;
+        
         foreach (var p in GetComponentsInChildren<ParallaxEffect>())
         {
-            p.ResetOrigin();
+            // Giả định ParallaxEffect có phương thức để cập nhật Camera hoặc Reset lại mốc
+            p.ResetOrigin(); 
+            // Nếu ParallaxEffect có trường camera công khai hoặc phương thức SetCamera:
+            // p.SetCamera(mainCam); 
         }
     }
 
@@ -316,7 +308,7 @@ public class MapManager : NetworkBehaviour, IMapManager
 
     public float GetMaxMapTime() => _mapData != null ? _mapData.MapDuration : 180f;
 
-    public float GetKillYThreshold() => _killYThreshold;
+    public float GetKillYThreshold() => transform.position.y + _killYThreshold;
 
     public bool IsDevToolEnabled() => _mapData != null && _mapData.EnableDevTools;
 
@@ -386,13 +378,28 @@ public class MapManager : NetworkBehaviour, IMapManager
     }
 
     [Rpc(SendTo.Server)]
-    private void TriggerButtonServerRpc()
+    private void TriggerButtonServerRpc(RpcParams rpcParams = default)
     {
         if (_buttonSequenceManager != null)
         {
             _buttonSequenceManager.TriggerCurrentButton();
+            
+            // Lấy ClientId của người gửi yêu cầu ấn nút
+            ulong senderId = rpcParams.Receive.SenderClientId;
+
+            // Gửi thông báo cục bộ chỉ cho chính người đó
+            NotifyButtonPressClientRpc(_buttonSequenceManager.CurrentIndex, RpcTarget.Single(senderId, RpcTargetUse.Temp));
+            
             _netButtonProgress.Value = _buttonSequenceManager.CurrentIndex;
         }
+    }
+
+    [Rpc(SendTo.SpecifiedInParams)]
+    private void NotifyButtonPressClientRpc(int index, RpcParams rpcParams = default)
+    {
+        // Chỉ hiển thị thông báo "Pressed Button X" cho chính người vừa ấn
+        var uiManager = FindObjectsByType<MonoBehaviour>().OfType<IMultiplayerUIManager>().FirstOrDefault();
+        uiManager?.ShowFloatNotification($"Pressed Button {index}", new Color(1f, 1f, 0.7f));
     }
 
     private void SyncButtonProgressToCurrent(int targetIndex)
@@ -447,7 +454,7 @@ public class MapManager : NetworkBehaviour, IMapManager
     private void OnAllButtonsActivated()
     {
         IsExitUnlocked = true;
-        Debug.Log("Exit Region Unlocked!");
+        Debug.Log("[MapManager] Exit Region Unlocked!");
         // Có thể thêm âm thanh hoặc hiệu ứng thông báo mở cửa tại đây
     }
 
@@ -519,12 +526,13 @@ public class MapManager : NetworkBehaviour, IMapManager
     private void CheckObjectsOutOfBound()
     {
         // Duyệt qua toàn bộ registry để tìm các object rơi quá sâu
+        float worldKillY = GetKillYThreshold();
         foreach (var registryList in _objectRegistry.Values)
         {
             for (int i = registryList.Count - 1; i >= 0; i--)
             {
                 var obj = registryList[i];
-                if (obj != null && obj.transform.position.y < _killYThreshold)
+                if (obj != null && obj.transform.position.y < worldKillY)
                 {
                     // Chỉ hủy các object môi trường, không hủy Player ở đây (Player do GameplayManager quản lý)
                     if (!obj.CompareTag("Player")) Destroy(obj.gameObject);

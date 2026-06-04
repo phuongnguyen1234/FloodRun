@@ -8,6 +8,10 @@ public class PlayerSpawn : MonoBehaviour
     [Header("Spawn Settings")]
     [Tooltip("Độ dài đoạn thẳng spawn (trục X). Vị trí Y của object này được coi là mặt sàn (nơi chân Player chạm đất).")]
     [SerializeField] private float _spawnWidth = 2f;
+
+    [Tooltip("Hướng mặt của Player khi spawn. Bật nếu muốn nhìn sang phải, tắt nếu muốn nhìn sang trái.")]
+    [SerializeField] private bool _isFacingRight = true;
+    public bool IsFacingRight => _isFacingRight;
     
     [Header("Visuals")]
     [SerializeField] private Color _gizmoColor = Color.green;

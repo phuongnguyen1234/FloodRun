@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
+using Core.Interfaces;
 
 /// <summary>
 /// Khả năng trượt (Slide) và lao xuống (Air Dive) của người chơi.
@@ -7,7 +8,6 @@ using Unity.Netcode;
 public class SlideAbility : NetworkBehaviour, IPlayerAbility
 {
     [Header("Settings")]
-    [SerializeField] private float _slideSpeed = 12f;
     [SerializeField] private float _maxSlideTime = 1.0f;
     [SerializeField] private float _slideCooldown = 0.5f;
     
@@ -31,6 +31,7 @@ public class SlideAbility : NetworkBehaviour, IPlayerAbility
     private PlayerInputHandler _input;
     private PlayerMotor _motor;
     private Rigidbody2D _rb;
+    private IPlayer _player;
 
     private bool _isSliding = false;
     private bool _isDiving = false;
@@ -53,6 +54,7 @@ public class SlideAbility : NetworkBehaviour, IPlayerAbility
         _input = GetComponent<PlayerInputHandler>();
         _motor = GetComponent<PlayerMotor>();
         _rb = GetComponent<Rigidbody2D>();
+        _player = GetComponent<IPlayer>();
     }
 
     public void EnableAbility() => _isAbilityEnabled = true;
@@ -70,6 +72,7 @@ public class SlideAbility : NetworkBehaviour, IPlayerAbility
         if (IsSpawned && !IsOwner) return;
 
         if (!_isAbilityEnabled) return;
+        if (_player != null && _player.IsInputBlocked) return;
 
         // Nếu người chơi đã thả phím, reset cờ chặn để cho phép trượt lần sau
         if (!_input.SlideInput)
@@ -190,13 +193,13 @@ public class SlideAbility : NetworkBehaviour, IPlayerAbility
         if (_motor.IsGrounded)
         {
             Vector2 directionVector = new Vector2(_slideDirection, 0);
-            Vector2 slopeVelocity = _motor.GetSlopeVelocity(directionVector, _slideSpeed);
+            Vector2 slopeVelocity = _motor.GetSlopeVelocity(directionVector, _motor.Speed);
             _rb.linearVelocity = slopeVelocity;
         }
         else
         {
             // Nếu lỡ bị bay lên không (Air Slide), giữ vận tốc ngang và cho phép rơi tự do (Y)
-            _rb.linearVelocity = new Vector2(_slideDirection * _slideSpeed, _rb.linearVelocity.y);
+            _rb.linearVelocity = new Vector2(_slideDirection * _motor.Speed, _rb.linearVelocity.y);
         }
         
         // Khóa di chuyển thông thường của Motor để không bị ghi đè vận tốc

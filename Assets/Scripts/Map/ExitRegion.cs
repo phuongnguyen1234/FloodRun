@@ -1,6 +1,7 @@
 using UnityEngine;
 using Core.Interfaces;
 using Core.Events;
+using Unity.Netcode;
 
 /// <summary>
 /// ExitRegion là một vùng đặc biệt trên bản đồ, khi Player đi vào sẽ kích hoạt sự kiện hoàn thành level nếu cửa đã được mở.
@@ -10,6 +11,8 @@ public class ExitRegion : MonoBehaviour
 {
     [Tooltip("Kéo một GameObject con chứa Collider (không phải Trigger) vào đây. Object này sẽ được bật lên để chặn cửa khi Player đi vào.")]
     [SerializeField] private GameObject _blockColliderObject;
+
+    private IMapManager _mapManager; // FIX Bug 9: Reference to IMapManager
 
     private void Awake()
     {
@@ -21,6 +24,11 @@ public class ExitRegion : MonoBehaviour
         {
             _blockColliderObject.SetActive(false);
         }
+
+        // FIX Bug 9: Get IMapManager reference
+        _mapManager = GetComponentInParent<IMapManager>();
+        if (_mapManager == null)
+            Debug.LogError("[ExitRegion] IMapManager not found on map hierarchy!", this);
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -32,34 +40,31 @@ public class ExitRegion : MonoBehaviour
         // Cách này gọn và bao quát hơn logic cũ.
         IPlayer player = other.GetComponentInParent<IPlayer>();
 
-        if (player != null)
+        if (player == null || player.Status.Value == PlayerStatus.Finished) return;
+
+        // MP: chỉ owner xử lý va chạm exit để tránh bắn event nhiều lần trên mọi client
+        if (player is NetworkBehaviour netBehaviour
+            && NetworkManager.Singleton != null
+            && NetworkManager.Singleton.IsListening
+            && !netBehaviour.IsOwner)
+            return;
+
+        if (_mapManager != null)
         {
-            // Kiểm tra thông qua MapManager xem cửa đã mở chưa
-            if (MapManager.Instance != null)
+            if (_mapManager.IsExitUnlocked)
             {
-                if (MapManager.Instance.IsExitUnlocked)
-                {
-                    // CHỈ khi cửa đã mở thì mới set bất tử và chặn đường về
-                    player.SetInvincible(true);
+                player.SetInvincible(true);
 
-                    if (_blockColliderObject != null)
-                    {
-                        _blockColliderObject.SetActive(true);
-                    }
-                    else
-                    {
-                        Debug.LogWarning("ExitRegion: Chưa gán _blockColliderObject! Player có thể đi ngược ra ngoài.");
-                    }
-
-                    // Bắn sự kiện hoàn thành level ra toàn hệ thống
-                    GameplayEvents.TriggerLevelCompleted(player);
-                }
+                if (_blockColliderObject != null)
+                    _blockColliderObject.SetActive(true);
                 else
-                {
-                    Debug.Log("Cần kích hoạt tất cả các nút để mở cửa thoát hiểm!");
-                    // Có thể thêm hiển thị UI thông báo tại đây
-                }
+                    Debug.LogWarning("ExitRegion: Chưa gán _blockColliderObject! Player có thể đi ngược ra ngoài.");
+
+                player.Status.Value = PlayerStatus.Finished;
+                GameplayEvents.TriggerLevelCompleted(player);
             }
+            else
+                Debug.Log("Cần kích hoạt tất cả các nút để mở cửa thoát hiểm!");
         }
     }
 }

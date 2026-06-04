@@ -41,6 +41,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
     // IGameLoopManager implementation
     public bool IsHost => true; // SP luôn là host
     public bool IsMultiplayer => false; // SP không phải MP
+    public IMapManager CurrentMapManager => _mapManager;
 
     private IGameplayUIManager _uiManager;
     private IMapManager _mapManager;
@@ -141,8 +142,8 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         if (currentData != null && _uiManager != null)
         {
             MapRecord record = profile.MapRecords.Find(r => r.MapName == currentData.Name);
-            // Nếu tìm thấy record thì gửi BestTime, nếu không gửi -1 để UI hiển thị placeholder
-            _uiManager.SetRecordTime(record != null ? record.BestTime : -1f);
+            float bestTime = record != null ? record.BestTime : -1f;
+            _uiManager.SetRecordTime(bestTime, _mapManager.GetMaxMapTime());
         }
 
         _timelinesHalted = false;
@@ -483,6 +484,13 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
             {
                 IPlayer player = playerObj.GetComponent<IPlayer>();
                 
+                // Thiết lập hướng mặt ban đầu dựa trên cấu hình của PlayerSpawn
+                var spawnPoint = FindObjectsByType<PlayerSpawn>().FirstOrDefault(s => s.IsMapSpawn);
+                if (spawnPoint != null)
+                {
+                    player.SetFacing(spawnPoint.IsFacingRight);
+                }
+
                 // Trong Multiplayer, mỗi Client chỉ gán LocalPlayer cho Object mà họ sở hữu
                 LocalPlayer = player; 
                 AllPlayers.Add(player);
@@ -576,8 +584,8 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         IsGameActive = false;
         Time.timeScale = 1f; // Tránh treo game ở màn hình Victory
 
-        // Hiển thị lá cờ hoàn thành cá nhân giống MP
         _uiManager?.ShowPlayerFinishFlag(true);
+        _uiManager?.SetPersonalTimeHighlight(true);
 
         foreach (var p in AllPlayers)
         {
@@ -646,7 +654,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         }
 
         // Hiển thị thông báo Win màu xanh lá
-        _uiManager?.ShowFloatNotification("Map Completed!", Color.green, 2f);
+        _uiManager?.ShowFloatNotification($"Completed {data.Name}!", Color.green, 2f);
 
         // 3. Đợi 1 giây trước khi hiện bảng
         yield return new WaitForSeconds(1f);

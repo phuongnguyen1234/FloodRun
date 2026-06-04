@@ -33,7 +33,7 @@
 
 ## Giai đoạn Playing:
 
-- Kết thúc 3s đếm ngược, bắt đầu round với luồng như singleplayer.
+- Kết thúc 3s đếm ngược, bắt đầu round với luồng như singleplayer (mở khóa input, bật timer cá nhân...)
 - Player nào ấn nút thì gửi lên server để validate, nếu ok thì mới kích hoạt button cho tất cả, hiển thị thông báo float Pressed button X cho player ấn nút đó, đồng thời cập nhật thứ tự nút cần ấn trong gameplayHUD tất cả player.
 - Trong quá trình diễn ra round, hệ thống lắng nghe thay đổi danh sách player còn lại. Bất kỳ player nào win map, chết (do map hoặc reset character), thoát phòng đều sẽ bắn event tương ứng. Mỗi khi danh sách player còn lại thay đổi, kiểm tra điều kiện kết thúc round. Player chết thì cứ bắn event đã, respawn sau bao lâu thì kệ họ
 - Điều kiện kết thúc round: tất cả player win, tất cả player chết, 1 phần player chết và win, hết thời gian tối đa map, không còn ai trong danh sách player còn lại.

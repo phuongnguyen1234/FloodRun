@@ -51,6 +51,7 @@ namespace Core.Interfaces
 
         bool IsMapMechanicsStarted();
 
+        bool IsExitUnlocked { get; }
     }
 
     public interface IMapCommandHandler
