@@ -101,13 +101,22 @@ public class ButtonController : MonoBehaviour, IInteractable, IButtonController
         {
             _warningAreaObject.SetActive(false);
         }
+
+        RefreshMapManagerCache();
+    }
+
+    private void RefreshMapManagerCache()
+    {
+        _cachedMapManager = GetComponentInParent<IMapManager>();
+    }
+
+    private void OnEnable()
+    {
+        RefreshMapManagerCache();
     }
 
     private void Start()
-    {
-        // Thử cache sớm, nếu null cũng không sao, hàm GetMapManager sẽ lo liệu sau
-        _cachedMapManager = GetMapManager();
-    }
+    { }
 
     private void OnValidate()
     {
@@ -226,12 +235,8 @@ public class ButtonController : MonoBehaviour, IInteractable, IButtonController
     /// </summary>
     private IMapManager GetMapManager()
     {
-        if (_cachedMapManager == null)
-        {
-            _cachedMapManager = FindObjectsByType<MonoBehaviour>()
-                .OfType<IMapManager>()
-                .FirstOrDefault();
-        }
+        if (_cachedMapManager == null || (_cachedMapManager as MonoBehaviour) == null)
+            RefreshMapManagerCache();
         return _cachedMapManager;
     }
 

@@ -500,7 +500,7 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
     /// </summary>
     public float GetDepthMultiplier(float playerY)
     {
-        if (!ApplyDepthMultiplier || _collider == null)
+        if (!ApplyDepthMultiplier || _collider == null || _spriteRenderer == null)
             return 1.0f;
 
         // Tính mặt nước (Top Y)

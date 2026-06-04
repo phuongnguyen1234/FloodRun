@@ -39,8 +39,7 @@ public class GoalLocator : MonoBehaviour
     private void Start()
     {
         // Tìm kiếm các manager thông qua Interface
-        _gameLoopManager = FindObjectsByType<Component>().OfType<IGameLoopManager>().FirstOrDefault();
-        _mapManager = FindObjectsByType<Component>().OfType<IMapManager>().FirstOrDefault();
+        _gameLoopManager = FindObjectsByType<Component>().OfType<IGameLoopManager>().FirstOrDefault(); // FIX Bug 5: This is fine, it's a persistent object
     }
 
     private void InitLocatorLines()
@@ -80,6 +79,12 @@ public class GoalLocator : MonoBehaviour
     private void HandleGoalLocator()
     {
         bool isLocatorEnabled = SettingsManager.Instance != null && SettingsManager.Instance.GoalLocator;
+
+        // Lấy tham chiếu MapManager hiện tại thông qua GameLoopManager (đã được xử lý Unity-safe null check)
+        if (_gameLoopManager != null)
+        {
+            _mapManager = _gameLoopManager.CurrentMapManager; // Get the current map manager from the game loop manager
+        }
         
         // Kiểm tra điều kiện hiển thị
         if (!isLocatorEnabled || _gameLoopManager == null || _mapManager == null || _gameLoopManager.LocalPlayer == null || 

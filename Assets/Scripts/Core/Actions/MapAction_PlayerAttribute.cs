@@ -36,33 +36,27 @@ public class MapAction_PlayerAttribute : MapAction
             return;
         }
 
-        GameObject playerObject = targetPlayer.gameObject;
-        if (playerObject != null)
+        // Truy cập trực tiếp qua interface IPlayer (đã được refactor để chứa các setter)
+        switch (Command)
         {
-            playerObject.TryGetComponent(out IPlayerMotorAttributes motor);
-            playerObject.TryGetComponent(out IPlayerControllerAttributes controller);
-
-            switch (Command)
-            {
-                case PlayerCommand.SetMoveSpeed:
-                    motor?.SetSpeed(Value);
-                    break;
-                case PlayerCommand.SetJumpForce:
-                    motor?.SetJumpForce(Value);
-                    break;
-                case PlayerCommand.SetGravityScale:
-                    motor?.SetGravityScale(Value);
-                    break;
-                case PlayerCommand.ResetGravityScale:
-                    motor?.ResetGravityScale();
-                    break;
-                case PlayerCommand.SetMaxAir:
-                    controller?.SetMaxAir(Value);
-                    break;
-                case PlayerCommand.AddAir:
-                    controller?.AddAir(Value);
-                    break;
-            }
+            case PlayerCommand.SetMoveSpeed:
+                targetPlayer.SetSpeed(Value);
+                break;
+            case PlayerCommand.SetJumpForce:
+                targetPlayer.SetJumpForce(Value);
+                break;
+            case PlayerCommand.SetGravityScale:
+                targetPlayer.SetGravityScale(Value);
+                break;
+            case PlayerCommand.ResetGravityScale:
+                targetPlayer.ResetGravityScale();
+                break;
+            case PlayerCommand.SetMaxAir:
+                targetPlayer.SetMaxAir(Value);
+                break;
+            case PlayerCommand.AddAir:
+                targetPlayer.AddAir(Value);
+                break;
         }
     }
 }

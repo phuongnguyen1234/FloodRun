@@ -38,5 +38,7 @@ namespace Core.Interfaces
         /// Kiểm tra xem có phải chế độ multiplayer không.
         /// </summary>
         bool IsMultiplayer { get; }
+
+        IMapManager CurrentMapManager { get; }
     }
 }

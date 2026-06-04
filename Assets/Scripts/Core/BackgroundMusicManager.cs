@@ -102,12 +102,12 @@ namespace Core
         /// <summary>
         /// Chuyển đổi nhạc nền lập tức (tạm thời bỏ hiệu ứng Fade).
         /// </summary>
-        public void FadeTo(AudioClip newClip, float fadeDuration = 0.5f, bool loop = true)
+        public void FadeTo(AudioClip newClip, float fadeDuration = 0.5f, bool loop = true, bool forceRestart = true)
         {
             if (_audioSource == null) return;
             
-            // Nếu nhạc đang phát giống hệt nhạc mới thì không làm gì
-            if (_audioSource.clip == newClip && _audioSource.isPlaying) return;
+            // Nếu nhạc đang phát giống hệt nhạc mới và không yêu cầu force restart thì không làm gì
+            if (!forceRestart && _audioSource.clip == newClip && _audioSource.isPlaying) return;
 
             // Dừng mọi tween volume đang chạy nếu có
             _audioSource.DOKill();
@@ -123,6 +123,7 @@ namespace Core
                 _audioSource.clip = newClip;
                 _audioSource.loop = loop;
                 _audioSource.volume = targetVolume;
+                _audioSource.time = 0; // Luôn chơi lại từ đầu
                 _audioSource.Play();
             }
         }

@@ -44,6 +44,7 @@ namespace UI.Multiplayer
 
         [Header("Gameplay HUD (Common with SP)")]
         [SerializeField] private TMP_Text _personalTimeText;
+        [SerializeField] private Image _personalTimeIcon;
         [SerializeField] private TMP_Text _bestRecordTimeText;
         [SerializeField] private TMP_Text _floatNotificationText;
         [Tooltip("Cờ hoàn thành map cho người chơi cục bộ")]
@@ -63,7 +64,7 @@ namespace UI.Multiplayer
         [Header("Button Progress")]
         [SerializeField] private TMP_Text _buttonStepText;
         [SerializeField] private Image _buttonIcon;
-        [SerializeField] private GameObject _finishFlag;
+        [SerializeField] private GameObject _buttonFinishFlag;
 
         [Header("Sliders")]
         [SerializeField] private Slider _timeSlider;
@@ -92,6 +93,8 @@ namespace UI.Multiplayer
         [Header("Map Loading Details")]
         [SerializeField] private Image _loadingPreviewImage;
         [Tooltip("Định dạng: <Tên map> [<Tier>] - <Tác giả>")]
+        
+        [SerializeField] private LobbyInfoBoard _lobbyInfoBoard; // Đối tượng bảng thông tin vật lý trong Scene
         [SerializeField] private TMP_Text _loadingMapNameAuthorText; 
         [SerializeField] private TMP_Text _loadingStatusText;
         [SerializeField] private TMP_Text _loadingButtonCountText;
@@ -116,6 +119,8 @@ namespace UI.Multiplayer
         private int _prevAliveCount = -1;
         private Color _originalPlayerCountColor;
         private Color _originalPlayerIconColor;
+        private Color _originalPersonalTimeColor;
+        private Color _originalPersonalTimeIconColor;
 
 
         private void Awake()
@@ -158,6 +163,8 @@ namespace UI.Multiplayer
             if (_buttonIcon != null) _originalButtonIconColor = _buttonIcon.color;
             if (_playerCountText != null) _originalPlayerCountColor = _playerCountText.color;
             if (_playerCountIcon != null) _originalPlayerIconColor = _playerCountIcon.color;
+            if (_personalTimeText != null) _originalPersonalTimeColor = _personalTimeText.color;
+            if (_personalTimeIcon != null) _originalPersonalTimeIconColor = _personalTimeIcon.color;
             
             _prevActivatedCount = 0;
             _prevAliveCount = 0;
@@ -178,9 +185,15 @@ namespace UI.Multiplayer
         public void SetVotingButtonVisible(bool visible)
         {
             if (_openVoteModalButton != null)
+            {
+                // FIX Bug 2: Nút Vote chỉ nhìn thấy ở giai đoạn Voting
                 _openVoteModalButton.gameObject.SetActive(visible);
+                _openVoteModalButton.interactable = visible;
+            }
 
             // FIX: Kích hoạt panel Voting để Slider Global (nếu nằm trong đây) có thể hiển thị và chạy
+            // Panel này chứa slider thời gian, nên nó cần active để slider chạy
+            // Tuy nhiên, nếu nút vote luôn active, panel này có thể không cần active liên tục.
             if (_votingPanel != null)
                 _votingPanel.SetActive(visible);
 
@@ -195,18 +208,31 @@ namespace UI.Multiplayer
             if (_voteMapModal != null) _voteMapModal.gameObject.SetActive(false);
         }
 
+        /// <summary>
+        /// Kiểm tra xem có bất kỳ Modal nào đang mở gây chặn tương tác không.
+        /// </summary>
+        public bool IsAnyModalOpen()
+        {
+            return (_roomInfoModal != null && _roomInfoModal.gameObject.activeSelf) ||
+                   (_settingsModal != null && _settingsModal.activeSelf) ||
+                   (_voteMapModal != null && _voteMapModal.gameObject.activeSelf);
+        }
+
         public void ResetGameplayHUD()
         {
             // 1. Ẩn các lá cờ hoàn thành (của người chơi và của nút bấm)
             ShowPlayerFinishFlag(false);
             ShowButtonFinishFlag(false);
+            SetWaitingForPlayersText(""); 
+            // FIX 1: Không ẩn LobbyInfoBoard khi reset, nó là vật thể thế giới luôn hiện
+            // _lobbyInfoBoard?.SetVisibility(false); 
 
             // 2. Reset các biến tracking hiệu ứng pulse để sẵn sàng cho thông số mới
             _prevActivatedCount = 0;
             _prevAliveCount = 0;
 
             // 3. Reset màu sắc thời gian và xóa text đếm ngược/thông báo
-            if (_personalTimeText != null) _personalTimeText.color = Color.white;
+                if (_personalTimeText != null) _personalTimeText.color = _originalPersonalTimeColor;
             SetCountdownText("");
         }
 
@@ -247,23 +273,20 @@ namespace UI.Multiplayer
         /// <summary>
         /// Hiển thị personal record (best time) giống như singleplayer.
         /// </summary>
-        public void SetRecordTime(float time)
+        public void SetRecordTime(float bestTime, float maxMapTime)
         {
-            // Reset màu HUD thời gian về mặc định
-            if (_personalTimeText != null) _personalTimeText.color = Color.white;
+            if (_personalTimeText != null) _personalTimeText.color = _originalPersonalTimeColor;
+            if (_personalTimeIcon != null) _originalPersonalTimeIconColor = _personalTimeIcon.color;
 
             if (_bestRecordTimeText != null)
-            {
-                // Nếu time <= 0 (chưa có record), hiển thị "-"
-                if (time <= 0f)
-                {
-                    _bestRecordTimeText.text = "-";
-                }
-                else
-                {
-                    _bestRecordTimeText.text = FormatTime(time);
-                }
-            }
+                _bestRecordTimeText.text = FormatTime(bestTime > 0f ? bestTime : maxMapTime);
+        }
+
+        public void SetPersonalTimeHighlight(bool highlightAsVictory)
+        {
+            Color c = highlightAsVictory ? Color.green : _originalPersonalTimeColor;
+            if (_personalTimeText != null) _personalTimeText.color = c;
+            if (_personalTimeIcon != null) _personalTimeIcon.color = highlightAsVictory ? Color.green : _originalPersonalTimeIconColor;
         }
 
         public void ShowPlayerFinishFlag(bool show)
@@ -348,29 +371,33 @@ namespace UI.Multiplayer
             _prevActivatedCount = current;
 
             // 2. Kiểm tra trạng thái hoàn thành: Hiện lá cờ nếu đã đủ nút
-            bool isFinished = total > 0 && current >= total;
+            bool isSequenceFinished = total > 0 && current >= total;
 
-            if (isFinished)
+            if (isSequenceFinished)
             {
                 _buttonStepText.text = "";
-                if (_finishFlag != null) _finishFlag.SetActive(true);
+                if (_buttonFinishFlag != null) _buttonFinishFlag.SetActive(true);
             }
             else
             {
                 _buttonStepText.text = (current + 1).ToString();
-                if (_finishFlag != null) _finishFlag.SetActive(false);
+                if (_buttonFinishFlag != null) _buttonFinishFlag.SetActive(false);
             }
         }
 
         public void ShowButtonFinishFlag(bool show)
         {
-            
+            if (_buttonFinishFlag != null) _buttonFinishFlag.SetActive(show);
         }
 
         public void SetCountdownText(string text)
         {
             if (_floatNotificationText != null)
             {
+                // FIX: Nếu lệnh này là xóa text (rỗng) mà đang có thông báo float đang chạy (Map Completed, kết quả round...), 
+                // thì bỏ qua để không làm mất thông báo quan trọng đó.
+                if (string.IsNullOrEmpty(text) && _notificationCoroutine != null) return;
+
                 // Reset lại trạng thái của Text (tránh bị ảnh hưởng bởi tween notification)
                 _floatNotificationText.DOKill();
                 _floatNotificationText.color = Color.white;
@@ -534,10 +561,12 @@ namespace UI.Multiplayer
             if (show) _roomInfoModal.Show();
             else _roomInfoModal.Hide();
         }
-
+        
+        // FIX Bug 7: Add logic to block player input when settings modal is shown
         public void ShowSettings(bool show)
         {
             if (_settingsModal != null) _settingsModal.SetActive(show);
+            // FIX: Việc khóa input bây giờ do MultiplayerManagerNew quản lý tập trung trong Update
         }
 
         /// <summary>
@@ -547,6 +576,7 @@ namespace UI.Multiplayer
         {
             ShowRoomInfo(false);
             ShowSettings(false);
+            // FIX: Việc khóa input bây giờ do MultiplayerManagerNew quản lý tập trung trong Update
         }
 
         #endregion
@@ -610,6 +640,30 @@ namespace UI.Multiplayer
             if (_loadingDifficultyText != null)
                 _loadingDifficultyText.text = data.Difficulty.ToString("F1");
         }
+
+        /// <summary>
+        /// Cập nhật text "Waiting for players" trên Lobby World UI.
+        /// </summary>
+        public void SetWaitingForPlayersText(string text)
+        {
+            _lobbyInfoBoard?.SetPlayerCountText(text);
+        }
+
+        /// <summary>
+        /// Cập nhật thông tin map trên Lobby World UI.
+        /// </summary>
+        public void UpdateLobbyWorldMapInfo(MapData data, float difficulty)
+        {
+            _lobbyInfoBoard?.UpdateMapInfo(data, difficulty, _palette);
+        }
+
+    /// <summary>
+    /// Chỉ cập nhật phần độ khó trên bảng Lobby mà không ảnh hưởng đến tên hay ảnh map.
+    /// </summary>
+    public void UpdateLobbyDifficultyOnly(float difficulty)
+    {
+        _lobbyInfoBoard?.UpdateDifficultyDisplay(difficulty, _palette);
+    }
 
         #endregion
 
@@ -754,16 +808,20 @@ namespace UI.Multiplayer
             if (localPlayer == null) return;
 
             // [HUD Visibility Logic Refactor]
-            // Chỉ hiện Lobby HUD khi người chơi thực sự ở trong Lobby (Intermission/Voting ban đầu).
-            // Nếu đã thắng map nhưng chưa hồi sinh về Lobby, vẫn giữ Gameplay HUD.
-            bool isParticipating = !localPlayer.IsInLobby.Value;
+            // Gameplay HUD hiện khi đang InGame hoặc đã Finished (về đích)
+            bool isParticipating = localPlayer.Status.Value == PlayerStatus.InGame || 
+                                 localPlayer.Status.Value == PlayerStatus.Finished;
 
+            // Control visibility of main HUDs
             if (_gameplayHUD != null) _gameplayHUD.SetActive(isParticipating);
             if (_lobbyHUD != null) _lobbyHUD.SetActive(!isParticipating);
             
             // Nếu đang trong map chơi, ẩn các icon/nút không cần thiết của Lobby
             if (_playStatusText != null) _playStatusText.transform.parent.gameObject.SetActive(!isParticipating);
             if (_spectateStatusText != null) _spectateStatusText.transform.parent.gameObject.SetActive(!isParticipating);
+
+            // FIX 1: LobbyInfoBoard luôn hiện thông tin map hiện tại
+            _lobbyInfoBoard?.SetVisibility(true);
 
             // Tự động đóng các modal khi vào gameplay
             if (isParticipating) HideAllModals();

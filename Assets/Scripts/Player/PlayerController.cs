@@ -60,9 +60,8 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
     public NetworkVariable<DeathReason> NetworkDeathReason = new(DeathReason.Drowned, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     // Đồng bộ trạng thái AFK và Spectating
     public NetworkVariable<bool> IsAFK { get; } = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    public NetworkVariable<bool> IsSpectating { get; } = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    public NetworkVariable<bool> IsInLobby { get; } = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
+    public NetworkVariable<PlayerStatus> Status { get; } = new NetworkVariable<PlayerStatus>(PlayerStatus.Lobby, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    
     private bool _isDeadSingleplayer = false; // Backing field cho Singleplayer
     private bool _isDeathEffectsExecuted = false; // Đảm bảo hiệu ứng nổ chỉ chạy 1 lần
     private bool _isAbilityEnabled = true;
@@ -88,6 +87,7 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
     public bool IsClimbing => _motor != null && _motor.IsClimbing; // Trạng thái leo thang
 
     // Triển khai CurrentFlood từ IPlayer: Trả về vùng nước mà Motor đang ghi nhận
+    public bool IsInputBlocked => _isInputBlocked;
     public IFloodZone CurrentFlood => _motor != null ? _motor.CurrentFlood : null;
 
     // Public getters cho MapManager đọc thông số hiển thị UI
@@ -207,6 +207,15 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
         }
     }
 
+    public void PrepareForNewRound()
+    {
+        ResetAir();
+        SetInvincible(false);
+        SetInfiniteAir(false);
+        SetInfiniteJump(false);
+        _motor?.ResetAttributes();
+    }
+
     #region IPlayerAbility Implementation
     public void EnableAbility()
     {
@@ -231,9 +240,23 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
     // Thực thi logic bất tử
     public void SetInvincible(bool isInvincible) => _isInvincible = isInvincible;
 
+    public void ResetAir()
+    {
+        _baseAir = _maxAir;
+        _bonusAir = 0f;
+        _bonusAirMaxCap = 0f;
+    }
+
     public void SetInfiniteAir(bool enabled) => _isInfiniteAir = enabled;
 
     public void SetInfiniteJump(bool enabled) => _isInfiniteJump = enabled;
+
+    // Triển khai các setter từ IPlayer, điều phối tới Motor nếu cần
+    public void SetSpeed(float newSpeed) => _motor?.SetSpeed(newSpeed);
+    public void SetJumpForce(float newJumpForce) => _motor?.SetJumpForce(newJumpForce);
+    public void SetGravityScale(float newGravityScale) => _motor?.SetGravityScale(newGravityScale);
+    public void ResetGravityScale() => _motor?.ResetGravityScale();
+    public void SetFacing(bool faceRight) => _motor?.SetFacing(faceRight);
 
     public void Teleport(Vector3 position)
     {
@@ -269,8 +292,16 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
     public void ToggleSpectateStatus()
     {
         if (!IsSpawned || !IsOwner) return;
-        IsSpectating.Value = !IsSpectating.Value;
-        Debug.Log($"[PlayerController] Player {NetworkPlayerName.Value} Spectating status: {IsSpectating.Value}");
+
+        // Chỉ cho phép chuyển đổi Spectate khi đang ở Lobby
+        if (Status.Value == PlayerStatus.Lobby)
+            Status.Value = PlayerStatus.Spectating;
+        else if (Status.Value == PlayerStatus.Spectating)
+            Status.Value = PlayerStatus.Lobby;
+        else
+            Debug.LogWarning("Cannot toggle spectate while in-game!");
+            
+        Debug.Log($"[PlayerController] Player {NetworkPlayerName.Value} Status: {Status.Value}");
     }
     #endregion
 

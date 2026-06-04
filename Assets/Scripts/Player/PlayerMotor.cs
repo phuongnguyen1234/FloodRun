@@ -78,6 +78,8 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     private string _currentLabel;
 
     private Rigidbody2D _rb;
+    private float _originalSpeed;
+    private float _originalJumpForce;
 
     // Đồng bộ các trạng thái quan trọng cho Visuals
     private NetworkVariable<bool> _facingRight = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -113,6 +115,8 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     private float _movementLockTimer = 0f; // Timer khóa di chuyển
     private Vector2 _groundNormal = Vector2.up; // Vector pháp tuyến của mặt đất hiện tại
     private float _groundingCooldown = 0f; // Cooldown ngăn chặn nhận diện mặt đất ngay sau khi nhảy/phóng
+
+    public float Speed => _speed;
 
     // FIX: Hỗ trợ nhiều vùng flood chồng nhau
     private readonly System.Collections.Generic.List<IFloodZone> _activeFloodZones = new System.Collections.Generic.List<IFloodZone>();
@@ -244,6 +248,13 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
         ResetCollider(); // Đảm bảo collider và rotation trở về mặc định
         CurrentFlood = null;
     }
+
+    public void ResetAttributes()
+    {
+        _speed = _originalSpeed;
+        _jumpForce = _originalJumpForce;
+        ResetGravityScale();
+    }
     #endregion
 
     void Awake()
@@ -251,6 +262,8 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
         _rb = GetComponent<Rigidbody2D>();
         
         // Đảm bảo ban đầu luôn là Dynamic để Singleplayer hoạt động bình thường
+        _originalSpeed = _speed;
+        _originalJumpForce = _jumpForce;
         _rb.bodyType = RigidbodyType2D.Dynamic;
         
         // Lưu lại thông số ban đầu của Collider
@@ -1028,6 +1041,14 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
         ResetGravityScale(); // Đảm bảo trọng lực hoạt động khi lao xuống
         // CẢI TIẾN: Giữ nguyên vận tốc X hiện tại thay vì ép về 0 để không bị khựng ngang đột ngột khi bắt đầu Dive
         _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, -speed);
+    }
+
+    /// <summary>
+    /// Thiết lập hướng mặt cụ thể cho Player.
+    /// </summary>
+    public void SetFacing(bool faceRight)
+    {
+        if (IsFacingRight != faceRight) Flip();
     }
 
     /// <summary>
