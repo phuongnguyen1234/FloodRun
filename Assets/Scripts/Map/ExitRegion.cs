@@ -33,11 +33,6 @@ public class ExitRegion : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // 1. Debug để kiểm tra xem va chạm vật lý có xảy ra không (quan trọng)
-        // Debug.Log($"Va chạm với: {other.gameObject.name} - Layer: {LayerMask.LayerToName(other.gameObject.layer)}");
-
-        // 2. Tìm IPlayer: GetComponentInParent sẽ tìm trên chính object đó trước, sau đó mới tìm lên cha.
-        // Cách này gọn và bao quát hơn logic cũ.
         IPlayer player = other.GetComponentInParent<IPlayer>();
 
         if (player == null || player.Status.Value == PlayerStatus.Finished) return;
@@ -51,7 +46,9 @@ public class ExitRegion : MonoBehaviour
 
         if (_mapManager != null)
         {
-            if (_mapManager.IsExitUnlocked)
+            // FIX: Chỉ cho phép Win khi map mechanics đã bắt đầu. 
+            // Ngăn chặn việc kẹt status Finished khi chơi lại cùng một map (Loop cleanup).
+            if (_mapManager.IsExitUnlocked && _mapManager.IsMapMechanicsStarted())
             {
                 player.SetInvincible(true);
 

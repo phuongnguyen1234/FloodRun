@@ -167,6 +167,7 @@ public class ZiplineAbility : NetworkBehaviour, IPlayerAbility
         float startAngle = Mathf.Atan2(startTangent.y, startTangent.x) * Mathf.Rad2Deg;
         if (!_motor.IsFacingRight) startAngle += 180f;
         _rb.SetRotation(startAngle);
+        _motor.SetTargetVisualsRotation(90f); // Nhân vật treo vuông góc với dây (90 độ là tư thế đứng thẳng)
 
         // 2. Snap vị trí Player sao cho Anchor nằm đúng điểm bắt đầu (dùng offset động)
         transform.position = zipline.GetStartPoint() - GetCurrentAnchorWorldOffset(startAngle);
@@ -344,6 +345,7 @@ public class ZiplineAbility : NetworkBehaviour, IPlayerAbility
         if (!_motor.IsFacingRight) rotationAngle += 180f;
         
         _rb.SetRotation(rotationAngle);
+        _motor.SetTargetVisualsRotation(90f); // Giữ tư thế treo thẳng so với trục của dây
 
         // FIX: Liên tục ép Scale của Particle về dương vì Motor.Flip có thể chạy trong lúc đang trượt
         if (_slideEffect != null)
