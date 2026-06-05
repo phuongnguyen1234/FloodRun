@@ -85,11 +85,10 @@ public class MapManager : NetworkBehaviour, IMapManager
     {
         // FIX Bug 9: Removed static Instance logic
 
-        // Đảm bảo MapManager luôn dùng đúng dữ liệu đã được chọn từ LevelManager
-        if (LevelManager.SelectedMap != null)
-        {
+        // Singleplayer: dùng map đã chọn từ menu. Multiplayer: giữ MapData gắn sẵn trên prefab.
+        bool isMultiplayerSession = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
+        if (!isMultiplayerSession && LevelManager.SelectedMap != null)
             _mapData = LevelManager.SelectedMap;
-        }
 
         // Lấy component thông qua interface từ các GameObject đã gán
         if (_floodManagerObjects != null)
@@ -366,9 +365,12 @@ public class MapManager : NetworkBehaviour, IMapManager
 
     public void TriggerCurrentButton()
     {
+        int currentIndex = GetButtonsActivatedCount();
+
         if (IsSpawned && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
         {
-            TriggerButtonServerRpc();
+            // Gửi kèm index hiện tại mà client đang thấy để Server validate
+            TriggerButtonServerRpc(currentIndex);
         }
         else
         {
@@ -378,9 +380,11 @@ public class MapManager : NetworkBehaviour, IMapManager
     }
 
     [Rpc(SendTo.Server)]
-    private void TriggerButtonServerRpc(RpcParams rpcParams = default)
+    private void TriggerButtonServerRpc(int expectedIndex, RpcParams rpcParams = default)
     {
-        if (_buttonSequenceManager != null)
+        // Chỉ kích hoạt nếu index client gửi lên khớp với index thực tế trên Server
+        // Tránh việc nhiều người cùng ấn 1 nút làm nhảy vọt sequence
+        if (_buttonSequenceManager != null && _buttonSequenceManager.CurrentIndex == expectedIndex)
         {
             _buttonSequenceManager.TriggerCurrentButton();
             
@@ -409,6 +413,8 @@ public class MapManager : NetworkBehaviour, IMapManager
         // Đồng bộ hóa sequence cục bộ cho đến khi khớp với Server
         while (_buttonSequenceManager.CurrentIndex < targetIndex)
         {
+            // LỖI QUAN TRỌNG: Phải gọi trực tiếp sequence manager để sync visual
+            // KHÔNG ĐƯỢC gọi this.TriggerCurrentButton() vì nó sẽ gửi ngược RPC lên server gây loop
             _buttonSequenceManager.TriggerCurrentButton();
         }
     }
