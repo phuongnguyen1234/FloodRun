@@ -258,6 +258,28 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
     public void ResetGravityScale() => _motor?.ResetGravityScale();
     public void SetFacing(bool faceRight) => _motor?.SetFacing(faceRight);
 
+    public void SetStatus(PlayerStatus newStatus)
+    {
+        if (IsOwner)
+        {
+            // Nếu bản thân là chủ sở hữu (Host tự xử cho mình hoặc Client nhận RPC xong tự xử)
+            Status.Value = newStatus;
+        }
+        else if (IsServer)
+        {
+            // Nếu là Server (Host) đang gọi cho một Client khác, gửi RPC yêu cầu Client đó tự cập nhật
+            SetPlayerStatusClientRpc(newStatus, RpcTarget.Single(OwnerClientId, RpcTargetUse.Temp));
+        }
+    }
+
+    [Rpc(SendTo.SpecifiedInParams)] // Server sẽ gọi RPC này để yêu cầu client tự cập nhật trạng thái
+    public void SetPlayerStatusClientRpc(PlayerStatus newStatus, RpcParams rpcParams = default)
+    {
+        // RPC này sẽ được nhận bởi PlayerController của client sở hữu
+        // Client đó sẽ tự cập nhật NetworkVariable của mình
+        SetStatus(newStatus);
+    }
+
     public void Teleport(Vector3 position)
     {
         // 1. Tạm thời vô hiệu hóa Ability để thoát các trạng thái bám tường, đu dây, trượt...
@@ -568,6 +590,15 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
             _lastDeathReasonSingleplayer = reason;
             ExecuteDeathEffects(reason, true);
         }
+    }
+
+    /// <summary>
+    /// RPC cho phép Server ép buộc một Client (Owner) phải chết.
+    /// </summary>
+    [Rpc(SendTo.Owner)]
+    public void ForceDieClientRpc(DeathReason reason)
+    {
+        Die(reason);
     }
 
     private void ExecuteDeathEffects(DeathReason reason, bool spawnGibs)

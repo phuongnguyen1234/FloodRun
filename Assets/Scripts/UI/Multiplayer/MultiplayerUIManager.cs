@@ -49,6 +49,10 @@ namespace UI.Multiplayer
         [SerializeField] private TMP_Text _floatNotificationText;
         [Tooltip("Cờ hoàn thành map cho người chơi cục bộ")]
         [SerializeField] private GameObject _playerFinishFlag;
+
+        /// <summary>
+        /// Hiển thị số player còn lại trong round
+        /// </summary>
         [Space]
         [SerializeField] private TMP_Text _playerCountText;
         [SerializeField] private Image _playerCountIcon; // Biểu thị số player còn sống

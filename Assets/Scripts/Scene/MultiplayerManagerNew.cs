@@ -75,6 +75,9 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
 
     private bool _isStarting = false; // Flag đánh dấu đang trong 3s đếm ngược (trước khi Mechanics chạy)
     private bool _playingPhaseStarted; // Chặn StartPlaying / countdown chồng giữa các round
+    private bool _setupTimeoutHandled; // Tránh xử lý timeout setup nhiều lần mỗi frame
+    private bool _localIsRoundParticipant; // Client: có tham gia round hiện tại không
+    private readonly HashSet<GameObject> _registeredMapPrefabs = new();
 
     private Coroutine _setupClientCoroutine;
     private Coroutine _serverCountdownCoroutine;
@@ -100,6 +103,7 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
         MapVotes = new NetworkList<int>();
 
         _uiManager ??= FindObjectsByType<Component>().OfType<IMultiplayerUIManager>().FirstOrDefault();
+        RegisterAllMapNetworkPrefabs();
 
         // Đăng ký cho các player đã tồn tại trong scene (phòng trường hợp scripts chạy sau player)
         foreach (var existingPlayer in FindObjectsByType<MonoBehaviour>().OfType<IPlayer>())
@@ -110,6 +114,7 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
 
     public override void OnNetworkSpawn()
     {
+        RegisterAllMapNetworkPrefabs();
         CurrentState.OnValueChanged += OnStateChanged;
         Difficulty.OnValueChanged += OnDifficultyChanged;
         IsMapMechanicsStartedNet.OnValueChanged += OnMapMechanicsStartedChanged;
@@ -121,11 +126,8 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
         GameplayEvents.OnPlayerDied += OnPlayerDiedHandler;
         GameplayEvents.OnLocalPlayerSpawned += OnLocalPlayerSpawnedHandler;
 
-        // FIX Bug 1: Đồng bộ UI "Waiting for players" cho tất cả các Client
-        _netReadyCount.OnValueChanged += (old, newVal) => {
-            if (CurrentState.Value == GameState.Playing && !IsMapMechanicsStartedNet.Value)
-                _uiManager?.SetWaitingForPlayersText($"Waiting for players ({newVal}/{_netTotalParticipants.Value})");
-        };
+        _netReadyCount.OnValueChanged += (_, _) => UpdateSetupWaitingText();
+        _netTotalParticipants.OnValueChanged += (_, _) => UpdateSetupWaitingText();
         
         // FIX: Đồng bộ số lượng player sống sót lên cả HUD màn hình và bảng Lobby trong Scene
         _netAliveCount.OnValueChanged += (old, newVal) => UpdateHUDAndBoardPlayerCount();
@@ -213,13 +215,18 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
 
         if (IsClient)
         {
-            DismissClientRoundSetup();
-            PlayLobbyMusic();
+            // Chỉ hủy setup khi RỜI Playing — tránh kill SetupClientRoutine khi state chuyển Voting → Playing
+            if (oldState == GameState.Playing && newState != GameState.Playing)
+            {
+                DismissClientRoundSetup();
+                PlayLobbyMusic();
+            }
 
             if (newState == GameState.Intermission)
             {
-                _uiManager?.SetWaitingForPlayersText("Waiting for players..."); // Reset khi về nghỉ
+                _uiManager?.SetWaitingForPlayersText("Waiting for players...");
                 ClearLocalMapReference();
+                PlayLobbyMusic();
             }
         }
     }
@@ -290,6 +297,15 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
         _uiManager?.ShowLoadingScreen(false);
         _uiManager?.SetWaitingForPlayersText("");
         _uiManager?.SetCountdownText("");
+    }
+
+    private void UpdateSetupWaitingText()
+    {
+        if (!IsClient || CurrentState.Value != GameState.Playing || IsMapMechanicsStartedNet.Value) return;
+
+        string text = $"Waiting for players ({_netReadyCount.Value}/{_netTotalParticipants.Value})";
+        _uiManager?.SetCountdownText(text);
+        _uiManager?.SetWaitingForPlayersText(text);
     }
 
     /// <summary>
@@ -377,7 +393,12 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
                     if (IsMapMechanicsStartedNet.Value && map != null)
                     {
                         NetworkTime.Value += Time.deltaTime;
-                        if (NetworkTime.Value >= map.GetMaxMapTime()) EndRound();
+                        if (NetworkTime.Value >= map.GetMaxMapTime()) 
+                        {
+                            // Ép buộc những người chưa về đích phải chết do hết giờ
+                            ForceTimeoutDeathClientRpc();
+                            EndRound();
+                        }
                     }
                     else if (!_isStarting) // Bắt đầu đếm ngược 20s cho giai đoạn Setup sau khi map được spawn
                     {
@@ -385,10 +406,8 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
                         NetworkTime.Value = Mathf.Max(0, NetworkTime.Value - Time.deltaTime);
 
                         // Chỉ kết thúc nếu chưa thực sự bắt đầu chơi
-                        if (NetworkTime.Value <= 0 && !IsMapMechanicsStartedNet.Value) {
-                            Debug.LogWarning("[MultiplayerManager] Setup timeout, aborting round setup.");
-                            AbortRoundSetup(returnToVoting: true);
-                        }
+                        if (NetworkTime.Value <= 0 && !IsMapMechanicsStartedNet.Value && !_setupTimeoutHandled)
+                            HandleSetupTimeout();
                     }
                     break;
             }
@@ -401,6 +420,16 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
 
         // Quản lý khóa Input tập trung: Tránh xung đột giữa Load Map và Modals
         UpdateInputLockState();
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void ForceTimeoutDeathClientRpc()
+    {
+        // Chỉ những người đang trong map và chưa về đích mới bị xử lý
+        if (LocalPlayer != null && LocalPlayer.Status.Value == PlayerStatus.InGame && !LocalPlayer.IsDead)
+        {
+            LocalPlayer.Die(DeathReason.TimeOut);
+        }
     }
 
     /// <summary>
@@ -433,8 +462,11 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
     {
         if (LocalPlayer == null) return;
 
-        // 1. Khóa do Logic Game: Đang Playing nhưng Mechanics chưa bắt đầu (Loading hoặc Countdown)
-        bool logicLock = (CurrentState.Value == GameState.Playing && !IsMapMechanicsStartedNet.Value);
+        // 1. Khóa do Logic Game: Chỉ khóa nếu là người tham gia round (đã teleport vào map) 
+        // và Game đang ở trạng thái Playing nhưng Mechanics chưa bắt đầu (Loading hoặc Countdown).
+        bool logicLock = _localIsRoundParticipant && 
+                         CurrentState.Value == GameState.Playing && 
+                         !IsMapMechanicsStartedNet.Value;
 
         // 2. Khóa do UI: Có bất kỳ Modal nào đang mở (Settings, Room Info, Vote)
         bool uiLock = false;
@@ -608,45 +640,79 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
         return root.GetComponentsInChildren<MonoBehaviour>(true).OfType<IMapManager>().FirstOrDefault();
     }
 
+    private void RegisterAllMapNetworkPrefabs()
+    {
+        if (_mapDatabase?.AllMaps == null) return;
+
+        var nm = NetworkManager.Singleton;
+        if (nm == null) return;
+
+        foreach (MapData map in _mapDatabase.AllMaps)
+        {
+            if (map?.MapPrefab == null) continue;
+            if (!map.MapPrefab.TryGetComponent<NetworkObject>(out _)) continue;
+
+            if (_registeredMapPrefabs.Contains(map.MapPrefab)) continue;
+
+            try
+            {
+                nm.AddNetworkPrefab(map.MapPrefab);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[MultiplayerManager] Map prefab '{map.Name}' already registered or failed: {ex.Message}");
+            }
+
+            _registeredMapPrefabs.Add(map.MapPrefab);
+        }
+    }
+
+    private static bool MapManagerMatchesName(IMapManager manager, string mapName, MapData expectedData)
+    {
+        MapData data = manager?.GetMapData();
+        if (data == null) return false;
+
+        return data.Name == mapName
+            || (expectedData != null && data.Name == expectedData.Name)
+            || (expectedData != null && ReferenceEquals(data, expectedData));
+    }
+
     private bool TryResolveMapManager(string mapName, ulong mapNetworkObjectId, out IMapManager manager)
     {
         manager = null;
         if (string.IsNullOrEmpty(mapName)) return false;
 
         MapData expectedData = _mapDatabase?.AllMaps.FirstOrDefault(m => m.Name == mapName);
+        var spawnManager = NetworkManager.Singleton?.SpawnManager;
 
-        // Ưu tiên NetworkObjectId do Server gửi — không phụ thuộc GetMapData() (có thể bị LevelManager.SelectedMap ghi đè)
-        if (mapNetworkObjectId != 0 && NetworkManager.Singleton != null)
+        if (spawnManager != null)
         {
-            var spawnManager = NetworkManager.Singleton.SpawnManager;
-            if (spawnManager != null && spawnManager.SpawnedObjects.TryGetValue(mapNetworkObjectId, out NetworkObject netObj))
+            if (mapNetworkObjectId != 0
+                && spawnManager.SpawnedObjects.TryGetValue(mapNetworkObjectId, out NetworkObject netObj))
             {
                 manager = FindMapManagerOn(netObj.gameObject);
                 if (manager != null) return true;
             }
+
+            foreach (NetworkObject spawned in spawnManager.SpawnedObjects.Values)
+            {
+                IMapManager candidate = FindMapManagerOn(spawned.gameObject);
+                if (candidate != null && MapManagerMatchesName(candidate, mapName, expectedData))
+                {
+                    manager = candidate;
+                    return true;
+                }
+            }
         }
 
-        var candidates = FindObjectsByType<MonoBehaviour>()
-            .OfType<IMapManager>()
-            .Where(m => m is MonoBehaviour mb && mb.gameObject.activeInHierarchy)
-            .ToList();
-
-        foreach (var candidate in candidates)
+        foreach (IMapManager candidate in Resources.FindObjectsOfTypeAll<MonoBehaviour>().OfType<IMapManager>())
         {
-            MapData data = candidate.GetMapData();
-            if (data == null) continue;
+            if (candidate is not MonoBehaviour mb) continue;
+            if (mb.gameObject.scene.name == "DontDestroyOnLoad") continue;
+            if (!MapManagerMatchesName(candidate, mapName, expectedData)) continue;
 
-            if (data.Name == mapName || (expectedData != null && data.Name == expectedData.Name))
-            {
-                manager = candidate;
-                return true;
-            }
-
-            if (expectedData != null && ReferenceEquals(data, expectedData))
-            {
-                manager = candidate;
-                return true;
-            }
+            manager = candidate;
+            return true;
         }
 
         return false;
@@ -660,7 +726,10 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
 
     private void TeleportLocalPlayerToMapSpawn(IMapManager map)
     {
-        if (LocalPlayer == null || LocalPlayer.IsAFK.Value || map == null) return;
+        // FIX: Không check IsAFK ở đây vì Server đã xác nhận Status là InGame cho những người tham gia.
+        // Check Status đảm bảo Client tuân thủ đúng mệnh lệnh từ Server.
+        if (LocalPlayer == null || map == null) return;
+        if (!_localIsRoundParticipant && LocalPlayer.Status.Value != PlayerStatus.InGame) return;
 
         PlayerSpawn mapSpawn = FindPlayerSpawnOnMap(map);
         Vector3 spawnPos = mapSpawn != null ? mapSpawn.GetRandomSpawnPosition() : map.GetPlayerSpawnPosition();
@@ -683,6 +752,7 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
 
         _isStarting = false;
         _playingPhaseStarted = false;
+        _setupTimeoutHandled = false;
         IsMapMechanicsStartedNet.Value = false;
         StopRoundCoroutines();
 
@@ -724,6 +794,7 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
         
         // Reset trạng thái Server-side trước khi bắt đầu
         _isStarting = false;
+        _setupTimeoutHandled = false;
         IsMapMechanicsStartedNet.Value = false;
         _netReadyCount.Value = 0;
         _playerRespawnTimers.Clear();
@@ -734,18 +805,13 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
         foreach (var p in _activePlayers)
         {
             if (p != null && p.IsSpawned && !p.IsAFK.Value && p is NetworkBehaviour nb)
-            {
                 _participants.Add(nb.OwnerClientId);
-                // Server Authority: Ép trạng thái InGame cho những người tham gia
-                p.Status.Value = PlayerStatus.InGame;
-            }
         }
 
         // FIX Bug 2: Initialize alive/total counts for HUD
         _netTotalParticipants.Value = _participants.Count;
         _netAliveCount.Value = _participants.Count; // Initially all are alive
         _netReadyCount.Value = 0;
-        _netReadyCount.Value = 0; // Reset số lượng người sẵn sàng cho round mới
         if (_participants.Count == 0)
         {
             CurrentState.Value = GameState.Intermission;
@@ -753,22 +819,49 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
             return;
         }
 
-        // Spawn Map trên Server — dọn map cũ trước để không chồng NetworkObject giữa các round
         MapData mapData = _mapDatabase.AllMaps.First(m => m.Name == mapName);
+        RegisterAllMapNetworkPrefabs();
+
         CleanupCurrentMap();
         _currentRoundMapName = mapName;
 
         _currentMapInstance = Instantiate(mapData.MapPrefab, new Vector3(1000, 1000, 0), Quaternion.identity);
-        var mapNetObj = _currentMapInstance.GetComponent<NetworkObject>();
+        if (!_currentMapInstance.TryGetComponent<NetworkObject>(out var mapNetObj))
+        {
+            Debug.LogError($"[MultiplayerManager] Map prefab '{mapName}' is missing NetworkObject.");
+            Destroy(_currentMapInstance);
+            _currentMapInstance = null;
+            AbortRoundSetup(returnToVoting: true);
+            return;
+        }
+
         mapNetObj.Spawn();
         _currentMapManager = FindMapManagerOn(_currentMapInstance);
 
         CurrentState.Value = GameState.Playing;
-        NetworkTime.Value = 20f; // Bắt đầu đếm ngược timeout 20s cho việc Load map
+        NetworkTime.Value = 20f;
 
         UpdateLobbyWorldUIClientRpc(mapName, Difficulty.Value);
 
-        StartRoundClientRpc(mapName, generation, mapNetObj.NetworkObjectId);
+        foreach (ulong clientId in _participants)
+            SetLocalParticipantStatusClientRpc(PlayerStatus.InGame, RpcTarget.Single(clientId, RpcTargetUse.Temp));
+
+        ulong mapNetId = mapNetObj.NetworkObjectId;
+        ulong[] participantSnapshot = _participants.ToArray();
+        StartCoroutine(DelayedStartRoundRoutine(mapName, generation, mapNetId, participantSnapshot));
+    }
+
+    private IEnumerator DelayedStartRoundRoutine(string mapName, int generation, ulong mapNetworkObjectId, ulong[] participantIds)
+    {
+        yield return null;
+        if (!IsServer || !IsRoundGenerationCurrent(generation) || CurrentState.Value != GameState.Playing) yield break;
+        StartRoundClientRpc(mapName, generation, mapNetworkObjectId, participantIds);
+    }
+
+    [Rpc(SendTo.SpecifiedInParams)]
+    private void SetLocalParticipantStatusClientRpc(PlayerStatus status, RpcParams rpcParams = default)
+    {
+        LocalPlayer?.SetStatus(status);
     }
 
     /// <summary>
@@ -777,20 +870,23 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
     /// </summary>
     /// <param name="mapName"></param>
     [Rpc(SendTo.ClientsAndHost)]
-    private void StartRoundClientRpc(string mapName, int roundGeneration, ulong mapNetworkObjectId)
+    private void StartRoundClientRpc(string mapName, int roundGeneration, ulong mapNetworkObjectId, ulong[] participantIds)
     {
         _roundGeneration = roundGeneration;
         _currentRoundMapName = mapName;
+
+        ulong localId = NetworkManager.Singleton.LocalClientId;
+        _localIsRoundParticipant = participantIds != null && participantIds.Contains(localId);
 
         DismissClientRoundSetup();
         ClearLocalMapReference();
         _uiManager?.ResetGameplayHUD();
 
-        // Chơi nhạc Loading cho những người tham gia round (Setup + Countdown)
-        if (LocalPlayer != null && !LocalPlayer.IsAFK.Value)
-        {
+        if (_localIsRoundParticipant && LocalPlayer != null)
+            LocalPlayer.SetStatus(PlayerStatus.InGame);
+
+        if (_localIsRoundParticipant && LocalPlayer != null && !LocalPlayer.IsAFK.Value)
             BackgroundMusicManager.Instance?.FadeTo(_loadingMusic, 0.25f, true, true);
-        }
 
         _setupClientCoroutine = StartCoroutine(SetupClientRoutine(mapName, roundGeneration, mapNetworkObjectId));
     }
@@ -807,7 +903,7 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
 
         MapData data = _mapDatabase.AllMaps.FirstOrDefault(m => m.Name == mapName);
         _uiManager?.SetupMapLoadingScreen(data);
-        _uiManager?.SetWaitingForPlayersText($"Waiting for players ({_netReadyCount.Value}/{_netTotalParticipants.Value})");
+        UpdateSetupWaitingText();
 
         float t = 0;
         while (!TryResolveMapManager(mapName, mapNetworkObjectId, out _currentMapManager) && t < 20f)
@@ -837,23 +933,42 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
         if (_currentMapManager == null)
         {
             Debug.LogError("[MultiplayerManager] Client map load timed out! Aborting SetupClientRoutine.");
-            HandleClientLoadTimeout(roundGeneration);
+            if (_localIsRoundParticipant)
+                HandleClientLoadTimeout(roundGeneration);
             yield break;
         }
 
-        if (LocalPlayer != null && !LocalPlayer.IsAFK.Value)
+        if (!_localIsRoundParticipant)
+        {
+            _uiManager?.ShowLoadingScreen(false);
+            _setupClientCoroutine = null;
+            yield break;
+        }
+
+        if (LocalPlayer != null && LocalPlayer.Status.Value != PlayerStatus.InGame)
+            LocalPlayer.SetStatus(PlayerStatus.InGame);
+
+        if (LocalPlayer != null)
         {
             var currentMap = CurrentMapManager;
 
             LocalPlayer.PrepareForNewRound();
             LocalPlayer.SetInvincible(true);
-            if (LocalPlayer.Status.Value != PlayerStatus.InGame) LocalPlayer.Status.Value = PlayerStatus.InGame;
 
             PlayerProfile profile = SaveSystem.LoadProfile();
             MapRecord record = profile?.MapRecords.Find(r => r.MapName == mapName);
             _uiManager?.SetRecordTime(record != null ? record.BestTime : -1f, currentMap.GetMaxMapTime());
 
             TeleportLocalPlayerToMapSpawn(currentMap);
+
+            // FIX: Đợi 1 frame để Camera và Physics ổn định vị trí mới trước khi setup Parallax.
+            // Điều này cực kỳ quan trọng với người vừa Win (vì khoảng cách teleport ngắn không đủ kích hoạt auto-reset của script Parallax).
+            yield return null;
+            if (!IsRoundGenerationCurrent(roundGeneration) || CurrentState.Value != GameState.Playing)
+            {
+                _uiManager?.ShowLoadingScreen(false);
+                yield break;
+            }
 
             _uiManager?.UpdateAlivePlayerCount(_netAliveCount.Value, _netTotalParticipants.Value);
             _uiManager?.UpdateButtonProgress(0, currentMap.GetTotalButtonsCount());
@@ -901,7 +1016,7 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
         {
             if (_lobbySpawn == null) _lobbySpawn = FindObjectsByType<PlayerSpawn>().FirstOrDefault(s => !s.IsMapSpawn);
             if (_lobbySpawn != null) LocalPlayer.Teleport(_lobbySpawn.GetRandomSpawnPosition());
-            LocalPlayer.Status.Value = PlayerStatus.Lobby;
+            LocalPlayer.SetStatus(PlayerStatus.Lobby);
             CameraHelper.WarpToTarget(_vcam, LocalPlayer as MonoBehaviour);
         }
 
@@ -959,6 +1074,62 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
         if (_playingPhaseStarted || _participants.Count == 0) return;
         if (_readyPlayers.Count >= _participants.Count)
             StartPlaying();
+    }
+
+    /// <summary>
+    /// Hết thời gian setup: loại player chưa ready, bắt đầu round cho những ai đã load xong.
+    /// </summary>
+    private void HandleSetupTimeout()
+    {
+        if (!IsServer || IsMapMechanicsStartedNet.Value || _playingPhaseStarted) return;
+
+        _setupTimeoutHandled = true;
+
+        var notReady = _participants.Where(id => !_readyPlayers.Contains(id)).ToList();
+        foreach (ulong clientId in notReady)
+        {
+            _participants.Remove(clientId);
+            _readyPlayers.Remove(clientId);
+
+            IPlayer player = _activePlayers.FirstOrDefault(p => p is NetworkBehaviour nb && nb.OwnerClientId == clientId);
+            player?.SetStatus(PlayerStatus.Lobby);
+            NotifyRemovedFromRoundClientRpc(RpcTarget.Single(clientId, RpcTargetUse.Temp));
+        }
+
+        _netTotalParticipants.Value = _participants.Count;
+        _netAliveCount.Value = _participants.Count;
+        _netReadyCount.Value = _readyPlayers.Count;
+
+        Debug.LogWarning($"[MultiplayerManager] Setup timeout — {_readyPlayers.Count} ready, {_participants.Count} participants remain.");
+
+        if (_participants.Count == 0 || _readyPlayers.Count == 0)
+        {
+            AbortRoundSetup(returnToVoting: true);
+            return;
+        }
+
+        TryStartPlayingWhenAllReady();
+    }
+
+    [Rpc(SendTo.SpecifiedInParams)]
+    private void NotifyRemovedFromRoundClientRpc(RpcParams rpcParams = default)
+    {
+        DismissClientRoundSetup();
+        ClearLocalMapReference();
+
+        if (LocalPlayer == null) return;
+
+        if (_lobbySpawn == null)
+            _lobbySpawn = FindObjectsByType<PlayerSpawn>().FirstOrDefault(s => !s.IsMapSpawn);
+        if (_lobbySpawn != null)
+            LocalPlayer.Teleport(_lobbySpawn.GetRandomSpawnPosition());
+
+        LocalPlayer.SetStatus(PlayerStatus.Lobby);
+        if (_vcam == null) _vcam = FindAnyObjectByType<Unity.Cinemachine.CinemachineCamera>();
+        if (_vcam != null && LocalPlayer is MonoBehaviour playerMono)
+            CameraHelper.WarpToTarget(_vcam, playerMono);
+
+        PlayLobbyMusic();
     }
 
     /// <summary>
@@ -1048,7 +1219,7 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
 
         _uiManager?.SetCountdownText("");
 
-        if (LocalPlayer != null && !LocalPlayer.IsAFK.Value)
+        if (LocalPlayer != null && !LocalPlayer.IsAFK.Value && LocalPlayer.Status.Value == PlayerStatus.InGame)
             LocalPlayer.SetInvincible(false);
 
         PlayCurrentMapMusic();
@@ -1281,7 +1452,7 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
                 LocalPlayer.Teleport(spawnPos);
                 LocalPlayer.Revive();
                 LocalPlayer.PrepareForNewRound();
-                LocalPlayer.Status.Value = PlayerStatus.Lobby; // Quay về Lobby
+                LocalPlayer.SetStatus(PlayerStatus.Lobby); // Quay về Lobby
                 PlayLobbyMusic(); // Chuyển về nhạc Lobby ngay khi hồi sinh
                 CameraHelper.WarpToTarget(_vcam, LocalPlayer as MonoBehaviour);
 
@@ -1369,19 +1540,27 @@ public class MultiplayerManagerNew : NetworkBehaviour, IMultiplayerManager
         // Thêm Safe-check: Nếu vừa bắt đầu mechanics < 1s, đợi thêm để sync network hoàn tất
         if (NetworkTime.Value < 1.0f) return;
 
-        int activeInMap = _activePlayers.Count(p => 
+        // Đếm những người thực sự còn đang tham gia thử thách (để check kết thúc round)
+        int competingCount = _activePlayers.Count(p => 
             p != null && 
             p.IsSpawned &&
             _participants.Contains(((NetworkBehaviour)p).OwnerClientId) &&
             p.Status.Value == PlayerStatus.InGame && 
-            !_finishedPlayers.Contains(((NetworkBehaviour)p).OwnerClientId) && 
             !p.IsDead);
 
-        // Cập nhật NetworkVariables cho HUD
-        _netAliveCount.Value = activeInMap;
+        // Đếm tất cả những người chưa chết (bao gồm cả người đã về đích) để hiển thị lên HUD
+        int totalAliveCount = _activePlayers.Count(p => 
+            p != null && 
+            p.IsSpawned &&
+            _participants.Contains(((NetworkBehaviour)p).OwnerClientId) &&
+            (p.Status.Value == PlayerStatus.InGame || p.Status.Value == PlayerStatus.Finished) && 
+            !p.IsDead);
+
+        // Cập nhật NetworkVariables cho HUD (Dùng totalAliveCount để HUD không bị tụt số khi có người Win)
+        _netAliveCount.Value = totalAliveCount;
         _netTotalParticipants.Value = _participants.Count;
 
-        if (_participants.Count > 0 && activeInMap <= 0) EndRound();
+        if (_participants.Count > 0 && competingCount <= 0) EndRound();
     }
 
     /// <summary>
