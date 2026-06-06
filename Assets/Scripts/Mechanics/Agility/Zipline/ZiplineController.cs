@@ -23,7 +23,7 @@ public class ZiplineController : MonoBehaviour, IZipline
     
     [Header("Settings")]
     [SerializeField] private float _speed = 10f;
-    [SerializeField] [Range(3, 50)] private int _lineResolution = 20;
+    [SerializeField] [Range(10, 100)] private int _lineResolution = 40; // Tăng nhẹ để bám dây mượt hơn
     [Tooltip("Nếu bật, player sẽ bay theo hướng dây với tốc độ của dây khi kết thúc (như bệ phóng).")]
     [SerializeField] private bool _isLauncher = false;
 

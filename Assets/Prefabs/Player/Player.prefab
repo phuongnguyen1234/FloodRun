@@ -116,7 +116,6 @@ Transform:
   - {fileID: 2027343975220429271}
   - {fileID: 7156045028982620365}
   - {fileID: 3710036052195311464}
-  - {fileID: 734472085970483876}
   - {fileID: 8507364654961222875}
   - {fileID: 5027836339865385234}
   - {fileID: 7709131364609829664}
@@ -478,7 +477,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2222251896
+  GlobalObjectIdHash: 2617846252
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -637,11 +636,6 @@ MonoBehaviour:
   _gibLayer:
     serializedVersion: 2
     m_Bits: 256
-  NetworkIsDead:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: 0
   NetworkDeathReason:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -683,7 +677,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Player::SlideAbility
   ShowTopMostFoldoutHeaderGroup: 1
-  _slideSpeed: 6
   _maxSlideTime: 0.5
   _slideCooldown: 0.1
   _heightReductionRatio: 0.45
@@ -967,13 +960,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3009898561232003492}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.18, y: 0.8, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: 0.7071068, w: 0.7071068}
+  m_LocalPosition: {x: 0.37, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2812755260923666860}
-  m_Father: {fileID: 1590798272235369517}
+  m_Father: {fileID: 7576035980281678920}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3152560748549044507
 GameObject:
@@ -1065,7 +1058,8 @@ Transform:
   m_LocalPosition: {x: 0.4, y: 0.18, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 734472085970483876}
   m_Father: {fileID: 3958958450109012143}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -180}
 --- !u!1 &5508065789986718061
