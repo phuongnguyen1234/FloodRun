@@ -85,10 +85,10 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     private NetworkVariable<bool> _facingRight = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private bool _facingRightLocal = true;
     public bool IsFacingRight => IsSpawned ? _facingRight.Value : _facingRightLocal;
-
+    private float _visualsRotationZLocal = 90f;
     // Đồng bộ rotation của visuals khi bơi cho tất cả player (proxy)
     private NetworkVariable<float> _visualsRotationZ = new NetworkVariable<float>(90f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    public float VisualsRotationZ => IsSpawned ? _visualsRotationZ.Value : 90f;
+    public float VisualsRotationZ => IsSpawned ? _visualsRotationZ.Value : _visualsRotationZLocal;
 
     private NetworkVariable<bool> _isSwimming = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private bool _isSwimmingLocal = false;
@@ -416,7 +416,7 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
         {
             SetTargetVisualsRotation(90f); // Đặt lại góc xoay visual về 90 độ (đứng thẳng)
         }
-        else if (IsSwimming) _rb.rotation = 0f;
+        else if (IsSwimming || IsZiplining) _rb.rotation = 0f;
 
 
         // Kiểm tra điều kiện bơi khi đang ở trong vùng nước (nhưng chưa kích hoạt trạng thái bơi)
@@ -1088,9 +1088,7 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
             // để Animation chuyển sang Zipline.
             if (IsSwimming) StopSwimming();
 
-            // FIX: Reset visualsRoot về góc 90 độ (thế đứng thẳng mặc định) 
-            // để nhân vật không bị nằm ngang khi chuyển từ bơi sang zipline.
-            SetTargetVisualsRotation(90f);        }    }
+        }    }
 
     /// <summary>
     /// Cập nhật trạng thái leo thang (Gọi từ LadderClimbAbility)
@@ -1113,10 +1111,16 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     /// </summary>
     public void SetTargetVisualsRotation(float zRotation)
     {
-        // Chỉ Owner mới có quyền ghi vào NetworkVariable
-        if (IsSpawned && !IsOwner) return;
-
-        _visualsRotationZ.Value = zRotation;
+        if (IsSpawned)
+        {
+            // Chỉ Owner mới có quyền ghi vào NetworkVariable
+            if (IsOwner) _visualsRotationZ.Value = zRotation;
+        }
+        else
+        {
+            // Ở Singleplayer, cập nhật biến local
+            _visualsRotationZLocal = zRotation;
+        }
     }
 
     // Vẽ Gizmos để dễ dàng debug vị trí check trong Editor
