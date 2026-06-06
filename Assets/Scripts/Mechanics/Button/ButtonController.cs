@@ -402,11 +402,14 @@ public class ButtonController : MonoBehaviour, IInteractable, IButtonController
             {
                 if (hit.TryGetComponent(out IPlayer player))
                 {
-                    player.Die(DeathReason.Explosion);
+                    if (isOffline) player.Die(DeathReason.Explosion);
+                    else player.ForceDieClientRpc(DeathReason.Explosion);
                 }
             }
-            SetState(ButtonState.Activated);
         }
+
+        // FIX: Đưa lệnh này ra ngoài để cả Client cũng thực hiện việc ẩn visual vùng nổ và đổi màu nút
+        SetState(ButtonState.Activated);
     }
 
     private void OnDrawGizmosSelected()

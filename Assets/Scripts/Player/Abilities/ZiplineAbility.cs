@@ -164,12 +164,16 @@ public class ZiplineAbility : NetworkBehaviour, IPlayerAbility
         if (startTangent.x > 0.01f && !_motor.IsFacingRight) _motor.Flip();
         else if (startTangent.x < -0.01f && _motor.IsFacingRight) _motor.Flip();
 
-        float startAngle = Mathf.Atan2(startTangent.y, startTangent.x) * Mathf.Rad2Deg;
-        if (!_motor.IsFacingRight) startAngle += 180f;
-        _rb.SetRotation(startAngle);
+        // Tính toán độ dốc của dây tại điểm bắt đầu (dùng Abs để đồng bộ với hướng Flip)
+        float startAngle = Mathf.Atan2(startTangent.y, Mathf.Abs(startTangent.x)) * Mathf.Rad2Deg;
 
-        // 2. Snap vị trí Player sao cho Anchor nằm đúng điểm bắt đầu (dùng offset động)
-        transform.position = zipline.GetStartPoint() - GetCurrentAnchorWorldOffset(startAngle);
+        // Đưa về cơ chế đồng bộ giống Swimming: RB giữ 0, Visual gánh toàn bộ góc xoay
+        _rb.SetRotation(0f);
+        _motor.SetTargetVisualsRotation(startAngle + 90f);
+
+        // 2. Snap vị trí Player sao cho Anchor nằm đúng điểm bắt đầu (dùng offset thực tế ngay tại frame này)
+        Vector3 currentAnchorOffset = _ziplineAnchor.position - transform.position;
+        transform.position = zipline.GetStartPoint() - currentAnchorOffset;
 
         // Bật hiệu ứng tia lửa
         if (_slideEffect != null)
@@ -199,22 +203,6 @@ public class ZiplineAbility : NetworkBehaviour, IPlayerAbility
     {
         if (_slideAudioSource != null && SettingsManager.Instance != null)
             _slideAudioSource.volume = SettingsManager.Instance.SfxVolume;
-    }
-
-    /// <summary>
-    /// Tính toán vector từ tâm Player đến Anchor trong không gian thế giới,
-    /// có tính đến hướng nhìn (Flip) và góc xoay hiện tại.
-    /// </summary>
-    private Vector3 GetCurrentAnchorWorldOffset(float currentRotation)
-    {
-        if (_ziplineAnchor == null || _ziplineAnchor == transform) return Vector3.zero;
-
-        Vector3 localPos = _ziplineAnchor.localPosition;
-        // Nhân với localScale để xử lý việc lật (Flip) nhân vật
-        Vector3 scaledOffset = new Vector3(localPos.x * transform.localScale.x, localPos.y * transform.localScale.y, 0);
-
-        // Xoay offset theo góc của Rigidbody để khớp với độ nghiêng của dây
-        return Quaternion.Euler(0, 0, currentRotation) * scaledOffset;
     }
 
     private float CalculateCurveLength(IZipline zipline)
@@ -335,15 +323,14 @@ public class ZiplineAbility : NetworkBehaviour, IPlayerAbility
         if (tangent.x > 0.01f && !_motor.IsFacingRight) _motor.Flip(); // Chỉ flip nếu có chuyển động đáng kể
         else if (tangent.x < -0.01f && _motor.IsFacingRight) _motor.Flip();
 
-        // 2. Nghiêng người theo dây (Vector pháp tuyến/tiếp tuyến)
-        // Sử dụng Atan2 để lấy góc của dây. 
-        float rotationAngle = Mathf.Atan2(tangent.y, tangent.x) * Mathf.Rad2Deg;
-
-        // Nếu nhân vật đang nhìn sang trái, chúng ta cần điều chỉnh góc xoay 
-        // để tư thế treo người không bị ngược.
-        if (!_motor.IsFacingRight) rotationAngle += 180f;
+        // 2. Nghiêng người vuông góc với dây
+        // Sử dụng Mathf.Abs(tangent.x) giúp nhân vật luôn giữ tư thế "treo" (90 độ làm gốc) 
+        // và nghiêng theo độ dốc của dây mà không bị đảo lộn khi đổi hướng trượt.
+        float rotationAngle = Mathf.Atan2(tangent.y, Mathf.Abs(tangent.x)) * Mathf.Rad2Deg;
         
-        _rb.SetRotation(rotationAngle);
+        // Đồng bộ hóa góc xoay qua NetworkVariable để Proxy cũng nhìn thấy
+        _rb.SetRotation(0f);
+        _motor.SetTargetVisualsRotation(rotationAngle + 90f);
 
         // FIX: Liên tục ép Scale của Particle về dương vì Motor.Flip có thể chạy trong lúc đang trượt
         if (_slideEffect != null)
@@ -352,9 +339,10 @@ public class ZiplineAbility : NetworkBehaviour, IPlayerAbility
             _slideEffect.transform.localScale = new Vector3(counterFlip, 1f, 1f);
         }
 
-        // 3. Cập nhật vị trí: Tính toán lại Offset động để Anchor luôn bám sát dây
-        // bất kể nhân vật đang Flip hay đang xoay theo góc nào.
-        Vector3 playerTargetPosition = anchorTargetPosition - GetCurrentAnchorWorldOffset(rotationAngle);
+        // 3. Cập nhật vị trí: Sử dụng offset thực tế giữa Anchor và Pivot để bù trừ.
+        // Cách này giúp Anchor luôn nằm trên dây kể cả khi Visuals đang Lerp xoay (tránh bị lệch quỹ đạo).
+        Vector3 currentAnchorOffset = _ziplineAnchor.position - transform.position;
+        Vector3 playerTargetPosition = anchorTargetPosition - currentAnchorOffset;
         _rb.MovePosition(playerTargetPosition);
 
         // Khóa Movement của Motor để không bị xung đột input trái/phải
