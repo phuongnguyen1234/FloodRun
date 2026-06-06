@@ -87,8 +87,14 @@ public class GoalLocator : MonoBehaviour
         }
         
         // Kiểm tra điều kiện hiển thị
-        if (!isLocatorEnabled || _gameLoopManager == null || _mapManager == null || _gameLoopManager.LocalPlayer == null || 
-            !_gameLoopManager.IsGameActive || _gameLoopManager.LocalPlayer.IsDead)
+        if (!isLocatorEnabled || 
+            _gameLoopManager == null || 
+            _mapManager == null ||
+            !_mapManager.IsMapMechanicsStarted() || // FIX: Chỉ hiện khi map đã thực sự bắt đầu
+            _gameLoopManager.LocalPlayer == null || 
+            !_gameLoopManager.IsGameActive || 
+            _gameLoopManager.LocalPlayer.IsDead || 
+            _gameLoopManager.LocalPlayer.Status.Value != PlayerStatus.InGame) // FIX: Chỉ hiện khi ĐANG chơi (không hiện ở Lobby/Finished)
         {
             DisableLocator();
             return;

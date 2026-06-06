@@ -34,7 +34,7 @@ namespace Core.Interfaces
         NetworkVariable<bool> IsAFK { get; } // Trạng thái AFK của người chơi
         NetworkVariable<PlayerStatus> Status { get; } // Trạng thái/Vị trí tổng quát của người chơi
         
-
+        void ForceDieClientRpc(DeathReason reason); // Hàm để ép client thực hiện việc chết (dùng trong trường hợp server muốn ép client chết ngay lập tức, bypass các điều kiện kiểm tra trên client)
         bool IsZiplining { get; }
         IFloodZone CurrentFlood { get; } // Thêm để FloodController có thể truy vấn
 
@@ -80,5 +80,6 @@ namespace Core.Interfaces
         void SetMaxAir(float max);
         void AddAir(float amount);
         void SetFacing(bool faceRight);
+        void SetStatus(PlayerStatus newStatus);
     }
 }

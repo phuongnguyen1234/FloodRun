@@ -23,7 +23,7 @@ public class ZiplineController : MonoBehaviour, IZipline
     
     [Header("Settings")]
     [SerializeField] private float _speed = 10f;
-    [SerializeField] [Range(3, 50)] private int _lineResolution = 20;
+    [SerializeField] [Range(10, 100)] private int _lineResolution = 40; // Tăng nhẹ để bám dây mượt hơn
     [Tooltip("Nếu bật, player sẽ bay theo hướng dây với tốc độ của dây khi kết thúc (như bệ phóng).")]
     [SerializeField] private bool _isLauncher = false;
 
@@ -32,6 +32,11 @@ public class ZiplineController : MonoBehaviour, IZipline
     private void Awake()
     {
         _lineRenderer = GetComponent<LineRenderer>();
+
+        // Đảm bảo LineRenderer sử dụng tọa độ Local để không bị lệch khi Map spawn ở xa
+        if (_lineRenderer != null)
+            _lineRenderer.useWorldSpace = false;
+
         
         UpdateZiplineVisuals();
     }
@@ -56,10 +61,11 @@ public class ZiplineController : MonoBehaviour, IZipline
         // Luôn vẽ đường cong Bézier bậc 3 (Cubic).
         // Nếu người dùng không gán điểm control, các điểm sẽ được tự động tính toán để tạo đường thẳng.
         _lineRenderer.positionCount = _lineResolution;
-        Vector3 p0 = GetStartPoint();
-        Vector3 p1 = GetControlPoint1();
-        Vector3 p2 = GetControlPoint2();
-        Vector3 p3 = GetEndPoint();
+
+        Vector3 p0 = transform.InverseTransformPoint(GetStartPoint());
+        Vector3 p1 = transform.InverseTransformPoint(GetControlPoint1());
+        Vector3 p2 = transform.InverseTransformPoint(GetControlPoint2());
+        Vector3 p3 = transform.InverseTransformPoint(GetEndPoint());
 
         for (int i = 0; i < _lineResolution; i++)
         {

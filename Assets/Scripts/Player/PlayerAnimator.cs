@@ -76,21 +76,17 @@ public class PlayerAnimator : NetworkBehaviour
         // Visuals (Sprite swap + Rotation) cần chạy trên tất cả các máy để ai cũng thấy đúng hướng/loại sprite
         _motor.UpdateSpriteLabels();
         
-        // FIX: Sync visual rotation cho proxy (flip + swimming rotation)
-        if (IsSpawned && !IsOwner)
-        {
-            SyncProxyVisuals();
-        }
+        UpdateVisualsRotation(); // Cập nhật và làm mượt góc xoay visual cho cả owner và proxy
         
         _wasGotorGrounded = _motor.IsGrounded; // Cập nhật trạng thái grounded của motor cho frame tiếp theo
     }
     
     /// <summary>
-    /// Đồng bộ visual của proxy dựa trên NetworkVariable từ Owner
+    /// Đồng bộ và làm mượt góc xoay visual của Player. Chạy trên cả Owner và Proxy.
     /// </summary>
-    private void SyncProxyVisuals()
+    private void UpdateVisualsRotation()
     {
-        // Sync Flip (Scale X)
+        // Đồng bộ Flip (Scale X)
         if (_motor._useScaleFlip)
         {
             Vector3 currentScale = transform.localScale;
@@ -102,8 +98,7 @@ public class PlayerAnimator : NetworkBehaviour
             }
         }
         
-        // Sync Rotation (Swimming + Water Exit Reset)
-        // FIX: Luôn sync rotation, không chỉ khi IsSwimming, vì ta cần sync cả rotation reset (90°) khi lên khỏi nước
+        // Làm mượt góc xoay (Swimming, Ziplining, Water Exit Reset)
         if (_motor._visualsRoot != null)
         {
             float targetRotZ = _motor.VisualsRotationZ;
@@ -115,7 +110,6 @@ public class PlayerAnimator : NetworkBehaviour
             );
         }
     }
-
     private void UpdateAnimationParameters()
     {
         // Xác định xem nhân vật có đang ở trạng thái "ổn định" (chạm đất, bơi, leo, đu dây) hay không.
