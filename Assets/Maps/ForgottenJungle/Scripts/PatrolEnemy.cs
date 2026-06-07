@@ -51,7 +51,7 @@ public class PatrolEnemy : MonoBehaviour
 
         if (pointA == null || pointB == null)
         {
-            Debug.LogError($"{name}: Chưa gán Point A hoặc Point B.");
+            Debug.LogError($"{gameObject.name}: thiếu Point A hoặc Point B", gameObject);
             enabled = false;
             return;
         }

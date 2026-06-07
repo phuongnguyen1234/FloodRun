@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 617946ca0553ff345b7c386184b3a557, type: 3}
+  m_Name: WhisperingVillage
+  m_EditorClassIdentifier: Map::MapData
+  Name: WhisperingVillage
+  Author: PhamPhucDat
+  Description: "Whispering Canopy \u2014 A mystical forest high above the ground,
+    where ancient vines, hidden ruins, and towering trees create a dangerous parkour
+    path through the whispering wilds."
+  Difficulty: 2
+  MapDuration: 60
+  ButtonNumber: 5
+  MapPreviewImage: {fileID: 8487885084202646721, guid: e2450d385f4a0a9428825145f30854f6, type: 3}
+  MapPrefab: {fileID: 1637740676321180219, guid: db341218408e1ec448ce8a0071830169, type: 3}
+  BackgroundMusic: {fileID: 8300000, guid: 9889d8440fcae2143ba68f9748b0e4a2, type: 3}
+  EnableDevTools: 0

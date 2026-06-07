@@ -16,9 +16,9 @@ MonoBehaviour:
   Author: PhamPhucDat
   Description: a jungle has been forgotten
   Difficulty: 1.17
-  MapDuration: 60
+  MapDuration: 100
   ButtonNumber: 4
-  MapPreviewImage: {fileID: 3002315276091994846, guid: 8a1400cd682f2394a9098ddee77addf7, type: 3}
+  MapPreviewImage: {fileID: 2942333121695581161, guid: 85799fd7b3f975041b6c214b1faff062, type: 3}
   MapPrefab: {fileID: 1637740676321180219, guid: 7f76c5e873577914d976c8812cfe2e82, type: 3}
-  BackgroundMusic: {fileID: 8300000, guid: d828e654b10d4a14bb8339ef679488fe, type: 3}
+  BackgroundMusic: {fileID: 8300000, guid: eb3fc65c9776d2a48b8c38ad2b5413f1, type: 3}
   EnableDevTools: 1
