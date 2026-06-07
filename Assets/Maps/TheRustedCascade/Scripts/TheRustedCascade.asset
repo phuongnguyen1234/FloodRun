@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 617946ca0553ff345b7c386184b3a557, type: 3}
-  m_Name: PlacidBay
+  m_Name: TheRustedCascade
   m_EditorClassIdentifier: Core::Core.MapData
-  Name: Placid Bay
+  Name: The Rusted Cascade
   Author: NTDzVEKNY
   Description: 
   Difficulty: 2
-  MapDuration: 60
-  ButtonNumber: 4
+  MapDuration: 120
+  ButtonNumber: 5
   MapPreviewImage: {fileID: 2825183691260570646, guid: c0549c05fb380e849a86150fc6ee09b6, type: 3}
   MapPrefab: {fileID: 2759769580059325146, guid: a5d2e92e5adfcac488e8245ab3a68db7, type: 3}
   BackgroundMusic: {fileID: 8300000, guid: 47f58486882872f4882b64d3964c9856, type: 3}
