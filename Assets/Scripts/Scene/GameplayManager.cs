@@ -136,6 +136,9 @@ public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
             return;
         }
 
+        // Gán lại thời gian tối đa từ MapManager/MapData
+        _maxLevelTime = _mapManager.GetMaxMapTime();
+
         // Load và hiển thị Best Time từ SaveSystem
         PlayerProfile profile = SaveSystem.LoadProfile();
         MapData currentData = _mapManager.GetMapData();
