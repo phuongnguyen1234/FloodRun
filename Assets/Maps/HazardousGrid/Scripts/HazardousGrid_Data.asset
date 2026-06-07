@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 617946ca0553ff345b7c386184b3a557, type: 3}
+  m_Name: HazardousGrid_Data
+  m_EditorClassIdentifier: Core::Core.MapData
+  Name: HazardousGrid
+  Author: PhamThanhSon
+  Description: 'You''re lost in an unknown woods. Make your way out of it
+
+    V1.0'
+  Difficulty: 2.31
+  MapDuration: 70
+  ButtonNumber: 4
+  MapPreviewImage: {fileID: -593376525978482583, guid: 47fd118054d563641879ddc332bbb5c5, type: 3}
+  MapPrefab: {fileID: 1637740676321180219, guid: 6001162bb13f8ba45a95c3b01a1884bb, type: 3}
+  BackgroundMusic: {fileID: 8300000, guid: 9b27d480ddeb83047a4c1d70b2f433ab, type: 3}
+  EnableDevTools: 1
