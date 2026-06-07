@@ -13,7 +13,7 @@ using System.Collections.Generic;
 /// <summary>
 /// Quản lý vòng lặp chính của Gameplay: UI, Spawn Player, Win/Lose Condition.
 /// </summary>
-public class GameplayManager : MonoBehaviour, IGameplayManager
+public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
 {
     public static GameplayManager Instance { get; private set; }
 
@@ -456,6 +456,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager
         foreach (var p in AllPlayers)
         {
             p.EnableAbility();
+            p.SetStatus(PlayerStatus.InGame);
         }
         
         // QUẢN LÝ NHẠC: Chuyển từ nhạc Loading sang nhạc Map khi game bắt đầu

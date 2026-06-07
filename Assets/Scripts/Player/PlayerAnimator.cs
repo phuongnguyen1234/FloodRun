@@ -102,11 +102,12 @@ public class PlayerAnimator : NetworkBehaviour
         if (_motor._visualsRoot != null)
         {
             float targetRotZ = _motor.VisualsRotationZ;
+            float lerpSpeed = _motor.IsSwimming ? _motor.SwimRotationSpeed : 25f;
             Quaternion targetRot = Quaternion.Euler(0, 0, targetRotZ);
             _motor._visualsRoot.localRotation = Quaternion.Lerp(
                 _motor._visualsRoot.localRotation,
                 targetRot,
-                Time.deltaTime * 15f
+                Time.deltaTime * lerpSpeed
             );
         }
     }

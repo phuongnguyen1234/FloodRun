@@ -119,6 +119,7 @@ public class PlayerMotor : NetworkBehaviour, IPlayerAbility, IPlayerMotorAttribu
     public float Speed => _speed;
 
     // FIX: Hỗ trợ nhiều vùng flood chồng nhau
+    public float SwimRotationSpeed => _swimRotationSpeed;
     private readonly System.Collections.Generic.List<IFloodZone> _activeFloodZones = new System.Collections.Generic.List<IFloodZone>();
     private readonly System.Collections.Generic.Dictionary<IFloodZone, Collider2D> _floodColliders = new System.Collections.Generic.Dictionary<IFloodZone, Collider2D>();
 
