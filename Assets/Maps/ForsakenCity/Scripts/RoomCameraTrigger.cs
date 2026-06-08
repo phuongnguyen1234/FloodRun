@@ -1,7 +1,7 @@
- using UnityEngine;
+using UnityEngine;
 using Unity.Cinemachine; 
 using Core.Interfaces;
-using Unity.Netcode; // Thêm Netcode để nhận diện Local Player
+using Unity.Netcode; 
 
 [RequireComponent(typeof(Collider2D))]
 public class RoomCameraTrigger : MonoBehaviour
@@ -10,23 +10,23 @@ public class RoomCameraTrigger : MonoBehaviour
     [SerializeField] private int _activePriority = 20;
     [SerializeField] private bool _isStartingRoom = false;
 
-    // Biến static lưu trữ phòng ĐANG HOẠT ĐỘNG trên Client này
     private static RoomCameraTrigger _currentActiveRoom;
-    
-    // Lưu lại bộ Collider của chính phòng này để check trạng thái Player
-    private Collider2D _roomCollider;
-
-    private void Awake()
-    {
-        _roomCollider = GetComponent<Collider2D>();
-    }
+    private IGameLoopManager _gameLoopManager;
 
     private void Start()
     {
-        // Khi game bắt đầu, hạ tất cả camera phòng về 0
         if (_roomCamera != null) _roomCamera.Priority = 0;
 
-        // Nếu là phòng xuất phát, chiếm quyền ngay lập tức
+        var monos = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        foreach (var mono in monos)
+        {
+            if (mono is IGameLoopManager glManager)
+            {
+                _gameLoopManager = glManager;
+                break;
+            }
+        }
+
         if (_isStartingRoom)
         {
             ActivateRoom();
@@ -35,42 +35,42 @@ public class RoomCameraTrigger : MonoBehaviour
 
     private void Update()
     {
-        // CHỈ PHÒNG ĐANG ACTIVE MỚI CẦN CHECK XEM PLAYER CÒN Ở ĐÂY KHÔNG
         if (_currentActiveRoom != this) return;
+        if (_gameLoopManager == null || _gameLoopManager.LocalPlayer == null) return;
 
-        // Tìm Local Player trên máy này
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.LocalClient != null)
+        IPlayer localPlayer = _gameLoopManager.LocalPlayer;
+
+        // Nếu Player chết hoặc về Lobby -> Nhả quyền kiểm soát camera
+        if (localPlayer.IsDead)
         {
-            var localPlayerObj = NetworkManager.Singleton.LocalClient.PlayerObject;
-            if (localPlayerObj != null)
-            {
-                IPlayer player = localPlayerObj.GetComponent<IPlayer>();
-                
-                if (player != null)
-                {
-                    // SỬA LỖI MULTIPLAYER KHI CHẾT/TELEPORT:
-                    // Nếu player đã chết HOẶC vị trí của player không còn nằm trong Trigger của phòng này nữa
-                    if (player.IsDead || 
-                        player.Status.Value == PlayerStatus.Dead || 
-                        player.Status.Value == PlayerStatus.Lobby ||
-                        !_roomCollider.OverlapPoint(localPlayerObj.transform.position))
-                    {
-                        DeactivateRoom();
-                    }
-                }
-            }
+            DeactivateRoom();
         }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        CheckAndActivate(other);
+    }
+
+    private void OnTriggerStay2D(Collider2D other)
+    {
+        CheckAndActivate(other);
+    }
+
+    private void CheckAndActivate(Collider2D other)
+    {
+        if (_currentActiveRoom == this) return;
+        
+        if (_gameLoopManager == null || _gameLoopManager.LocalPlayer == null) return;
+
         IPlayer player = GetPlayer(other);
         
-        // SỬA LỖI MULTIPLAYER: Chỉ xử lý nếu đối tượng chạm vào là LOCAL PLAYER (chính máy này)
-        if (player != null && player is NetworkBehaviour netBehaviour && netBehaviour.IsLocalPlayer)
+        if (player != null && player == _gameLoopManager.LocalPlayer)
         {
-            // Nếu thỏa mãn điều kiện và chưa phải phòng active, kèm theo player chưa chết
-            if (_currentActiveRoom != this && !player.IsDead && player.Status.Value == PlayerStatus.InGame)
+            // Chỉ lock camera lại khi trạng thái của player là hợp lệ (đang InGame)
+            if (!player.IsDead && 
+                player.Status.Value != PlayerStatus.Lobby && 
+                player.Status.Value != PlayerStatus.Dead)
             {
                 ActivateRoom();
             }
@@ -79,13 +79,11 @@ public class RoomCameraTrigger : MonoBehaviour
 
     private void ActivateRoom()
     {
-        // 1. Tắt camera của phòng cũ (nếu có)
-        if (_currentActiveRoom != null && _currentActiveRoom != this)
+        if (_currentActiveRoom != null && _currentActiveRoom._roomCamera != null)
         {
-            _currentActiveRoom.DeactivateRoom();
+            _currentActiveRoom._roomCamera.Priority = 0;
         }
 
-        // 2. Gán phòng này làm phòng hiện tại và Bật camera lên
         _currentActiveRoom = this;
         if (_roomCamera != null)
         {
@@ -93,13 +91,13 @@ public class RoomCameraTrigger : MonoBehaviour
         }
     }
 
-    // Hàm chủ động nhả quyền Camera
     private void DeactivateRoom()
     {
         if (_roomCamera != null)
         {
             _roomCamera.Priority = 0;
         }
+        
         if (_currentActiveRoom == this)
         {
             _currentActiveRoom = null;
@@ -114,7 +112,6 @@ public class RoomCameraTrigger : MonoBehaviour
         }
     }
 
-    // Dò tìm IPlayer (giữ nguyên gốc của bạn)
     private IPlayer GetPlayer(Collider2D col)
     {
         IPlayer p = col.GetComponentInParent<IPlayer>();
