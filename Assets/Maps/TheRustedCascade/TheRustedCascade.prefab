@@ -36137,6 +36137,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: _overrideSplashSound
+      value: 
+      objectReference: {fileID: 8300000, guid: 6a6d86cf5e60948499f121af78d64ca1, type: 3}
+    - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: _overrideAirDrainRate
       value: 10
       objectReference: {fileID: 0}
@@ -37185,6 +37189,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7595384347730104943, guid: ea82ed6f32dd0734e9f0d7b2c2716820, type: 3}
+      propertyPath: m_UseWorldSpace
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7595384347730104943, guid: ea82ed6f32dd0734e9f0d7b2c2716820, type: 3}
       propertyPath: m_Positions.Array.size
       value: 20
       objectReference: {fileID: 0}
@@ -37872,6 +37880,10 @@ PrefabInstance:
       propertyPath: _stages.Array.size
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: _overrideSplashSound
+      value: 
+      objectReference: {fileID: 8300000, guid: 6a6d86cf5e60948499f121af78d64ca1, type: 3}
     - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: _overrideAirDrainRate
       value: 15

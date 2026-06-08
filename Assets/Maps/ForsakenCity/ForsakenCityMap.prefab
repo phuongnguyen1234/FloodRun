@@ -44631,6 +44631,10 @@ PrefabInstance:
       propertyPath: _overrideProfile
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: _overrideSplashSound
+      value: 
+      objectReference: {fileID: 8300000, guid: b60637666596b494194984a4bae48c5a, type: 3}
     - target: {fileID: 4210039763436084017, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_LocalPosition.x
       value: 63.96
@@ -45215,6 +45219,10 @@ PrefabInstance:
       propertyPath: _overrideProfile
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: _overrideSplashSound
+      value: 
+      objectReference: {fileID: 8300000, guid: b60637666596b494194984a4bae48c5a, type: 3}
     - target: {fileID: 4210039763436084017, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_LocalPosition.x
       value: 147.53
@@ -48004,6 +48012,10 @@ PrefabInstance:
       propertyPath: _overrideProfile
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: _overrideSplashSound
+      value: 
+      objectReference: {fileID: 8300000, guid: b60637666596b494194984a4bae48c5a, type: 3}
     - target: {fileID: 4210039763436084017, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_LocalPosition.x
       value: 34.47
@@ -48367,6 +48379,10 @@ PrefabInstance:
       propertyPath: _overrideProfile
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: _overrideSplashSound
+      value: 
+      objectReference: {fileID: 8300000, guid: b60637666596b494194984a4bae48c5a, type: 3}
     - target: {fileID: 4210039763436084017, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_LocalPosition.x
       value: 19.5
@@ -48975,6 +48991,10 @@ PrefabInstance:
       propertyPath: _overrideProfile
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4091069653851809661, guid: 329195ae413857c44b38c0236173f23f, type: 3}
+      propertyPath: _overrideSplashSound
+      value: 
+      objectReference: {fileID: 8300000, guid: b60637666596b494194984a4bae48c5a, type: 3}
     - target: {fileID: 4210039763436084017, guid: 329195ae413857c44b38c0236173f23f, type: 3}
       propertyPath: m_LocalPosition.x
       value: 174.94
