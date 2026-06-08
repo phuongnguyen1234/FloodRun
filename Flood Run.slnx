@@ -1,12 +1,13 @@
 ﻿<Solution>
   <Project Path="Mechanics.csproj" />
   <Project Path="UI.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Unity.PlayerPrefsEditor.Editor.csproj" />
   <Project Path="Core.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="CFXREditor.csproj" />
   <Project Path="DOTween.Modules.csproj" />
   <Project Path="Editor.csproj" />
-  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Player.csproj" />
   <Project Path="Others.csproj" />
   <Project Path="Scene.csproj" />

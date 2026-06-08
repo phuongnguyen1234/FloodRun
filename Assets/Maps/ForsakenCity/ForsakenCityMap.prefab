@@ -37708,7 +37708,6 @@ MonoBehaviour:
   _playerSpawn: {fileID: 6596819429891901960}
   _floodManagerObjects:
   - {fileID: 4546704548371974424}
-  - {fileID: 0}
   _buttonSequenceManagerObject: {fileID: 3530613227491517485}
   _killYThreshold: -30
   _mapTimelineEvents: []
@@ -38234,7 +38233,7 @@ Transform:
   m_GameObject: {fileID: 5626232344521854071}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 6.14, y: 29.470001, z: -100}
+  m_LocalPosition: {x: 134.11, y: 145.42, z: -100}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
