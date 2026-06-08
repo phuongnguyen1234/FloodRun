@@ -1,6 +1,7 @@
-using UnityEngine;
+ using UnityEngine;
 using Unity.Cinemachine; 
 using Core.Interfaces;
+using Unity.Netcode; // Thêm Netcode để nhận diện Local Player
 
 [RequireComponent(typeof(Collider2D))]
 public class RoomCameraTrigger : MonoBehaviour
@@ -9,8 +10,16 @@ public class RoomCameraTrigger : MonoBehaviour
     [SerializeField] private int _activePriority = 20;
     [SerializeField] private bool _isStartingRoom = false;
 
-    // Biến static lưu trữ phòng ĐANG HOẠT ĐỘNG. Dùng chung cho tất cả các phòng.
+    // Biến static lưu trữ phòng ĐANG HOẠT ĐỘNG trên Client này
     private static RoomCameraTrigger _currentActiveRoom;
+    
+    // Lưu lại bộ Collider của chính phòng này để check trạng thái Player
+    private Collider2D _roomCollider;
+
+    private void Awake()
+    {
+        _roomCollider = GetComponent<Collider2D>();
+    }
 
     private void Start()
     {
@@ -24,25 +33,56 @@ public class RoomCameraTrigger : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        // CHỈ PHÒNG ĐANG ACTIVE MỚI CẦN CHECK XEM PLAYER CÒN Ở ĐÂY KHÔNG
+        if (_currentActiveRoom != this) return;
+
+        // Tìm Local Player trên máy này
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.LocalClient != null)
+        {
+            var localPlayerObj = NetworkManager.Singleton.LocalClient.PlayerObject;
+            if (localPlayerObj != null)
+            {
+                IPlayer player = localPlayerObj.GetComponent<IPlayer>();
+                
+                if (player != null)
+                {
+                    // SỬA LỖI MULTIPLAYER KHI CHẾT/TELEPORT:
+                    // Nếu player đã chết HOẶC vị trí của player không còn nằm trong Trigger của phòng này nữa
+                    if (player.IsDead || 
+                        player.Status.Value == PlayerStatus.Dead || 
+                        player.Status.Value == PlayerStatus.Lobby ||
+                        !_roomCollider.OverlapPoint(localPlayerObj.transform.position))
+                    {
+                        DeactivateRoom();
+                    }
+                }
+            }
+        }
+    }
+
     private void OnTriggerEnter2D(Collider2D other)
     {
         IPlayer player = GetPlayer(other);
         
-        // NẾU chạm vào Player VÀ phòng này CHƯA PHẢI là phòng đang active
-        if (player != null && _currentActiveRoom != this)
+        // SỬA LỖI MULTIPLAYER: Chỉ xử lý nếu đối tượng chạm vào là LOCAL PLAYER (chính máy này)
+        if (player != null && player is NetworkBehaviour netBehaviour && netBehaviour.IsLocalPlayer)
         {
-            ActivateRoom();
+            // Nếu thỏa mãn điều kiện và chưa phải phòng active, kèm theo player chưa chết
+            if (_currentActiveRoom != this && !player.IsDead && player.Status.Value == PlayerStatus.InGame)
+            {
+                ActivateRoom();
+            }
         }
     }
-
-    // CHÚNG TA KHÔNG CẦN HÀM OnTriggerExit2D NỮA!
 
     private void ActivateRoom()
     {
         // 1. Tắt camera của phòng cũ (nếu có)
-        if (_currentActiveRoom != null && _currentActiveRoom._roomCamera != null)
+        if (_currentActiveRoom != null && _currentActiveRoom != this)
         {
-            _currentActiveRoom._roomCamera.Priority = 0;
+            _currentActiveRoom.DeactivateRoom();
         }
 
         // 2. Gán phòng này làm phòng hiện tại và Bật camera lên
@@ -53,16 +93,28 @@ public class RoomCameraTrigger : MonoBehaviour
         }
     }
 
+    // Hàm chủ động nhả quyền Camera
+    private void DeactivateRoom()
+    {
+        if (_roomCamera != null)
+        {
+            _roomCamera.Priority = 0;
+        }
+        if (_currentActiveRoom == this)
+        {
+            _currentActiveRoom = null;
+        }
+    }
+
     private void OnDestroy()
     {
-        // Reset biến static khi Restart Game hoặc chuyển Map để tránh lỗi
         if (_currentActiveRoom == this) 
         {
             _currentActiveRoom = null;
         }
     }
 
-    // Dò tìm IPlayer (bọc 3 lớp chống kẹt xương)
+    // Dò tìm IPlayer (giữ nguyên gốc của bạn)
     private IPlayer GetPlayer(Collider2D col)
     {
         IPlayer p = col.GetComponentInParent<IPlayer>();

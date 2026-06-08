@@ -260,6 +260,13 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
 
     public void SetStatus(PlayerStatus newStatus)
     {
+        // Fix cho Singleplayer: Cập nhật trực tiếp giá trị NetworkVariable để các hệ thống local như Locator có thể đọc được
+        if (!IsSpawned)
+        {
+            Status.Value = newStatus;
+            return;
+        }
+
         if (IsOwner)
         {
             // Nếu bản thân là chủ sở hữu (Host tự xử cho mình hoặc Client nhận RPC xong tự xử)

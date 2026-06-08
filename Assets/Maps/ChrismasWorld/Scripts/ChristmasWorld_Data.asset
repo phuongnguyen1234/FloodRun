@@ -18,7 +18,7 @@ MonoBehaviour:
   Difficulty: 1.5
   MapDuration: 100
   ButtonNumber: 4
-  MapPreviewImage: {fileID: -5248143932855167462, guid: 7e55288f10f3b7241944a20c5ab6158e, type: 3}
+  MapPreviewImage: {fileID: 8597137755251125098, guid: a04ca39e4c7f94d47aa14a6e5b6dfc73, type: 3}
   MapPrefab: {fileID: 4785617213215511861, guid: 025aff7d7346382419e9fedfeee01a64, type: 3}
   BackgroundMusic: {fileID: 8300000, guid: 291a334140508cd408b1f521e64ae7b6, type: 3}
   EnableDevTools: 1

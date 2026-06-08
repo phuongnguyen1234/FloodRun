@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 617946ca0553ff345b7c386184b3a557, type: 3}
+  m_Name: DangerZoneStation_Data
+  m_EditorClassIdentifier: Map::MapData
+  Name: Dangerzone Station
+  Author: Rexx
+  Description: Warning Power Station Area
+  Difficulty: 2.5
+  MapDuration: 90
+  ButtonNumber: 5
+  MapPreviewImage: {fileID: 2054072228669355848, guid: ec2e380cb115b584ebc386e07fdf1201, type: 3}
+  MapPrefab: {fileID: 4973619334281991828, guid: 8d9639e7ad944a445895b5d10ebd4f64, type: 3}
+  BackgroundMusic: {fileID: 8300000, guid: dc0688b1525a7f648a4654bdb011475d, type: 3}
+  EnableDevTools: 1

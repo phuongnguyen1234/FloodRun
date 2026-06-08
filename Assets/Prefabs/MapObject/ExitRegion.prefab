@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6370338452222732325}
   - component: {fileID: 3968340005615208850}
-  m_Layer: 14
+  m_Layer: 6
   m_Name: Block_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -88,7 +88,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6476824549074358654}
   - component: {fileID: 2553243033962260849}
-  m_Layer: 14
+  m_Layer: 6
   m_Name: Block_Top
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -166,7 +166,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1139688539418457319}
   - component: {fileID: 8461757988012372977}
-  m_Layer: 14
+  m_Layer: 6
   m_Name: Block_Bottom
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -312,7 +312,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 2094852713
-  m_SortingLayer: 7
+  m_SortingLayer: 10
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: -4544338722142618783, guid: f99b3a708926fd34b855386adfa90f2b, type: 3}
@@ -335,7 +335,7 @@ GameObject:
   m_Component:
   - component: {fileID: 160962537849736105}
   - component: {fileID: 4219605924508083713}
-  m_Layer: 14
+  m_Layer: 6
   m_Name: Block_Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -412,7 +412,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8499149732666310325}
-  m_Layer: 14
+  m_Layer: 6
   m_Name: BlockWall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
