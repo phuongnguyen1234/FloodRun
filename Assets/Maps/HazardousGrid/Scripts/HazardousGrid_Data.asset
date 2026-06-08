@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 617946ca0553ff345b7c386184b3a557, type: 3}
   m_Name: HazardousGrid_Data
   m_EditorClassIdentifier: Core::Core.MapData
-  Name: HazardousGrid
+  Name: Hazardous Grid
   Author: PhamThanhSon
   Description: 'You''re lost in an unknown woods. Make your way out of it
 
