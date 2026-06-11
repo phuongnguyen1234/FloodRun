@@ -13,9 +13,9 @@ using System.Collections.Generic;
 /// <summary>
 /// Quản lý vòng lặp chính của Gameplay: UI, Spawn Player, Win/Lose Condition.
 /// </summary>
-public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
+public class SingleplayerManager : MonoBehaviour, ISingleplayerManager, IGameLoopManager
 {
-    public static GameplayManager Instance { get; private set; }
+    public static SingleplayerManager Instance { get; private set; }
 
     [Header("References")]
     [SerializeField] private GameObject _playerPrefab;
@@ -43,7 +43,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
     public bool IsMultiplayer => false; // SP không phải MP
     public IMapManager CurrentMapManager => _mapManager;
 
-    private IGameplayUIManager _uiManager;
+    private ISingleplayerUIManager _uiManager;
     private IMapManager _mapManager;
 
     [Header("Data Settings")]
@@ -63,12 +63,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
-        // Tự động tìm UI Manager thông qua Interface (Giải quyết vấn đề khác Assembly)
-        // Vì Scene.asmdef chỉ tham chiếu Core, nên nó thấy IGameplayUIManager chứ không thấy class GameplayUIManager
-        if (_uiManager == null)
-        {
-            _uiManager = FindObjectsByType<Component>().OfType<IGameplayUIManager>().FirstOrDefault();
-        }
+        _uiManager ??= FindObjectsByType<Component>().OfType<ISingleplayerUIManager>().FirstOrDefault();
     }
 
     private void OnEnable()
@@ -121,7 +116,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
         if (LevelManager.SelectedMap != null)
         {
             // Điền thông tin map vào màn hình loading đang hiển thị sẵn
-            if (_uiManager != null) _uiManager.SetupMapLoadingScreen(LevelManager.SelectedMap);
+            _uiManager?.SetupMapLoadingScreen(LevelManager.SelectedMap);
 
             // Tự động sinh Map ra Scene nếu chưa có
             _currentMapInstance = Instantiate(LevelManager.SelectedMap.MapPrefab, Vector3.zero, Quaternion.identity, _mapParent);
@@ -132,7 +127,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
 
         if (_mapManager == null)
         {
-            Debug.LogError("[GameplayManager] Không tìm thấy MapManager trong Scene!");
+            Debug.LogError("[SingleplayerManager] Không tìm thấy MapManager trong Scene!");
             return;
         }
 
@@ -288,18 +283,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
         }
         else Debug.LogWarning("[DevTool] Cannot teleport: No active button found or sequence complete.");
     }
-/// <summary>
-    /// Dịch chuyển camera tức thời đến vị trí của Local Player.
-    /// </summary>
-    private void WarpCamera()
-    {
-        if (_vcam != null && LocalPlayer is MonoBehaviour playerMono)
-        {
-            Vector3 targetPos = playerMono.transform.position;
-            targetPos.z = _vcam.transform.position.z; // Giữ nguyên độ sâu Z của camera
-            _vcam.ForceCameraPosition(targetPos, _vcam.transform.rotation);
-        }
-    }
+
     public void SetPaused(bool paused)
     {
         // Chỉ cho phép pause khi đã vào màn chơi (tránh pause lúc đang loading)
@@ -312,7 +296,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
         // Tạm dừng/Tiếp tục toàn bộ âm thanh gameplay (SFX)
         AudioListener.pause = paused;
 
-        // Gọi trực tiếp qua interface IGameplayUIManager
+        // Gọi trực tiếp qua interface ISingleplayerUIManager
         _uiManager?.ShowPauseMenu(paused);
     }
 
@@ -324,8 +308,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
     private IEnumerator RestartLevelRoutine()
     {
         // Phát nhạc Loading khi Restart với fade nhanh
-        if (BackgroundMusicManager.Instance != null)
-            BackgroundMusicManager.Instance.FadeTo(_loadingMusic, 0.25f);
+        BackgroundMusicManager.Instance?.FadeTo(_loadingMusic, 0.25f);
 
         // 1. Hiển thị Loading UI ngay tại scene hiện tại trước khi reload
         if (_uiManager != null && LevelManager.SelectedMap != null)
@@ -354,8 +337,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
     private IEnumerator BackToMainMenuRoutine()
     {
         // Phát nhạc Loading khi quay về Home
-        if (BackgroundMusicManager.Instance != null)
-            BackgroundMusicManager.Instance.FadeTo(_loadingMusic, 0.25f);
+        BackgroundMusicManager.Instance?.FadeTo(_loadingMusic, 0.25f);
         
         // 1. Hiển thị Loading Screen của Gameplay HUD trước khi thoát
         _uiManager?.ShowBackToMainMenuLoadingScreen();
@@ -426,10 +408,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
         yield return new WaitForEndOfFrame();
         CameraHelper.WarpToTarget(_vcam, LocalPlayer as MonoBehaviour);
 
-        if (_uiManager != null)
-        {
-            _uiManager.ShowLoadingScreen(false);
-        }
+        _uiManager?.ShowLoadingScreen(false);
 
         // Bước 2: Khóa điều khiển
         foreach (var p in AllPlayers)
@@ -439,19 +418,19 @@ public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
 
         // Reset Parallax mốc (0,0,0) cho Map vừa Instantiate
         // Gọi tại đây để Camera ổn định vị trí trước khi tính Delta Parallax
-        if (_mapManager != null) _mapManager.PrepareMapBackgrounds();
+        _mapManager?.PrepareMapBackgrounds();
 
         // Bước 3: Đếm ngược
         float timeLeft = _startCountdownTime;
         while (timeLeft > 0)
         {
-            if (_uiManager != null) _uiManager.SetCountdownText($"Get ready: {timeLeft:F0}");
+            _uiManager?.SetCountdownText($"Get ready: {timeLeft:F0}");
             yield return new WaitForSeconds(1f);
             timeLeft--;
         }
 
         // Xóa text đếm ngược ngay lập tức thay vì hiện chữ GO!
-        if (_uiManager != null) _uiManager.SetCountdownText("");
+        _uiManager?.SetCountdownText("");
 
         // Bước 4: Bắt đầu game
         IsGameActive = true;
@@ -470,7 +449,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
         }
 
         // Báo cho MapManager biết để kích hoạt nhạc, nước, event
-        if (_mapManager != null) _mapManager.StartMapMechanics();
+        _mapManager?.StartMapMechanics();
     }
 
     private void SpawnPlayer()
@@ -508,14 +487,14 @@ public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
                     _vcam.Follow = playerObj.transform;
                     _vcam.LookAt = playerObj.transform;
                 }
-                else Debug.LogWarning("[GameplayManager] Chưa gán Virtual Camera vào Inspector!");
+                else Debug.LogWarning("[SingleplayerManager] Chưa gán Virtual Camera vào Inspector!");
                 // Thông báo cho toàn hệ thống biết Local Player đã sẵn sàng
                 GameplayEvents.TriggerLocalPlayerSpawned(player);
             }
         }
         else
         {
-            Debug.LogError("[GameplayManager] Missing Player Prefab or MapManager!");
+            Debug.LogError("[SingleplayerManager] Missing Player Prefab or MapManager!");
         }
     }
 
@@ -664,10 +643,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
         yield return new WaitForSeconds(1f);
 
         // 4. Hiển thị UI EndGame với trạng thái thắng
-        if (_uiManager != null)
-        {
-            _uiManager.ShowEndGame(true, "Map Completed", data, finalTime, currentButtons, isNewBest, earnedCoins);
-        }
+        _uiManager?.ShowEndGame(true, "Map Completed", data, finalTime, currentButtons, isNewBest, earnedCoins);
     }
 
     public void GameOver(string reason, DeathReason deathReason)
@@ -690,7 +666,7 @@ public class GameplayManager : MonoBehaviour, IGameplayManager, IGameLoopManager
     private IEnumerator GameOverRoutine(string reason, DeathReason deathReason)
     {
         // 1. Thu thập dữ liệu ngay tại thời điểm thua
-        MapData data = _mapManager != null ? _mapManager.GetMapData() : null;
+        MapData data = _mapManager?.GetMapData();
         float finalTime = CurrentLevelTime;
         int currentButtons = _mapManager != null ? _mapManager.GetButtonsActivatedCount() : 0;
 

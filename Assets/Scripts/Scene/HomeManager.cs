@@ -34,7 +34,7 @@ public class HomeManager : MonoBehaviour, ILevelLoader
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
 
-        // Chuyển việc tìm UI Manager từ Start sang Awake để nhất quán với GameplayManager
+        // Chuyển việc tìm UI Manager từ Start sang Awake để nhất quán với SingleplayerManager
         if (_uiManager == null)
         {
             _uiManager = FindObjectsByType<Component>().OfType<IHomeUIManager>().FirstOrDefault();
@@ -105,7 +105,7 @@ public class HomeManager : MonoBehaviour, ILevelLoader
         LevelManager.SelectedMap = mapData;
 
         // 3. Nạp Scene không đồng bộ (Async)
-        AsyncOperation operation = SceneManager.LoadSceneAsync("Gameplay");
+        AsyncOperation operation = SceneManager.LoadSceneAsync("Singleplayer");
         
         while (!operation.isDone)
         {

@@ -13,7 +13,7 @@ public class UIButtonSound : MonoBehaviour
 
     private void Start()
     {
-        // Tìm bất kỳ Component nào thực thi IUISfxPlayer (có thể là HomeUIManager hoặc GameplayUIManager)
+        // Tìm bất kỳ Component nào thực thi IUISfxPlayer (có thể là HomeUIManager hoặc SingleplayerUIManager)
         if (_sfxPlayer == null)
         {
             _sfxPlayer = FindObjectsByType<Component>().OfType<IUISfxPlayer>().FirstOrDefault();

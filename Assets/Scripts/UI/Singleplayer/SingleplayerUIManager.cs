@@ -8,16 +8,16 @@ using Core.Events;
 using DG.Tweening;
 
 /// <summary>
-/// GameplayUIManager chịu trách nhiệm quản lý tất cả các yếu tố giao diện người dùng liên quan đến gameplay, bao gồm:
+/// SingleplayerUIManager chịu trách nhiệm quản lý tất cả các yếu tố giao diện người dùng liên quan đến gameplay, bao gồm:
 /// - Cập nhật thời gian cá nhân, thời gian kỷ lục, và đếm ngược
 /// - Cập nhật lượng Air còn lại, Bonus Air, và Drain Rate
 /// - Cập nhật tiến độ bấm nút và hiển thị cờ hoàn thành
 /// - Hiển thị modal kết thúc game (thắng/thua) với thông tin chi tiết về map và thành tích
 /// - Hiển thị menu tạm dừng và các tùy chọn liên quan
 /// </summary>
-public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
+public class SingleplayerUIManager : MonoBehaviour, ISingleplayerUIManager
 {
-    public static GameplayUIManager Instance { get; private set; }
+    public static SingleplayerUIManager Instance { get; private set; }
 
     [Header("HUD References")]
     [SerializeField] private TMP_Text _personalTimeText;
@@ -174,7 +174,7 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
     {
         if (_floatNotificationText != null)
         {
-            // Reset lại trạng thái của Text nếu GameplayManager gọi (tránh bị ảnh hưởng bởi tween notification)
+            // Reset lại trạng thái của Text nếu SingleplayerManager gọi (tránh bị ảnh hưởng bởi tween notification)
             _floatNotificationText.DOKill();
             _floatNotificationText.color = Color.white;
             _floatNotificationText.alpha = 1f; // Sử dụng TMP alpha thay vì canvasRenderer
@@ -190,7 +190,7 @@ public class GameplayUIManager : MonoBehaviour, IGameplayUIManager
 
     public void UpdateAirUI(float currentAir, float bonusAir, float bonusMax, float rate)
     {
-        // Trong Multiplayer, hàm này PHẢI được gọi từ dữ liệu của Local Player (GameplayManager lo việc này)
+        // Trong Multiplayer, hàm này PHẢI được gọi từ dữ liệu của Local Player (SingleplayerManager lo việc này)
         float totalAir = currentAir + bonusAir;
         
         // 1. Cập nhật Text Air

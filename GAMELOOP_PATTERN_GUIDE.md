@@ -2,7 +2,7 @@
 
 ## Tổng quan
 
-Để tránh duplicate logic giữa Single Player và Multiplayer, chúng ta sử dụng interface base `IGameLoopManager`. Cả `GameplayManager` (SP) và `MultiplayerManager` (MP) đều implement interface này.
+Để tránh duplicate logic giữa Single Player và Multiplayer, chúng ta sử dụng interface base `IGameLoopManager`. Cả `SingleplayerManager` (SP) và `MultiplayerManager` (MP) đều implement interface này.
 
 ## Architecture
 
@@ -14,7 +14,7 @@ IGameLoopManager (Base Interface)
 ├── IsPaused { get; }
 ├── IsHost { get; }
 └── IsMultiplayer { get; }
-    ├── GameplayManager : IGameplayManager, IGameLoopManager
+    ├── SingleplayerManager : IGameplayManager, IGameLoopManager
     │   └── (Single Player specific: IsHost=true, IsMultiplayer=false)
     │
     └── MultiplayerManager : IMultiplayerManager, IGameLoopManager
@@ -82,7 +82,7 @@ if (_gameLoopManager.IsHost) {
 - [x] Created `IGameLoopManager` interface
 - [x] `IGameplayManager` extends `IGameLoopManager`
 - [x] `IMultiplayerManager` extends `IGameLoopManager`
-- [x] `GameplayManager` implements `IGameplayManager` + `IGameLoopManager` properties
+- [x] `SingleplayerManager` implements `IGameplayManager` + `IGameLoopManager` properties
 - [x] `MultiplayerManager` implements `IMultiplayerManager` + `IGameLoopManager` properties
 - [x] Updated `FloodController` to use `IGameLoopManager` instead of `IGameplayManager`
 

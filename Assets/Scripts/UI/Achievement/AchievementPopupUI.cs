@@ -113,7 +113,7 @@ namespace UI
                 float fadeTime = 0.2f;
                 float moveOffset = 20f;
 
-                // 1. Reset trạng thái ban đầu (Ở trên cao và mờ) giống GameplayUIManager
+                // 1. Reset trạng thái ban đầu (Ở trên cao và mờ) giống SingleplayerUIManager
                 _container.anchoredPosition = _originalPopupPos + new Vector2(0, moveOffset);
                 _canvasGroup.alpha = 0f;
 

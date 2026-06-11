@@ -2,7 +2,7 @@
 
 ## Tổng quan
 
-Để tránh duplicate logic UI giữa Single Player và Multiplayer, chúng ta sử dụng 2 interface base: `ICommonUIManager` và `IGameplayHUDUI`. Cả `GameplayUIManager` (SP) và `MultiplayerUIManager` (MP) đều implement các interface này.
+Để tránh duplicate logic UI giữa Single Player và Multiplayer, chúng ta sử dụng 2 interface base: `ICommonUIManager` và `IGameplayHUDUI`. Cả `SingleplayerUIManager` (SP) và `MultiplayerUIManager` (MP) đều implement các interface này.
 
 ## Architecture
 
@@ -23,7 +23,7 @@ IUISfxPlayer (Base SFX player)
     ├── SetCountdownText()
     └── UpdateTimeSlider()
         │
-        ├── GameplayUIManager : IGameplayUIManager
+        ├── SingleplayerUIManager : ISingleplayerUIManager
         │   ├── extends IGameplayHUDUI
         │   ├── ShowEndGame() [SP-specific]
         │   ├── ShowPauseMenu() [SP-specific]
@@ -42,7 +42,7 @@ IUISfxPlayer (Base SFX player)
 
 ### 1. Trong Mechanics (chung cho SP & MP)
 
-Thay vì chỉ dùng `IGameplayUIManager` (chỉ cho SP), mechanics có thể dùng `IGameplayHUDUI`:
+Thay vì chỉ dùng `ISingleplayerUIManager` (chỉ cho SP), mechanics có thể dùng `IGameplayHUDUI`:
 
 ```csharp
 public class FloodController : MonoBehaviour {
@@ -61,14 +61,14 @@ public class FloodController : MonoBehaviour {
 }
 ```
 
-### 2. Trong GameplayManager (Single Player)
+### 2. Trong SingleplayerManager (Single Player)
 
 ```csharp
-public class GameplayManager : IGameplayManager {
-    private IGameplayUIManager _uiManager;
+public class SingleplayerManager : IGameplayManager {
+    private ISingleplayerUIManager _uiManager;
 
     private void OnEnable() {
-        _uiManager = FindObjectsByType<Component>().OfType<IGameplayUIManager>().FirstOrDefault();
+        _uiManager = FindObjectsByType<Component>().OfType<ISingleplayerUIManager>().FirstOrDefault();
     }
 
     private void OnGameEnd(bool isVictory) {
@@ -112,33 +112,33 @@ _uiManager.SetupLoadingScreen(mapData);
 
 - [x] Created `ICommonUIManager` interface (base for all UI)
 - [x] Created `IGameplayHUDUI` interface (extends ICommonUIManager)
-- [x] `IGameplayUIManager` extends `IGameplayHUDUI` (SP-specific)
+- [x] `ISingleplayerUIManager` extends `IGameplayHUDUI` (SP-specific)
 - [x] `IMultiplayerUIManager` extends `IGameplayHUDUI` (MP-specific)
-- [ ] Update `GameplayUIManager` class to implement `IGameplayUIManager`
+- [ ] Update `SingleplayerUIManager` class to implement `ISingleplayerUIManager`
 - [ ] Update `MultiplayerUIManager` class to implement `IMultiplayerUIManager`
-- [ ] Convert mechanics using `IGameplayUIManager` → `IGameplayHUDUI` (nếu không cần SP-specific)
+- [ ] Convert mechanics using `ISingleplayerUIManager` → `IGameplayHUDUI` (nếu không cần SP-specific)
 
 ## Next Steps: Convert Mechanics
 
 ### Mechanics hiện tại dùng UI:
 
-Tìm kiếm: `grep -r "IGameplayUIManager" Assets/Scripts/Mechanics/`
+Tìm kiếm: `grep -r "ISingleplayerUIManager" Assets/Scripts/Mechanics/`
 
 **Quy tắc chuyển đổi:**
 
 1. **Nếu mechanic chỉ dùng chung methods** (UpdateAirUI, UpdateButtonProgress, etc.)
-   - Thay: `IGameplayUIManager` → `IGameplayHUDUI`
+   - Thay: `ISingleplayerUIManager` → `IGameplayHUDUI`
 
 2. **Nếu mechanic dùng SP-specific methods** (ShowEndGame, ShowPauseMenu, dev tools)
-   - Giữ: `IGameplayUIManager` (chỉ dùng trong SP)
+   - Giữ: `ISingleplayerUIManager` (chỉ dùng trong SP)
 
 ### Example:
 
 **Before (chỉ SP hoạt động):**
 
 ```csharp
-private IGameplayUIManager _uiManager;
-_uiManager = FindObjectsByType<Component>().OfType<IGameplayUIManager>().FirstOrDefault();
+private ISingleplayerUIManager _uiManager;
+_uiManager = FindObjectsByType<Component>().OfType<ISingleplayerUIManager>().FirstOrDefault();
 ```
 
 **After (hoạt động cả SP & MP):**
@@ -162,7 +162,7 @@ _uiManager = FindObjectsByType<Component>().OfType<IGameplayHUDUI>().FirstOrDefa
 
 ```csharp
 // SAI: Mechanics dùng SP-specific UI
-private IGameplayUIManager _uiManager; // ❌ Mechanic không phải SP-only!
+private ISingleplayerUIManager _uiManager; // ❌ Mechanic không phải SP-only!
 ```
 
 ✅ **Đúng cách:**
@@ -176,7 +176,7 @@ private IGameplayHUDUI _uiManager; // ✅ Hoạt động cả SP & MP
 
 ```csharp
 // SAI: Tìm kiếm trực tiếp
-var ui = FindObjectsByType<GameplayUIManager>().FirstOrDefault();
+var ui = FindObjectsByType<SingleplayerUIManager>().FirstOrDefault();
 ```
 
 ✅ **Đúng cách:**

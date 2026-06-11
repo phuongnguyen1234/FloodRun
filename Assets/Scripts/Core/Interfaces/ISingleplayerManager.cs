@@ -7,7 +7,7 @@ namespace Core.Interfaces
     /// Extends IGameLoopManager để cung cấp các tính năng cơ bản, 
     /// đồng thời có thể thêm các method SP-specific ở đây.
     /// </summary>
-    public interface IGameplayManager : IGameLoopManager
+    public interface ISingleplayerManager : IGameLoopManager
     {
         // Hiện tại không có thêm method nào, nhưng có thể mở rộng sau này
         // Ví dụ: void RestartLevel(), void BackToMainMenu()...

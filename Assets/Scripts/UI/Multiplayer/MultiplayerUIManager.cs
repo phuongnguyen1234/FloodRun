@@ -319,7 +319,7 @@ namespace UI.Multiplayer
                 UpdateAirRateUI(rate);
             }
 
-            // Cập nhật lớp Bubble Air (Bonus) giống GameplayUIManager
+            // Cập nhật lớp Bubble Air (Bonus) giống SingleplayerUIManager
             if (_bonusAirFill != null)
             {
                 bool hasBonus = bonusAir > 0.1f; // Sử dụng ngưỡng nhỏ để tránh nháy UI do sai số float

@@ -8,7 +8,7 @@ namespace Core.Interfaces
     /// Extends IGameplayHUDUI để sử dụng chung các hành vi gameplay HUD.
     /// Thêm các hành vi SP-specific như ShowEndGame, ShowPauseMenu, dev tools, etc.
     /// </summary>
-    public interface IGameplayUIManager : IGameplayHUDUI
+    public interface ISingleplayerUIManager : IGameplayHUDUI
     {
         /// <summary>
         /// Hiển thị kết thúc game (SP-specific).

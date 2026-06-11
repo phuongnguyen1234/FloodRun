@@ -770,7 +770,7 @@ GameObject:
   - component: {fileID: 160340586}
   - component: {fileID: 160340585}
   m_Layer: 0
-  m_Name: GameplayManager
+  m_Name: SingleplayerManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

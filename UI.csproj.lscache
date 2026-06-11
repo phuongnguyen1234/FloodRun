@@ -56,7 +56,7 @@ Assets/Scripts/UI/Achievement/
  AchievementSectionUI.cs
 Assets/Scripts/UI/
  Character/CharacterUI.cs
- Gameplay/GameplayUIManager.cs
+ Gameplay/SingleplayerUIManager.cs
  Home/
   DifficultySelectionView.cs
   HomeUIManager.cs

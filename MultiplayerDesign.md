@@ -105,7 +105,7 @@
 
 ## 2.4. Gameplay HUD
 
-- **Dựa trên:** GameplayUIManager từ singleplayer
+- **Dựa trên:** SingleplayerUIManager từ singleplayer
 - **Thêm:** Số player đang sống sót
 - **Gợi ý:** Tách logic chung để singleplayer & multiplayer dùng chung
 
@@ -193,7 +193,7 @@
   - Group button: +10 xu
 - **Pause:** Multiplayer không thể pause game (chỉ pause gameloop khi không ai active)
 - **Host disconnect:** Kick tất cả clients, quay về Home/Multiplayer + thông báo "Sorry, the host has left the room"
-- **Kiến trúc phụ thuộc** Logic manager (GameplayManager, MultiplayerManager) có trách nhiệm điều khiển dữ liệu, logic và ra lệnh cho UI manager (GameplayUIManager, MultiplayerUIManager). Khi sử dụng, gọi interface của chúng, không được gọi trực tiếp class thực thi (Vì Manager logic thuộc assembly Scene, UI manager thuộc assembly UI). Các UI con (sub modal, màn hình con cần truy cập qua UI manager)
+- **Kiến trúc phụ thuộc** Logic manager (SingleplayerManager, MultiplayerManager) có trách nhiệm điều khiển dữ liệu, logic và ra lệnh cho UI manager (SingleplayerUIManager, MultiplayerUIManager). Khi sử dụng, gọi interface của chúng, không được gọi trực tiếp class thực thi (Vì Manager logic thuộc assembly Scene, UI manager thuộc assembly UI). Các UI con (sub modal, màn hình con cần truy cập qua UI manager)
 
 # 5. Scripts Bổ Sung
 
