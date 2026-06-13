@@ -8,6 +8,7 @@ using Core;
 using System.Linq;
 using UI;
 using DG.Tweening;
+using System.Collections.Generic;
 
 namespace UI.Multiplayer
 {
@@ -74,10 +75,10 @@ namespace UI.Multiplayer
         [SerializeField] private Slider _timeSlider;
 
         [Header("Multiplayer Systems")]
-        [SerializeField] private GameObject _votingPanel;
         [SerializeField] private VoteMapModal _voteMapModal;
         [SerializeField] private Button _openVoteModalButton;
         [SerializeField] private GameObject _chatPanel;
+        [SerializeField] private SummaryModalUI _summaryModal;
         [Space]
         [SerializeField] private GameObject _chatLinePrefab;
         [SerializeField] private Transform _chatContent;
@@ -144,18 +145,19 @@ namespace UI.Multiplayer
             if (_logicManager != null)
             {
                 if (_roomInfoModal != null) _roomInfoModal.SetManager(_logicManager);
-                // Đồng bộ settings ban đầu cho slider
                 if (_timeSlider != null) {
                     _timeSlider.minValue = 0;
                     _timeSlider.value = 0;
                 }
+                
+                // Đảm bảo Modal Summary và Vote được gán manager và ở trạng thái ẩn lúc đầu
+                if (_summaryModal != null) _summaryModal.gameObject.SetActive(false);
                 if (_voteMapModal != null) 
                 {
                     _voteMapModal.SetManager(_logicManager);
                     _voteMapModal.gameObject.SetActive(false);
                 }
-                // Bạn có thể gán cho các modal khác ở đây (ví dụ: ChatModal, VoteModal...)
-                // if (_chatModal != null) _chatModal.SetManager(logicManager);
+                
             }
 
             if (_floatNotificationText != null)
@@ -179,6 +181,17 @@ namespace UI.Multiplayer
             }
         }
 
+        public void ShowSummary(List<RoundSummaryData> results)
+        {
+            if (_summaryModal == null) 
+            {
+                Debug.LogError("MultiplayerUIManager: SummaryModal reference is missing in Inspector!");
+                return;
+            }
+            _summaryModal.gameObject.SetActive(true); // Bật GameObject lên trước
+            _summaryModal.Show(results);
+        }
+
         public void OpenVotingModal()
         {
             if (_voteMapModal == null) return;
@@ -198,8 +211,8 @@ namespace UI.Multiplayer
             // FIX: Kích hoạt panel Voting để Slider Global (nếu nằm trong đây) có thể hiển thị và chạy
             // Panel này chứa slider thời gian, nên nó cần active để slider chạy
             // Tuy nhiên, nếu nút vote luôn active, panel này có thể không cần active liên tục.
-            if (_votingPanel != null)
-                _votingPanel.SetActive(visible);
+            if (_voteMapModal != null)
+                _voteMapModal.gameObject.SetActive(visible);
 
             // Nếu bắt đầu đợt vote mới (visible = true), reset trạng thái vote của local player
             if (visible && _voteMapModal != null)
@@ -219,7 +232,8 @@ namespace UI.Multiplayer
         {
             return (_roomInfoModal != null && _roomInfoModal.gameObject.activeSelf) ||
                    (_settingsModal != null && _settingsModal.activeSelf) ||
-                   (_voteMapModal != null && _voteMapModal.gameObject.activeSelf);
+                   (_voteMapModal != null && _voteMapModal.gameObject.activeSelf) ||
+                   (_summaryModal != null && _summaryModal.gameObject.activeSelf);
         }
 
         public void ResetGameplayHUD()
@@ -228,6 +242,10 @@ namespace UI.Multiplayer
             ShowPlayerFinishFlag(false);
             ShowButtonFinishFlag(false);
             SetWaitingForPlayersText(""); 
+
+            // Ẩn Summary Modal nếu đang hiện
+            if (_summaryModal != null) _summaryModal.gameObject.SetActive(false);
+
             // FIX 1: Không ẩn LobbyInfoBoard khi reset, nó là vật thể thế giới luôn hiện
             // _lobbyInfoBoard?.SetVisibility(false); 
 

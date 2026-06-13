@@ -12,6 +12,8 @@ namespace Multiplayer
     {
         public NetworkVariable<GameState> CurrentState = new(GameState.Intermission);
         public NetworkVariable<float> NetworkTime { get; } = new NetworkVariable<float>(0f);
+        private NetworkVariable<double> _netStartTime = new(0);
+
         public NetworkVariable<float> Difficulty { get; } = new NetworkVariable<float>(1.0f);
         public NetworkVariable<bool> IsMapMechanicsStartedNet = new(false);
         public NetworkList<FixedString64Bytes> VotingMapNames { get; private set; }
@@ -234,6 +236,8 @@ namespace Multiplayer
         private void StartRoundClientRpc(string mapName, int roundGeneration, ulong mapNetworkObjectId, ulong[] participantIds)
         {
             _roundGeneration = roundGeneration;
+            _localRoundButtonsPressed = 0;
+            _localFinishTime = -1f;
 
             ulong localId = NetworkManager.Singleton.LocalClientId;
             _localIsRoundParticipant = participantIds != null && participantIds.Contains(localId);
@@ -247,6 +251,9 @@ namespace Multiplayer
 
             if (_localIsRoundParticipant && LocalPlayer != null && !LocalPlayer.IsAFK.Value)
                 BackgroundMusicManager.Instance?.FadeTo(_loadingMusic, 0.25f, true, true);
+
+            // Reset đếm số người về đích cho round mới
+            _localRoundFinishCount = 0;
 
             _setupClientCoroutine = StartCoroutine(SetupClientRoutine(mapName, roundGeneration, mapNetworkObjectId));
         }
@@ -383,6 +390,7 @@ namespace Multiplayer
             IsMapMechanicsStartedNet.Value = true;
             _isStarting = false;
             NetworkTime.Value = 0f;
+            _netStartTime.Value = NetworkManager.Singleton.ServerTime.Time; // Lưu mốc bắt đầu thực tế
 
             var map = CurrentMapManager;
             if (map == null && !string.IsNullOrEmpty(NetCurrentMapName.Value.ToString()) && _currentMapInstance != null)

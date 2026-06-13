@@ -59,7 +59,7 @@ public class GoalLocator : MonoBehaviour
 
     private LineRenderer CreateLine(string name, Color color, float width, int sortingOrder)
     {
-        GameObject go = new GameObject(name);
+        GameObject go = new(name);
         go.transform.SetParent(transform);
         LineRenderer line = go.AddComponent<LineRenderer>();
         line.material = _locatorMaterial != null ? _locatorMaterial : new Material(Shader.Find("Hidden/Internal-Colored"));
@@ -171,14 +171,14 @@ public class GoalLocator : MonoBehaviour
 
     private void UpdateSequenceLine(List<Transform> buttons)
     {
-        if (buttons.Count >= 3)
+        if (buttons.Count >= 2)
         {
             _sequencePathLine.positionCount = 2;
+            Vector3 b1Pos = buttons[0].position + Vector3.up * _locatorTargetVerticalOffset;
             Vector3 b2Pos = buttons[1].position + Vector3.up * _locatorTargetVerticalOffset;
-            Vector3 b3Pos = buttons[2].position + Vector3.up * _locatorTargetVerticalOffset;
-            b2Pos.z = 0; b3Pos.z = 0;
-            _sequencePathLine.SetPosition(0, b2Pos);
-            _sequencePathLine.SetPosition(1, b3Pos);
+            b1Pos.z = 0; b2Pos.z = 0;
+            _sequencePathLine.SetPosition(0, b1Pos);
+            _sequencePathLine.SetPosition(1, b2Pos);
         }
         else _sequencePathLine.positionCount = 0;
     }

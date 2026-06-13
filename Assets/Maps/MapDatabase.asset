@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: MapDatabase
   m_EditorClassIdentifier: Map::MapDatabase
   AllMaps:
-  - {fileID: 11400000, guid: 09f726a4c7cab75448f015cef9b214ad, type: 2}
   - {fileID: 11400000, guid: c59a2cc68dc50704382a6aa04a3dfd5d, type: 2}
   - {fileID: 11400000, guid: 109572de057195748b4d1274698735ad, type: 2}
   - {fileID: 11400000, guid: 0e6411c8f9bbdac41a34c6e26e7fa8a8, type: 2}

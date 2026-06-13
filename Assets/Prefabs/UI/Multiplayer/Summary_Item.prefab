@@ -194,9 +194,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -41.570007, y: 0}
-  m_SizeDelta: {x: 83.140015, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 0}
+  m_Pivot: {x: 1, y: 0.5}
 --- !u!222 &4441621916307679347
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -225,7 +225,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 9:59.999
+  m_text: 0:00.000
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 0763c80469420bb45ac3ae6bd32d68d0, type: 2}
   m_sharedMaterial: {fileID: -3090036126112049867, guid: 0763c80469420bb45ac3ae6bd32d68d0, type: 2}
@@ -259,7 +259,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 1
+  m_HorizontalAlignment: 4
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -1053,7 +1053,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 32.179993, y: 0}
+  m_AnchoredPosition: {x: 32, y: 0}
   m_SizeDelta: {x: 64.36, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &544220255570747926
@@ -1471,6 +1471,7 @@ GameObject:
   - component: {fileID: 7371302342670778378}
   - component: {fileID: 5822540183688147522}
   - component: {fileID: 3514204059148011331}
+  - component: {fileID: 3595552116857960700}
   m_Layer: 5
   m_Name: Summary_Item
   m_TagString: Untagged
@@ -1534,3 +1535,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RectMask2D
   m_Padding: {x: 0, y: 0, z: 0, w: 0}
   m_Softness: {x: 0, y: 0}
+--- !u!114 &3595552116857960700
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9110701167139415604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 269e7947cc75001428e06493d1e8d98e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UI::UI.Multiplayer.SummaryItem
+  _mapImage: {fileID: 5915848954069277165}
+  _overlayImage: {fileID: 8177466790075857965}
+  _palette: {fileID: 11400000, guid: 3cd5c2851e58e1a4793845e05bf1626e, type: 2}
+  _mapNameText: {fileID: 5354892699236213374}
+  _rankText: {fileID: 834280333338543392}
+  _buttonsText: {fileID: 8719048648571722380}
+  _timeText: {fileID: 3275754523757947309}
+  _coinsText: {fileID: 708633913133794543}

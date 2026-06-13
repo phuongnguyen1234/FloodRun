@@ -58,7 +58,8 @@ namespace Multiplayer{
             VotingMapNames = new NetworkList<FixedString64Bytes>();
             MapVotes = new NetworkList<int>();
 
-            _uiManager ??= FindObjectsByType<Component>().OfType<IMultiplayerUIManager>().FirstOrDefault();
+            // Tìm UI Manager bao gồm cả các object đang bị ẩn trong Scene
+            _uiManager ??= FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include).OfType<IMultiplayerUIManager>().FirstOrDefault();
             RegisterAllMapNetworkPrefabs();
 
             // Đăng ký cho các player đã tồn tại trong scene (phòng trường hợp scripts chạy sau player)
@@ -81,6 +82,7 @@ namespace Multiplayer{
             GameplayEvents.OnLevelCompleted += OnPlayerFinishedHandler;
             GameplayEvents.OnPlayerDied += OnPlayerDiedHandler;
             GameplayEvents.OnLocalPlayerSpawned += OnLocalPlayerSpawnedHandler;
+            GameplayEvents.OnButtonPressed += OnLocalButtonPressed;
 
             _netReadyCount.OnValueChanged += (_, _) => UpdateSetupWaitingText();
             _netTotalParticipants.OnValueChanged += (_, _) => UpdateSetupWaitingText();
@@ -148,6 +150,12 @@ namespace Multiplayer{
                 // Đăng ký thông tin bản thân lên Server
                 string myName = DataManager.Instance != null ? DataManager.Instance.Profile.PlayerName : "Player " + NetworkManager.Singleton.LocalClientId;
                 RegisterPlayerServerRpc(NetworkManager.Singleton.LocalClientId, myName, IsServer);
+
+                // FIX: Đồng bộ thủ công các thông số Player Count cho late joiner.
+                // Vì các NetworkVariable đã có giá trị trước khi join, OnValueChanged sẽ không nổ ra.
+                // Gọi các hàm này giúp cập nhật con số "X/Y Players" lên LobbyInfoBoard ngay khi join.
+                UpdateHUDAndBoardPlayerCount();
+                UpdateSetupWaitingText();
             }
 
             // Cập nhật UI ban đầu
@@ -346,17 +354,17 @@ namespace Multiplayer{
             else { currentTime = 0f; maxTime = 1f; }
 
             _uiManager.UpdateTimeSlider(currentTime, maxTime, isVoting);
-            
-            float displayTime = mechanicsStarted ? NetworkTime.Value : 0f;
+
+            float displayTime = GetElapsedRoundTime();
 
             // 2. Truyền dữ liệu Player Stats khi đang trong map chơi
             if (state == GameState.Playing && LocalPlayer != null && LocalPlayer.Status.Value != PlayerStatus.Lobby)
             {
-                // Nếu đã về đích, hiển thị thời gian đã lưu. Nếu chưa, hiển thị NetworkTime.
-                ulong myId = NetworkManager.Singleton.LocalClientId;
-                if (_playerFinishTimes.ContainsKey(myId))
+                // FIX: Ưu tiên hiển thị thời gian đã chốt (Personal Finish Time) nếu có, 
+                // giúp đồng hồ trên HUD dừng lại ngay khi người chơi về đích.
+                if (_localFinishTime > 0)
                 {
-                    _uiManager.UpdatePersonalRecord(_playerFinishTimes[myId]);
+                    _uiManager.UpdatePersonalRecord(_localFinishTime);
                 }
                 else
                 {
@@ -521,6 +529,10 @@ namespace Multiplayer{
             _uiManager?.ShowBackToMainMenuLoadingScreen();
             
             StopBackgroundMusic();
+
+            // Đảm bảo dọn dẹp kết quả streak khi rời phòng để không bị cộng dồn sang phiên sau
+            _localSessionResults?.Clear();
+
             NetworkManager.Singleton.Shutdown();
             SceneManager.LoadScene("Home");
         }
@@ -554,6 +566,7 @@ namespace Multiplayer{
             GameplayEvents.OnLevelCompleted -= OnPlayerFinishedHandler;
             GameplayEvents.OnPlayerDied -= OnPlayerDiedHandler;
             GameplayEvents.OnLocalPlayerSpawned -= OnLocalPlayerSpawnedHandler;
+            GameplayEvents.OnButtonPressed -= OnLocalButtonPressed;
             if (NetworkManager.Singleton != null)
             {
                 NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectedFromServer;

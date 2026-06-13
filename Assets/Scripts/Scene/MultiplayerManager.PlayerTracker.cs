@@ -28,6 +28,34 @@ namespace Multiplayer{
         [Header("Respawn Settings")]
         [SerializeField] private float _respawnDelay = 3f;
         private Dictionary<ulong, float> _playerRespawnTimers = new();
+        public void SetLocalParticipant(bool isParticipant) => _localIsRoundParticipant = isParticipant;
+
+        // Local Session Tracking
+        private List<RoundSummaryData> _localSessionResults = new();
+        private int _localRoundFinishCount = 0; // Đếm số người về đích trước mình
+        private int _localRoundButtonsPressed = 0;
+        private float _localFinishTime = -1f;
+
+        /// <summary>
+        /// Hàm gộp để lấy thời gian thực tế từ lúc bắt đầu round đến hiện tại.
+        /// Luôn chính xác bất kể trạng thái NetworkTime thay đổi.
+        /// </summary>
+        private float GetElapsedRoundTime()
+        {
+            if (!IsMapMechanicsStartedNet.Value || _netStartTime.Value <= 0) return 0f;
+            return (float)(NetworkManager.Singleton.ServerTime.Time - _netStartTime.Value);
+        }
+
+        private void OnLocalButtonPressed()
+        {
+            // FIX: Chỉ đếm nút khi Game đang trong phase Playing 
+            // VÀ mechanics đã thực sự bắt đầu (đã hiện chữ GO!)
+            // Điều này ngăn việc đếm nhầm các nút của map cũ chưa kịp hủy khi round mới đang setup.
+            if (CurrentState.Value == GameState.Playing && IsMapMechanicsStartedNet.Value)
+            {
+                _localRoundButtonsPressed++;
+            }
+        }
 
         private void OnPlayerJoinedHandler(IPlayer player)
         {
@@ -165,16 +193,36 @@ namespace Multiplayer{
                 if (!_finishedPlayers.Contains(clientId))
                 {
                     _finishedPlayers.Add(clientId);
-                    if (!_playerFinishTimes.ContainsKey(clientId))
-                    {
-                        _playerFinishTimes[clientId] = IsMapMechanicsStartedNet.Value ? NetworkTime.Value : 0f;
-                    }
+                    
+                    // Server tính toán Rank dựa trên số người đã có trong danh sách và gửi về cho Client đó
+                    int assignedRank = _finishedPlayers.Count;
+                    NotifyRankClientRpc(assignedRank, RpcTarget.Single(clientId, RpcTargetUse.Temp));
+
                     Debug.Log($"[Server] Player {clientId} finished at {NetworkTime.Value}s");
                 }
             }
 
             if (newVal == PlayerStatus.Lobby || newVal == PlayerStatus.Finished) 
                 CheckRoundCompletion();
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        private void NotifyRankClientRpc(int rank, RpcParams rpcParams = default)
+        {
+            // Gán rank chính xác do Server cấp phát cho Local Player
+            _localRoundFinishCount = rank;
+
+            // FIX: Chỉ hiển thị thông báo và ghi nhận kết quả khi đã nhận được Rank từ Server
+            _uiManager?.ShowFloatNotification($"Completed {NetCurrentMapName.Value} (#{rank})", Color.green, 2f);
+            
+            // Ghi lại kết quả thắng vào Session
+            RecordLocalRoundResult(true);
+
+            // Cập nhật streak vào Profile cục bộ
+            if (DataManager.Instance != null)
+            {
+                DataManager.Instance.Profile.RegisterMultiplayerWin();
+            }
         }
 
         private void OnPlayerDeathStatusChangedServer(IPlayer player, bool oldVal, bool newVal)
@@ -260,6 +308,7 @@ namespace Multiplayer{
                     LocalPlayer.Teleport(spawnPos);
                     LocalPlayer.Revive();
                     LocalPlayer.PrepareForNewRound();
+                    _localIsRoundParticipant = false; // Đảm bảo không còn là Participant khi đã về Lobby
                     LocalPlayer.SetStatus(PlayerStatus.Lobby); // Quay về Lobby
                     PlayLobbyMusic(); // Chuyển về nhạc Lobby ngay khi hồi sinh
                     CameraHelper.WarpToTarget(_vcam, LocalPlayer as MonoBehaviour);
@@ -322,15 +371,37 @@ namespace Multiplayer{
             LocalPlayer?.SetStatus(status);
         }
 
-                private void OnPlayerFinishedHandler(IPlayer player)
+        private void OnPlayerFinishedHandler(IPlayer player)
         {
-            // [Giai đoạn Playing - Client Side]
             if (player == LocalPlayer)
             {
-                _uiManager?.ShowPlayerFinishFlag(true);
-                _uiManager?.ShowFloatNotification($"Completed {NetCurrentMapName.Value}!", Color.green, 2f);
+                // "Chốt" thời gian về đích cục bộ ngay lập tức
+                _localFinishTime = GetElapsedRoundTime();
+
+                _uiManager?.ShowPlayerFinishFlag(true); // Hiển thị cờ hoàn thành
                 LocalPlayer?.SetInvincible(true);
             }
+        }
+
+        private void RecordLocalRoundResult(bool isWin)
+        {
+            MapData data = _mapDatabase.AllMaps.FirstOrDefault(m => m.Name == NetCurrentMapName.Value.ToString());
+
+            float elapsed = GetElapsedRoundTime();
+            // Nếu thắng, ưu tiên lấy thời gian đã chốt lúc chạm đích. Nếu thua, lấy thời gian trôi qua tại thời điểm gọi Record.
+            float timeToRecord = (isWin && _localFinishTime > 0) ? _localFinishTime : elapsed;
+
+            _localSessionResults.Add(new RoundSummaryData
+            {
+                MapName = data != null ? data.Name : "Unknown",
+                Tier = _palette != null && data != null ? _palette.GetTierFromRating(data.Difficulty) : DifficultyPalette.Tier.Easy,
+                Rank = _localRoundFinishCount,
+                ButtonsPressed = _localRoundButtonsPressed,
+                FinishTime = timeToRecord,
+                MapPreviewSprite = data != null ? data.MapPreviewImage : null,
+                CoinsEarned = CalculateSessionCoins(isWin, _localRoundButtonsPressed),
+                IsWin = isWin
+            });
         }
 
         private void OnPlayerDiedHandler()
@@ -340,6 +411,58 @@ namespace Multiplayer{
             {
                 OnPlayerDeadServerRpc(netObj.OwnerClientId);
             }
+
+            // DEBUG: Kiểm tra tại sao modal không hiện
+            Debug.Log($"[DeathLog] State: {CurrentState.Value}, IsParticipant: {_localIsRoundParticipant}, LocalPlayer: {LocalPlayer != null}");
+
+            // FIX: Khi chết, nếu là người cuối cùng, State có thể đã chuyển sang Voting ngay lập tức (đặc biệt là Host)
+            // nên ta cho phép hiện Summary nếu State là Playing HOẶC Voting.
+            bool isPlayingOrVoting = CurrentState.Value == GameState.Playing || CurrentState.Value == GameState.Voting;
+
+            if (isPlayingOrVoting && _localIsRoundParticipant && LocalPlayer != null)
+            {
+                StartCoroutine(ShowSummaryWithDelayRoutine());
+            }
+        }
+
+        private IEnumerator ShowSummaryWithDelayRoutine()
+        {
+            // FIX: Chỉ ghi nhận kết quả Thua nếu người chơi chưa về đích ở round này.
+            // Nếu đã Win (Finished), ta không cần Record thêm một lượt Lose cho cùng một map vào danh sách.
+            if (LocalPlayer != null && LocalPlayer.Status.Value != PlayerStatus.Finished)
+                RecordLocalRoundResult(false);
+            
+            // Yêu cầu 3: Delay 1s trước khi hiện SummaryModal để người chơi kịp thấy mình chết
+            yield return new WaitForSeconds(1f);
+          
+            int winCount = _localSessionResults.Count(r => r.IsWin);
+            int totalCoins = _localSessionResults.Sum(r => r.CoinsEarned);
+
+            // Hiển thị Summary Modal (Yêu cầu 1: OnPlayerDiedHandler chỉ chạy trên Owner nên modal chỉ hiện cho local)
+            _uiManager?.ShowSummary(_localSessionResults);
+
+            // Cộng xu và reset streak trong Profile (Commit)
+            if (DataManager.Instance != null)
+            {
+                var profile = DataManager.Instance.Profile;
+                
+                totalCoins = _localSessionResults.Sum(r => r.CoinsEarned);
+                if (totalCoins > 0) profile.TotalCoins += totalCoins;
+
+                // Yêu cầu 2: Reset streak tại thời điểm chết lần cuối
+                profile.ResetMultiplayerStreak();
+                
+                DataManager.Instance.SaveData();
+            }
+
+            // Reset danh sách session để chuẩn bị cho chuỗi chơi tiếp theo sau khi hồi sinh
+            _localSessionResults.Clear();
+            _localRoundButtonsPressed = 0; // Đảm bảo reset sạch sẽ sau khi hiện Summary
+        }
+
+        private int CalculateSessionCoins(bool isWin, int buttons)
+        {
+            return (buttons * 5) + (isWin ? 20 : 0);
         }
 
         /// <summary>

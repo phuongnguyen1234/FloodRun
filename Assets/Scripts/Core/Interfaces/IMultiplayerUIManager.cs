@@ -1,11 +1,28 @@
 using System;
+using System.Collections.Generic;
+using UnityEngine;
+using Core;
+using static Core.DifficultyPalette;
 
 namespace Core.Interfaces
 {
     /// <summary>
+    /// Dữ liệu kết quả của một ván chơi trong chuỗi ván đấu.
+    /// </summary>
+    public struct RoundSummaryData
+    {
+        public string MapName;
+        public Tier Tier;
+        public int Rank;
+        public int ButtonsPressed;
+        public float FinishTime;
+        public Sprite MapPreviewSprite;
+        public int CoinsEarned;
+        public bool IsWin;
+    }
+
+    /// <summary>
     /// Interface cho UI Manager của Multiplayer.
-    /// Extends IGameplayHUDUI để sử dụng chung các hành vi gameplay HUD.
-    /// Thêm các hành vi MP-specific như chat, room info, spectate, etc.
     /// </summary>
     public interface IMultiplayerUIManager : IGameplayHUDUI
     {
@@ -105,5 +122,10 @@ namespace Core.Interfaces
         /// </summary>
         /// <param name="newVal"></param>
         void UpdateLobbyDifficultyOnly(float newVal);
+
+        /// <summary>
+        /// Hiển thị bảng tổng hợp kết quả sau khi kết thúc một chuỗi chơi (khi chết).
+        /// </summary>
+        void ShowSummary(List<RoundSummaryData> results);
     }
 }

@@ -70,6 +70,7 @@ public class ButtonController : MonoBehaviour, IInteractable, IButtonController
     private AudioSource _audioSource;
     private ButtonState _currentState;
     private float _activationPitch = 1.0f;
+    private bool _hasInteractedLocally = false; // Khóa chặn spam cục bộ
 
     // Cache màu sắc từ Hex
     private Color _colorGreen;
@@ -139,6 +140,12 @@ public class ButtonController : MonoBehaviour, IInteractable, IButtonController
     public void SetState(ButtonState newState)
     {
         _currentState = newState;
+
+        // Reset cờ chặn tương tác khi trạng thái thay đổi
+        // Điều này đảm bảo khi nút từ Inactive -> Normal, player có thể ấn được ngay.
+        // Và khi nút đã Activated, ta cũng reset để sẵn sàng cho lần hồi sinh/round sau.
+        _hasInteractedLocally = false;
+
         SyncVisuals(_currentState);
     }
 
@@ -222,8 +229,19 @@ public class ButtonController : MonoBehaviour, IInteractable, IButtonController
     {
         if (!CanInteract) return;
 
-        // Chỉ cần object có IPlayerAbility là ta coi như đó là Player hoặc vật thể hợp lệ
-        if (other.GetComponentInParent<IPlayerAbility>() != null)
+        var player = other.GetComponentInParent<IPlayer>();
+        if (player != null && player.IsLocalPlayer)
+        {
+            Interact();
+        }
+    }
+
+    private void OnTriggerStay2D(Collider2D other)
+    {
+        if (!CanInteract) return;
+
+        var player = other.GetComponentInParent<IPlayer>();
+        if (player != null && player.IsLocalPlayer)
         {
             Interact();
         }
@@ -246,7 +264,12 @@ public class ButtonController : MonoBehaviour, IInteractable, IButtonController
     /// </summary>
     public void Interact()
     {
-        if (!CanInteract) return;
+        if (!CanInteract || _hasInteractedLocally) return;
+
+        _hasInteractedLocally = true; // Khóa ngay lập tức để chặn các frame vật lý tiếp theo
+
+        // Phản hồi âm thanh cục bộ ngay lập tức cho người ấn
+        PlayActivationAudio();
 
         // 1. Thống kê và Event (Chỉ chạy 1 lần khi Player thực sự chạm vào)
         DataManager.Instance.Profile.RegisterButtonPress();
