@@ -67,12 +67,20 @@ public class ParallaxEffect : MonoBehaviour
     {
         if (_cameraTransform == null) return;
         
+        // Đảm bảo lấy vị trí camera tại ĐÚNG thời điểm này (đã được Warp)
+        Vector3 cameraWorldPos = _cameraTransform.position;
+        
+        // Tính toán vị trí camera trong không gian của cha (Map)
         Vector3 localCameraPos = transform.parent != null 
-            ? transform.parent.InverseTransformPoint(_cameraTransform.position) 
-            : _cameraTransform.position;
+            ? transform.parent.InverseTransformPoint(cameraWorldPos) 
+            : cameraWorldPos;
 
+        // Quan trọng: Reset cả start và last position về cùng một điểm để triệt tiêu delta jump
+        // Việc gán _lastCameraPosition ở đây cực kỳ quan trọng để frame LateUpdate tiếp theo delta = 0
         _startCameraPosition = (Vector2)localCameraPos;
-        _lastCameraPosition = _startCameraPosition;
+        _lastCameraPosition = (Vector2)localCameraPos; 
+        
+        // Reset vị trí của object về vị trí thiết kế ban đầu trong Map
         _startPosition = _initialLocalPosition;
         _isInitialized = true;
     }

@@ -8,6 +8,7 @@ using UnityEngine.SceneManagement;
 using Core;
 using Core.Events;
 using Unity.Cinemachine;
+using System.Collections;
 
 namespace Multiplayer{
     /// <summary>
@@ -488,20 +489,35 @@ namespace Multiplayer{
         [Rpc(SendTo.SpecifiedInParams)]
         private void NotifyRemovedFromRoundClientRpc(RpcParams rpcParams = default)
         {
+            StartCoroutine(ReturnToLobbyRoutine());
+        }
+
+        private IEnumerator ReturnToLobbyRoutine()
+        {
             DismissClientRoundSetup();
             ClearLocalMapReference();
 
-            if (LocalPlayer == null) return;
+            if (LocalPlayer == null) yield break;
 
             if (_lobbySpawn == null)
                 _lobbySpawn = FindObjectsByType<PlayerSpawn>().FirstOrDefault(s => !s.IsMapSpawn);
-            if (_lobbySpawn != null)
-                LocalPlayer.Teleport(_lobbySpawn.GetRandomSpawnPosition());
+            
+            Vector3 spawnPos = _lobbySpawn != null ? _lobbySpawn.GetRandomSpawnPosition() : Vector3.zero;
 
             LocalPlayer.SetStatus(PlayerStatus.Lobby);
-            if (_vcam == null) _vcam = FindAnyObjectByType<Unity.Cinemachine.CinemachineCamera>();
+
+            if (_vcam == null) _vcam = FindAnyObjectByType<CinemachineCamera>();
             if (_vcam != null && LocalPlayer is MonoBehaviour playerMono)
+            {
+                _vcam.Follow = null;
+                LocalPlayer.Teleport(spawnPos);
+
                 CameraHelper.WarpToTarget(_vcam, playerMono);
+                
+                // Đợi frame để Camera ổn định vị trí tại Lobby (0,0) trước khi bật lại Follow
+                yield return new WaitForEndOfFrame();
+                _vcam.Follow = playerMono.transform;
+            }
 
             PlayLobbyMusic();
         }

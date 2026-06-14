@@ -328,9 +328,10 @@ namespace Multiplayer
 
                 TeleportLocalPlayerToMapSpawn(currentMap);
 
-                // FIX: Đợi 1 frame để Camera và Physics ổn định vị trí mới trước khi setup Parallax.
-                // Điều này cực kỳ quan trọng với người vừa Win (vì khoảng cách teleport ngắn không đủ kích hoạt auto-reset của script Parallax).
-                yield return null;
+                // QUAN TRỌNG: Đợi đến cuối frame để Cinemachine thực hiện Warp vật lý cho Camera Transform.
+                // Nếu dùng yield return null, transform.position có thể vẫn đang ở Lobby (0,0).
+                yield return new WaitForEndOfFrame();
+
                 if (!IsRoundGenerationCurrent(roundGeneration) || CurrentState.Value != GameState.Playing)
                 {
                     _uiManager?.ShowLoadingScreen(false);
@@ -340,7 +341,11 @@ namespace Multiplayer
                 _uiManager?.UpdateAlivePlayerCount(_netAliveCount.Value, _netTotalParticipants.Value);
                 _uiManager?.UpdateButtonProgress(0, currentMap.GetTotalButtonsCount());
 
+                // Lúc này Camera đã thực sự ở Map (1000, 1000), Reset Parallax sẽ lấy mốc chuẩn.
                 currentMap?.PrepareMapBackgrounds();
+
+                // Sau khi mọi thứ đã ổn định mới bật lại Follow
+                if (_vcam != null) _vcam.Follow = (LocalPlayer as MonoBehaviour).transform;
             }
 
             if (!IsRoundGenerationCurrent(roundGeneration) || CurrentState.Value != GameState.Playing)

@@ -155,7 +155,11 @@ namespace Multiplayer
 
             if (_vcam == null) _vcam = FindAnyObjectByType<Unity.Cinemachine.CinemachineCamera>();
             if (_vcam != null && LocalPlayer is MonoBehaviour playerMono)
+            {
+                // Ngắt Follow để tránh Cinemachine tự động nội suy (Damping) từ Lobby sang Map
+                _vcam.Follow = null;
                 CameraHelper.WarpToTarget(_vcam, playerMono);
+            }
         }
 
         /// <summary>

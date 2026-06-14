@@ -296,22 +296,40 @@ namespace Multiplayer{
         [Rpc(SendTo.SpecifiedInParams)]
         private void RespawnPlayerClientRpc(RpcParams rpcParams)
         {
+            StartCoroutine(RespawnLocalPlayerRoutine());
+        }
+
+        private IEnumerator RespawnLocalPlayerRoutine()
+        {
             if (LocalPlayer != null)
             {
                 // Tìm đúng điểm spawn Public (Lobby)
                 if (_lobbySpawn == null) 
                     _lobbySpawn = FindObjectsByType<PlayerSpawn>().FirstOrDefault(s => !s.IsMapSpawn);
 
-                if (_lobbySpawn != null)
+                if (_lobbySpawn != null && _vcam != null)
                 {
                     Vector3 spawnPos = _lobbySpawn.GetRandomSpawnPosition();
+                    
+                    // 1. Ngắt follow hoàn toàn
+                    _vcam.Follow = null;
+                    
                     LocalPlayer.Teleport(spawnPos);
                     LocalPlayer.Revive();
                     LocalPlayer.PrepareForNewRound();
-                    _localIsRoundParticipant = false; // Đảm bảo không còn là Participant khi đã về Lobby
-                    LocalPlayer.SetStatus(PlayerStatus.Lobby); // Quay về Lobby
-                    PlayLobbyMusic(); // Chuyển về nhạc Lobby ngay khi hồi sinh
+                    _localIsRoundParticipant = false;
+                    LocalPlayer.SetStatus(PlayerStatus.Lobby);
+                    PlayLobbyMusic();
+
+                    // 2. Warp camera đến vị trí mới (Lobby 0,0)
                     CameraHelper.WarpToTarget(_vcam, LocalPlayer as MonoBehaviour);
+                    
+                    // 3. QUAN TRỌNG: Đợi đến cuối frame để Cinemachine cập nhật Transform vật lý.
+                    // Điều này triệt tiêu hoàn toàn damping trễ khi nhảy khoảng cách lớn.
+                    yield return new WaitForEndOfFrame();
+
+                    // 4. Bật lại follow khi mọi thứ đã ổn định
+                    _vcam.Follow = (LocalPlayer as MonoBehaviour).transform;
 
                     _uiManager?.ShowPlayerFinishFlag(false);
                 }
@@ -481,26 +499,23 @@ namespace Multiplayer{
             // Tìm và thiết lập Camera
             if (_vcam == null) _vcam = FindAnyObjectByType<Unity.Cinemachine.CinemachineCamera>();
 
-            if (localPlayer is MonoBehaviour playerMono)
+            if (localPlayer is MonoBehaviour playerMono && _vcam != null)
             {
-                // 1. Gán mục tiêu cho Camera TRƯỚC khi teleport để camera biết cần snap vào đâu
-                if (_vcam != null)
-                {
-                    _vcam.Priority = 10;
-                    _vcam.Follow = playerMono.transform;
-                    _vcam.LookAt = playerMono.transform;
-                }
-
-                // 2. Thực hiện Teleport về Lobby
-                // FIX: Nếu là người chơi join mid-game (không phải participant), 
-                // chúng ta vẫn phải đưa họ về Lobby và gán camera.
                 if (!_localIsRoundParticipant)
                 {
+                    _vcam.Priority = 10;
+                    _vcam.Follow = null; // 1. Tạm dừng follow
+                    _vcam.LookAt = playerMono.transform;
+
                     Vector3 spawnPos = _lobbySpawn != null ? _lobbySpawn.GetRandomSpawnPosition() : Vector3.zero;
                     localPlayer.Teleport(spawnPos);
                     if (_lobbySpawn != null) localPlayer.SetFacing(_lobbySpawn.IsFacingRight);
                     
-                    if (_vcam != null) CameraHelper.WarpToTarget(_vcam, playerMono);
+                    // 2. Warp camera đến vị trí player ở Lobby
+                    CameraHelper.WarpToTarget(_vcam, playerMono);
+                    
+                    yield return new WaitForEndOfFrame();
+                    _vcam.Follow = playerMono.transform;
                 }
             }
             _uiManager?.ShowJoiningLoadingScreen(false);
