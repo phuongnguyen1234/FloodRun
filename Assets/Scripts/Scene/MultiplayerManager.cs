@@ -597,6 +597,5 @@ namespace Multiplayer{
 
         public void RequestStartGame() { if(IsServer) StartVoting(); }
 
-        public void SendChatMessage(string message) { /* Tương tự bản cũ */ }
     }
 }

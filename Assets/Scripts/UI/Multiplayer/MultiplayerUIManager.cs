@@ -9,6 +9,7 @@ using System.Linq;
 using UI;
 using DG.Tweening;
 using System.Collections.Generic;
+using UnityEngine.InputSystem;
 
 namespace UI.Multiplayer
 {
@@ -16,7 +17,7 @@ namespace UI.Multiplayer
     /// Quản lý giao diện HUD trong Multiplayer.
     /// Tích hợp Chat, Voting UI và thông tin phòng.
     /// </summary>
-    public class MultiplayerUIManager : MonoBehaviour, IMultiplayerUIManager
+    public partial class MultiplayerUIManager : MonoBehaviour, IMultiplayerUIManager
     {
         public static MultiplayerUIManager Instance { get; private set; }
 
@@ -77,12 +78,7 @@ namespace UI.Multiplayer
         [Header("Multiplayer Systems")]
         [SerializeField] private VoteMapModal _voteMapModal;
         [SerializeField] private Button _openVoteModalButton;
-        [SerializeField] private GameObject _chatPanel;
         [SerializeField] private SummaryModalUI _summaryModal;
-        [Space]
-        [SerializeField] private GameObject _chatLinePrefab;
-        [SerializeField] private Transform _chatContent;
-        [SerializeField] private int _maxChatLines = 50;
 
         [Header("Modals & Modifiers")]
         [SerializeField] private RoomInfoModalUI _roomInfoModal; 
@@ -179,6 +175,8 @@ namespace UI.Multiplayer
             {
                 _openVoteModalButton.onClick.AddListener(OpenVotingModal);
             }
+
+            InitializeChat();
         }
 
         public void ShowSummary(List<RoundSummaryData> results)
@@ -233,7 +231,8 @@ namespace UI.Multiplayer
             return (_roomInfoModal != null && _roomInfoModal.gameObject.activeSelf) ||
                    (_settingsModal != null && _settingsModal.activeSelf) ||
                    (_voteMapModal != null && _voteMapModal.gameObject.activeSelf) ||
-                   (_summaryModal != null && _summaryModal.gameObject.activeSelf);
+                   (_summaryModal != null && _summaryModal.gameObject.activeSelf) ||
+                   IsChatFocused();
         }
 
         public void ResetGameplayHUD()
@@ -523,19 +522,6 @@ namespace UI.Multiplayer
         }
         #endregion
 
-        #region Chat System
-
-        public void ShowChat(bool show)
-        {
-            _chatPanel?.SetActive(show);
-        }
-
-        public void ToggleChat()
-        {
-            if (_chatPanel == null) return;
-            ShowChat(!_chatPanel.activeSelf);
-        }
-
         public void UpdateAlivePlayerCount(int current, int total)
         {
             if (_playerCountText == null) return;
@@ -553,27 +539,6 @@ namespace UI.Multiplayer
             _prevAliveCount = current;
             _playerCountText.text = current.ToString();
         }
-
-        public void AddChatMessage(string sender, string message, bool isHost)
-        {
-            if (_chatLinePrefab == null || _chatContent == null) return;
-
-            GameObject lineObj = Instantiate(_chatLinePrefab, _chatContent);
-            TMP_Text text = lineObj.GetComponentInChildren<TMP_Text>();
-            if (text != null)
-            {
-                string prefix = isHost ? "<color=yellow>[Host]</color> " : "";
-                text.text = $"{prefix}<b>{sender}:</b> {message}";
-            }
-
-            // Giới hạn số lượng tin nhắn (theo thiết kế là 50)
-            if (_chatContent.childCount > _maxChatLines)
-            {
-                Destroy(_chatContent.GetChild(0).gameObject);
-            }
-        }
-
-        #endregion
 
         #region Room & UI Management
 
@@ -847,6 +812,11 @@ namespace UI.Multiplayer
 
             // Tự động đóng các modal khi vào gameplay
             if (isParticipating) HideAllModals();
+        }
+
+        private void Update()
+        {
+            UpdateChat();
         }
     }
 }
