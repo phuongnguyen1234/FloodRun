@@ -37,6 +37,7 @@ namespace UI.Multiplayer
         [SerializeField] private Sprite _spectateSprite;
         [SerializeField] private Sprite _stopSpectateSprite;
         [SerializeField] private GameObject _spectateControls;
+        [SerializeField] private Button _spectateButton;
 
         [Space]
         [SerializeField] private Color _playActiveColor = Color.white;
@@ -698,23 +699,7 @@ namespace UI.Multiplayer
             _logicManager?.RequestStartGame();
         }
 
-        public void UpdateSpectateStatus(bool isSpectating)
-        {
-            if (_spectateStatusText != null)
-                _spectateStatusText.text = isSpectating ? "Stop spectating" : "Spectate";
 
-            if (_spectateIcon != null)
-            {
-                _spectateIcon.sprite = isSpectating ? _stopSpectateSprite : _spectateSprite;
-                _spectateIcon.color = isSpectating ? _spectateActiveColor : _spectateNormalColor;
-            }
-
-            // Spectate_Btns (chứa 2 nút next/previous) chỉ hiện khi đang spectate
-            if (_spectateControls != null)
-            {
-                _spectateControls.SetActive(isSpectating);
-            }
-        }
 
         // --- Lobby HUD Actions (Gán vào OnClick trong Inspector) ---
 
@@ -728,11 +713,7 @@ namespace UI.Multiplayer
             _logicManager?.LocalPlayer?.ToggleAFKStatus();
         }
 
-        public void OnSpectateToggleClick()
-        {
-            PlayClickSound();
-            _logicManager?.LocalPlayer?.ToggleSpectateStatus();
-        }
+
 
         public void OnShopClick()
         {
@@ -805,7 +786,16 @@ namespace UI.Multiplayer
             
             // Nếu đang trong map chơi, ẩn các icon/nút không cần thiết của Lobby
             if (_playStatusText != null) _playStatusText.transform.parent.gameObject.SetActive(!isParticipating);
-            if (_spectateStatusText != null) _spectateStatusText.transform.parent.gameObject.SetActive(!isParticipating);
+            
+            if (_spectateStatusText != null)
+            {
+                _spectateStatusText.transform.parent.gameObject.SetActive(!isParticipating);
+            }
+
+            if (_spectateButton != null)
+            {
+                _spectateButton.interactable = currentState == GameState.Playing;
+            }
 
             // FIX 1: LobbyInfoBoard luôn hiện thông tin map hiện tại
             _lobbyInfoBoard?.SetVisibility(true);

@@ -307,6 +307,11 @@ namespace Multiplayer{
 
             // Quản lý khóa Input tập trung: Tránh xung đột giữa Load Map và Modals
             UpdateInputLockState();
+
+            if (IsSpawned)
+            {
+                CheckSpectateState();
+            }
         }
 
         /// <summary>
