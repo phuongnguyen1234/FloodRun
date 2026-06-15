@@ -82,6 +82,10 @@ namespace Multiplayer{
             localPlayer.Status.OnValueChanged += (oldVal, newVal) => {
                 _uiManager?.UpdateSpectateStatus(newVal == PlayerStatus.Spectating);
                 _uiManager?.SetHUDMode(newVal == PlayerStatus.InGame || newVal == PlayerStatus.Finished);
+                
+                // Spectate Hooks
+                if (newVal == PlayerStatus.Spectating) StartSpectating();
+                else if (oldVal == PlayerStatus.Spectating && newVal != PlayerStatus.Spectating) StopSpectating();
             };
 
             // Cập nhật UI ngay lập tức

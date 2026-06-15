@@ -77,6 +77,12 @@ namespace Core.Interfaces
         void SubmitVote(int mapIndex);
         void SendChatMessage(string message);
         
+        /// <summary>
+        /// Yêu cầu chuyển hướng theo dõi Camera sang một người chơi khác đang còn sống.
+        /// </summary>
+        /// <param name="direction">Hướng chuyển: 1 (Người kế tiếp), -1 (Người trước đó)</param>
+        void CycleSpectateTarget(int direction);
+        
         // Để các UI biết đang ở giai đoạn nào (Intermission/Voting/Playing) và lấy enum GameState
         GameState GetCurrentGameState(); 
         void SetRoomInfo(string roomId, string passcode);

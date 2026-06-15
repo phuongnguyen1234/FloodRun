@@ -307,6 +307,11 @@ namespace Multiplayer{
 
             // Quản lý khóa Input tập trung: Tránh xung đột giữa Load Map và Modals
             UpdateInputLockState();
+
+            if (IsSpawned)
+            {
+                CheckSpectateState();
+            }
         }
 
         /// <summary>
@@ -597,6 +602,5 @@ namespace Multiplayer{
 
         public void RequestStartGame() { if(IsServer) StartVoting(); }
 
-        public void SendChatMessage(string message) { /* Tương tự bản cũ */ }
     }
 }
