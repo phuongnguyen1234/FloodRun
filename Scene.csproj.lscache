@@ -51,7 +51,7 @@ TemporaryDependencyNodeTargetIdentifier=netstandard2.1
 
 [sourceFiles]
 Assets/Scripts/Scene/
- GameplayManager.cs
+ SingleplayerManager.cs
  HomeManager.cs
  MultiplayerManager.cs
 Temp/obj/Scene/.NETStandard,Version=v2.1.AssemblyAttributes.cs

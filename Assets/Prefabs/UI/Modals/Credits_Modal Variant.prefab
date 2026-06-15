@@ -9,8 +9,24 @@ PrefabInstance:
     m_TransformParent: {fileID: 6766003226988705155}
     m_Modifications:
     - target: {fileID: 1003177409384360596, guid: f303873535aed964faa292776cfeea9e, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1003177409384360596, guid: f303873535aed964faa292776cfeea9e, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1003177409384360596, guid: f303873535aed964faa292776cfeea9e, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1003177409384360596, guid: f303873535aed964faa292776cfeea9e, type: 3}
       propertyPath: m_SizeDelta.y
       value: 458
+      objectReference: {fileID: 0}
+    - target: {fileID: 1003177409384360596, guid: f303873535aed964faa292776cfeea9e, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1003177409384360596, guid: f303873535aed964faa292776cfeea9e, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -155,6 +171,18 @@ PrefabInstance:
     - target: {fileID: 6164487234291774474, guid: f303873535aed964faa292776cfeea9e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7885252324353786645, guid: f303873535aed964faa292776cfeea9e, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 0763c80469420bb45ac3ae6bd32d68d0, type: 2}
+    - target: {fileID: 7885252324353786645, guid: f303873535aed964faa292776cfeea9e, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -3090036126112049867, guid: 0763c80469420bb45ac3ae6bd32d68d0, type: 2}
+    - target: {fileID: 7885252324353786645, guid: f303873535aed964faa292776cfeea9e, type: 3}
+      propertyPath: m_HorizontalAlignment
+      value: 8
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

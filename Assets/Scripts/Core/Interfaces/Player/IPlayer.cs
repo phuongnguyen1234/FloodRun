@@ -30,6 +30,7 @@ namespace Core.Interfaces
     {
         bool IsDead { get; }
         bool IsSpawned { get; }
+        bool IsLocalPlayer { get; }
         NetworkVariable<bool> NetworkIsDead { get; }
         NetworkVariable<bool> IsAFK { get; } // Trạng thái AFK của người chơi
         NetworkVariable<PlayerStatus> Status { get; } // Trạng thái/Vị trí tổng quát của người chơi

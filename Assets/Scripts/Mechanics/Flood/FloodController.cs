@@ -132,7 +132,7 @@ public class FloodController : MonoBehaviour, IFloodZone, IFloodManager
         _defaultAlpha = _spriteRenderer.color.a;
         _initialLocalPosition = transform.localPosition;
 
-        // Tìm IGameLoopManager trong Scene (có thể là GameplayManager hoặc MultiplayerManager)
+        // Tìm IGameLoopManager trong Scene (có thể là SingleplayerManager hoặc MultiplayerManager)
         // Việc này giải quyết vấn đề "không thấy MapManager.cs" giữa các Assembly.
         if (_gameLoopManager == null)
         {

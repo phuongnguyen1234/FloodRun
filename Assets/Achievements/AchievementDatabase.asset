@@ -13,8 +13,14 @@ MonoBehaviour:
   m_Name: AchievementDatabase
   m_EditorClassIdentifier: Core::Core.AchievementDatabaseSO
   AllAchievements:
+  - {fileID: 11400000, guid: fe1ce4c127c2e624c9e9674f5513d6ce, type: 2}
   - {fileID: 11400000, guid: 96117890588d07142b3c016301f0b6db, type: 2}
-  - {fileID: 11400000, guid: bd8f86293c8a0374390fabd7b6e828bf, type: 2}
+  - {fileID: 11400000, guid: 7e79ab91f83b09447b6f1bb2ddd40e62, type: 2}
+  - {fileID: 11400000, guid: 8d3b50f2a318a374cbc8f07e4edb2960, type: 2}
+  - {fileID: 11400000, guid: 6c3b83f7333155045893052115646f7b, type: 2}
+  - {fileID: 11400000, guid: 7f71d3446a854a84b92cf8b820cb94e8, type: 2}
+  - {fileID: 11400000, guid: b9803500bb3c53b4686bb7836788f173, type: 2}
+  - {fileID: 11400000, guid: a9539756a41fb1540b5464af12fb1319, type: 2}
   - {fileID: 11400000, guid: e3dbfe635d43a8c4187a6d2b74ccec97, type: 2}
   - {fileID: 11400000, guid: 4fceafacc79dcbd47b65dd6b3197fac1, type: 2}
   - {fileID: 11400000, guid: 06cdfc8946cfd9242b8821998c888226, type: 2}
@@ -26,5 +32,3 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e2b09012436109c458c3b0a7480f6fc9, type: 2}
   - {fileID: 11400000, guid: 8c9adecb99a781c4599817f11cb64580, type: 2}
   - {fileID: 11400000, guid: a336d901bf6dc1847ad935a89de6a6cc, type: 2}
-  - {fileID: 11400000, guid: 7f143d2b10d751c4ebede218bcda4c0a, type: 2}
-  - {fileID: 11400000, guid: ab6f4ef520bdb4f4e94c7af5aefcd5e4, type: 2}

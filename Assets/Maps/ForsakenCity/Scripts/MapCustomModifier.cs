@@ -12,7 +12,7 @@ public class MapCustomModifier : MonoBehaviour
 
     private IEnumerator Start()
     {
-        // Đợi 0.5 giây để đảm bảo GameplayManager đã Instantiate Player ra Scene xong
+        // Đợi 0.5 giây để đảm bảo SingleplayerManager đã Instantiate Player ra Scene xong
         yield return new WaitForSeconds(0.5f);
 
         // Quét tìm tất cả các Player đang có trên Scene (hỗ trợ cả Multiplayer nếu có)

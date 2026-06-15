@@ -17,10 +17,10 @@ namespace Core.Interfaces
         int GetButtonsActivatedCount();
         int GetTotalButtonsCount();
 
-        // Cho phép GameplayManager lấy nhạc nền của Map
+        // Cho phép SingleplayerManager lấy nhạc nền của Map
         AudioClip GetMapMusic();
 
-        // Cho phép GameplayManager kiểm tra xem DevTool có được bật không
+        // Cho phép SingleplayerManager kiểm tra xem DevTool có được bật không
         bool IsDevToolEnabled();
 
         // Lấy vị trí của nút hiện tại đang cần kích hoạt

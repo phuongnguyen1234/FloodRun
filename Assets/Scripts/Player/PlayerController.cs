@@ -76,8 +76,16 @@ public class PlayerController : NetworkBehaviour, IPlayer, IAirRefillable, IPlay
     private Vector2 _currentMoveInput;
     private bool _isTryingToJumpOutOfWater;
 
-    // Thực thi interface IPlayer: Cho phép bên ngoài đọc trạng thái chết
+    // --- Thực thi interface IPlayer ---
+
+    /// <summary>
+    /// Trả về true nếu đây là người chơi cục bộ.
+    /// Trong Multiplayer, nó dựa vào quyền sở hữu (IsOwner). Trong Singleplayer, nó luôn là true.
+    /// </summary>
+    public bool IsLocalPlayer => !IsSpawned || IsOwner;
+
     public bool IsDead => IsSpawned ? NetworkIsDead.Value : _isDeadSingleplayer;
+
 
     public bool IsZiplining => _motor != null && _motor.IsZiplining;
     public DeathReason LastDeathReason => IsSpawned ? NetworkDeathReason.Value : _lastDeathReasonSingleplayer;

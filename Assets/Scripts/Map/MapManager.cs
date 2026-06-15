@@ -32,7 +32,7 @@ public class TimedMapEvent
 /// - Quản lý timeline sự kiện của map (TimedMapEvent)
 /// - Quản lý trạng thái mở cửa (IsExitUnlocked)
 /// - Cung cấp thông tin về map (MapData, nhạc nền, thời gian tối đa, v.v.)
-/// - Cung cấp vị trí spawn cho GameplayManager
+/// - Cung cấp vị trí spawn cho SingleplayerManager
 /// - Quản lý các Flood thông qua IFloodManager
 /// - Quản lý chuỗi nút bấm thông qua IButtonSequenceManager
 /// - Cung cấp các phương thức để tương tác với map (TriggerCurrentButton, GetNextButtonTransform, v.v.)
@@ -142,7 +142,7 @@ public class MapManager : NetworkBehaviour, IMapManager
             IsExitUnlocked = true;
         }
         // MapManager không tự StartCoroutine GameStartSequence nữa
-        // Việc đó do GameplayManager gọi
+        // Việc đó do SingleplayerManager gọi
     }
 
     public override void OnNetworkSpawn()
@@ -196,7 +196,7 @@ public class MapManager : NetworkBehaviour, IMapManager
     }
 
     /// <summary>
-    /// Gọi từ GameplayManager khi đếm ngược xong
+    /// Gọi từ SingleplayerManager khi đếm ngược xong
     /// </summary>
     public void StartMapMechanics()
     {
@@ -260,7 +260,7 @@ public class MapManager : NetworkBehaviour, IMapManager
     }
 
     /// <summary>
-    /// Cung cấp vị trí spawn cho GameplayManager
+    /// Cung cấp vị trí spawn cho SingleplayerManager
     /// </summary>
     public Vector3 GetPlayerSpawnPosition()
     {
@@ -540,7 +540,7 @@ public class MapManager : NetworkBehaviour, IMapManager
                 var obj = registryList[i];
                 if (obj != null && obj.transform.position.y < worldKillY)
                 {
-                    // Chỉ hủy các object môi trường, không hủy Player ở đây (Player do GameplayManager quản lý)
+                    // Chỉ hủy các object môi trường, không hủy Player ở đây (Player do SingleplayerManager quản lý)
                     if (!obj.CompareTag("Player")) Destroy(obj.gameObject);
                 }
             }

@@ -7,5 +7,7 @@ namespace Core
     {
         public static string PendingRoomId;
         public static string PendingPasscode;
+        public static int PendingMaxPlayers;
+        public static string PendingHostName; 
     }
 }

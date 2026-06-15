@@ -95,7 +95,7 @@ Assets/Scripts/Core/
    IButtonSequenceManager.cs
    IFloodManager.cs
    IFloodZone.cs
-   IGameplayUIManager.cs
+   ISingleplayerUIManager.cs
    IMapManager.cs
    IWallJumpSurface.cs
    IWallSurface.cs

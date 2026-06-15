@@ -52,6 +52,14 @@ PrefabInstance:
       propertyPath: m_SizeDelta.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5123961020307763798, guid: f2008e88686e23a44b948a9b3f0ae438, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: -10
+      objectReference: {fileID: 0}
+    - target: {fileID: 5123961020307763798, guid: f2008e88686e23a44b948a9b3f0ae438, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5259226542094830885, guid: f2008e88686e23a44b948a9b3f0ae438, type: 3}
       propertyPath: m_Name
       value: Content_Changelog

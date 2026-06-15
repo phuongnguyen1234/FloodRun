@@ -157,8 +157,9 @@ namespace UI
 
                 MultiplayerRoomInfoCache.PendingRoomId = roomId;
                 MultiplayerRoomInfoCache.PendingPasscode = passcode;
+                MultiplayerRoomInfoCache.PendingMaxPlayers = maxPlayers; // Lưu thêm MaxPlayers
+                MultiplayerRoomInfoCache.PendingHostName = hostName;     // Lưu thêm HostName
 
-                LANDiscovery.Instance.StartBroadcasting(roomId, hostName, passcode, maxPlayers);
                 NetworkManager.Singleton.SceneManager.LoadScene("Multiplayer", UnityEngine.SceneManagement.LoadSceneMode.Single);
             }
             else
