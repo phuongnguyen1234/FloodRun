@@ -97,9 +97,21 @@ namespace Multiplayer{
                 // Gán thông tin phòng từ Cache nếu có (Host tạo phòng)
                 if (!string.IsNullOrEmpty(MultiplayerRoomInfoCache.PendingRoomId))
                 {
-                    SetRoomInfo(MultiplayerRoomInfoCache.PendingRoomId, MultiplayerRoomInfoCache.PendingPasscode);
+                    string rId = MultiplayerRoomInfoCache.PendingRoomId;
+                    string pass = MultiplayerRoomInfoCache.PendingPasscode;
+                    int maxP = MultiplayerRoomInfoCache.PendingMaxPlayers;
+                    string hName = MultiplayerRoomInfoCache.PendingHostName;
+
+                    SetRoomInfo(rId, pass);
+                    
+                    // FIX: Chỉ bắt đầu phát quảng bá sau khi Manager đã lên sóng ổn định trong Scene Multiplayer
+                    if (LANDiscovery.Instance != null)
+                        LANDiscovery.Instance.StartBroadcasting(rId, hName, pass, maxP);
+
                     MultiplayerRoomInfoCache.PendingRoomId = null;
                     MultiplayerRoomInfoCache.PendingPasscode = null;
+                    MultiplayerRoomInfoCache.PendingMaxPlayers = 0;
+                    MultiplayerRoomInfoCache.PendingHostName = null;
                 }
 
                 PlayerDataList.OnListChanged += OnPlayerDataListChanged;
@@ -128,6 +140,12 @@ namespace Multiplayer{
                     // Gọi handler để setup reference và camera ngay lập tức
                     OnLocalPlayerSpawnedHandler(localPlayer);
                 }
+            }
+
+            // FIX: Quét lại tất cả player hiện có trong Scene khi Manager bắt đầu chạy trên mạng
+            foreach (var existingPlayer in FindObjectsByType<MonoBehaviour>().OfType<IPlayer>())
+            {
+                OnPlayerJoinedHandler(existingPlayer);
             }
 
             if (IsClient)
@@ -304,14 +322,14 @@ namespace Multiplayer{
 
             // [LOCAL ONLY] Đẩy dữ liệu lên UI (Chạy trên cả Host và Client)
             UpdateLocalUI();
+        }
 
+        private void LateUpdate()
+        {
             // Quản lý khóa Input tập trung: Tránh xung đột giữa Load Map và Modals
             UpdateInputLockState();
 
-            if (IsSpawned)
-            {
-                CheckSpectateState();
-            }
+            if (IsSpawned) CheckSpectateState();
         }
 
         /// <summary>

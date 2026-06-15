@@ -172,6 +172,18 @@ namespace UI.Multiplayer
                     _chatInputField.ActivateInputField();
                 }
             }
+            // Bổ sung logic cho phím "/"
+            else if (Keyboard.current != null && Keyboard.current.slashKey.wasPressedThisFrame)
+            {
+                if (_chatInputField != null && !_chatInputField.isFocused)
+                {
+                    if (_chatPanel != null && !_chatPanel.activeInHierarchy)
+                    {
+                        ShowChat(true);
+                    }
+                    _chatInputField.ActivateInputField();
+                }
+            }
         }
         
         /// <summary>

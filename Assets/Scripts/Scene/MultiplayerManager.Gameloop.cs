@@ -174,7 +174,10 @@ namespace Multiplayer
             foreach (var p in _activePlayers)
             {
                 if (p != null && p.IsSpawned && !p.IsAFK.Value && p is NetworkBehaviour nb)
+                {
                     _participants.Add(nb.OwnerClientId);
+                    p.SetStatus(PlayerStatus.InGame); // Đặt trực tiếp trên Server để đồng bộ cho toàn bộ máy khách
+                }
             }
 
             // FIX Bug 2: Initialize alive/total counts for HUD

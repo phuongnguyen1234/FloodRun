@@ -156,9 +156,11 @@ namespace Multiplayer
             if (_vcam == null) _vcam = FindAnyObjectByType<Unity.Cinemachine.CinemachineCamera>();
             if (_vcam != null && LocalPlayer is MonoBehaviour playerMono)
             {
-                // Ngắt Follow để tránh Cinemachine tự động nội suy (Damping) từ Lobby sang Map
+                // FIX: Warp camera về Pivot của Spawn thay vì vị trí người chơi (có thể bị randomize)
+                // Điều này đảm bảo khi PrepareMapBackgrounds chạy, Camera đang ở đúng "điểm gốc" của Prefab.
                 _vcam.Follow = null;
-                CameraHelper.WarpToTarget(_vcam, playerMono);
+                if (mapSpawn != null) CameraHelper.WarpToTarget(_vcam, mapSpawn);
+                else CameraHelper.WarpToTarget(_vcam, playerMono);
             }
         }
 

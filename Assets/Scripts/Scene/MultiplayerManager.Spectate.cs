@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Core;
 using Core.Interfaces;
+using System.Collections;
 using UnityEngine;
 
 namespace Multiplayer
@@ -9,6 +10,7 @@ namespace Multiplayer
     public partial class MultiplayerManager
     {
         private IPlayer _currentSpectateTarget;
+        private Coroutine _spectateSwitchCoroutine;
 
         /// <summary>
         /// Bắt đầu chế độ Spectate cho Local Player.
@@ -22,10 +24,7 @@ namespace Multiplayer
             if (alivePlayers.Count > 0)
             {
                 _currentSpectateTarget = alivePlayers[0];
-                if (_currentSpectateTarget is MonoBehaviour targetMono)
-                {
-                    _vcam.Follow = targetMono.transform;
-                }
+                SwitchToTarget(_currentSpectateTarget);
             }
             else
             {
@@ -69,10 +68,34 @@ namespace Multiplayer
             int nextIndex = (currentIndex + direction + alivePlayers.Count) % alivePlayers.Count;
             _currentSpectateTarget = alivePlayers[nextIndex];
 
-            if (_vcam != null && _currentSpectateTarget is MonoBehaviour targetMono)
+            SwitchToTarget(_currentSpectateTarget);
+        }
+
+        private void SwitchToTarget(IPlayer target)
+        {
+            if (_spectateSwitchCoroutine != null) StopCoroutine(_spectateSwitchCoroutine);
+            _spectateSwitchCoroutine = StartCoroutine(SwitchSpectateTargetRoutine(target));
+        }
+
+        private IEnumerator SwitchSpectateTargetRoutine(IPlayer target)
+        {
+            if (_vcam == null || target == null || target is not MonoBehaviour targetMono) yield break;
+
+            // 1. Gán Follow và thực hiện Warp logic
+            _vcam.Follow = targetMono.transform;
+            CameraHelper.WarpToTarget(_vcam, targetMono);
+
+            // 2. QUAN TRỌNG: Đợi đến cuối frame để Cinemachine hoàn tất việc cập nhật 
+            // Transform vật lý của Camera dựa trên vị trí của target.
+            yield return new WaitForEndOfFrame();
+
+            // 3. Lúc này Camera đã ở vị trí mới chính xác, Reset Parallax sẽ lấy mốc chuẩn
+            if (CurrentMapManager != null)
             {
-                _vcam.Follow = targetMono.transform;
+                CurrentMapManager?.PrepareMapBackgrounds();
             }
+
+            _spectateSwitchCoroutine = null;
         }
 
         /// <summary>

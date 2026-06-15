@@ -142,6 +142,9 @@ namespace Multiplayer{
                         break;
                     }
                 }
+            }
+
+            if (IsServer || IsClient) {
                 // Remove from active players list
                 _activePlayers.RemoveAll(p => p is NetworkBehaviour nb && nb.OwnerClientId == clientId);
             }

@@ -23,9 +23,7 @@ public class ParallaxEffect : MonoBehaviour
     [Tooltip("Nếu camera di chuyển xa hơn mức này trong 1 frame, coi như là Teleport và reset parallax.")]
     [SerializeField] private float _teleportThreshold = 5f;
 
-    private Vector2 _startCameraPosition;
     private Vector2 _lastCameraPosition;
-    private Vector3 _startPosition;
     private Vector3 _initialLocalPosition;
     private float _textureUnitSizeX;
     private bool _isInitialized = false;
@@ -75,13 +73,9 @@ public class ParallaxEffect : MonoBehaviour
             ? transform.parent.InverseTransformPoint(cameraWorldPos) 
             : cameraWorldPos;
 
-        // Quan trọng: Reset cả start và last position về cùng một điểm để triệt tiêu delta jump
-        // Việc gán _lastCameraPosition ở đây cực kỳ quan trọng để frame LateUpdate tiếp theo delta = 0
-        _startCameraPosition = (Vector2)localCameraPos;
-        _lastCameraPosition = (Vector2)localCameraPos; 
-        
-        // Reset vị trí của object về vị trí thiết kế ban đầu trong Map
-        _startPosition = _initialLocalPosition;
+        // FIX: Không ghi lại _startCameraPosition nữa. 
+        // Mốc (0,0) của Map Parent chính là mốc cố định cho mọi người chơi.
+        _lastCameraPosition = (Vector2)localCameraPos;
         _isInitialized = true;
     }
 
@@ -114,25 +108,27 @@ public class ParallaxEffect : MonoBehaviour
         }
         _lastCameraPosition = currentCamPos2D;
 
-        // Tính toán độ dời của camera so với lúc bắt đầu
-        float deltaX = localCameraPos.x - _startCameraPosition.x;
-        float deltaY = localCameraPos.y - _startCameraPosition.y;
-
-        // Vị trí mục tiêu: 
-        // X di chuyển chậm hơn camera tùy theo hệ số
-        // Y di chuyển 1:1 cùng camera (giữ nguyên khoảng cách tương đối)
-        float targetX = _startPosition.x + (deltaX * _parallaxMultiplierX);
-        float targetY = _startPosition.y + deltaY;
+        // FIX: Tính toán vị trí dựa trên tọa độ tuyệt đối trong Map (Local Space của Parent)
+        // Điều này đảm bảo dù Spectate tại bất kỳ thời điểm nào, Background vẫn khớp 100% với Host.
+        float targetX;
+        float targetY = localCameraPos.y; // Mặc định Y đi theo Camera 1:1 để giữ background luôn ở giữa màn hình dọc
 
         // XỬ LÝ LẶP LẠI (SMOOTH INFINITE TILING)
         if (_infiniteHorizontal && _parallaxMultiplierX != 1 && _textureUnitSizeX > 0)
         {
-            // Tính toán khoảng cách mà Camera đã "vượt qua" texture này
-            // (1 - multiplier) chính là tốc độ trôi tương đối của texture trên màn hình
-            float relativeOffset = localCameraPos.x * (1 - _parallaxMultiplierX) % _textureUnitSizeX;
+            // CẢI TIẾN: Trừ đi _initialLocalPosition.x để giữ nguyên offset thiết kế của Designer trong Prefab
+            float effectiveCamX = localCameraPos.x - _initialLocalPosition.x;
+            float relativeOffset = effectiveCamX * (1 - _parallaxMultiplierX) % _textureUnitSizeX;
             
-            // Ép vị trí X của background luôn nằm trong tầm nhìn của Camera dựa trên offset lặp lại
             targetX = localCameraPos.x - relativeOffset;
+        }
+        else
+        {
+            // Công thức Parallax đồng bộ: 
+            // Nếu Multiplier = 1 (Xa vô tận): Background sẽ ở đúng _initialLocalPosition.x + deltaX (đi theo Cam)
+            // Nếu Multiplier = 0 (Gần nhất): Background sẽ đứng yên tại _initialLocalPosition.x (vị trí trong World)
+            float deltaXFromInitial = localCameraPos.x - _initialLocalPosition.x;
+            targetX = _initialLocalPosition.x + (deltaXFromInitial * _parallaxMultiplierX);
         }
 
         transform.localPosition = new Vector3(targetX, targetY, transform.localPosition.z);
