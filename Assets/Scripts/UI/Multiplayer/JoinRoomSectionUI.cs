@@ -285,20 +285,11 @@ namespace UI
                 yield return null;
             }
 
-            // 2. FIX: Khi test trên localhost, cần dùng 127.0.0.1 thay vì broadcast IP
-            // Vì cả host lẫn client chạy trên cùng máy (loopback)
             string connectionAddress = ip;
-            if (ip != "127.0.0.1" && (ip.StartsWith("192.168") || ip.StartsWith("10.") || ip.StartsWith("172.")))
-            {
-                // Nếu là IP private, kiểm tra xem có localhost instance không (dev environment)
-                // Thử connect tới 127.0.0.1 trước, nếu thất bại thì dùng broadcast IP
-                Debug.Log("[JoinRoom] Detected private IP. Trying localhost first for local testing...");
-                connectionAddress = "127.0.0.1";
-            }
 
             // 3. Cấu hình Transport và Start Client
             var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
-            transport.ConnectionData.Address = connectionAddress;
+            transport.ConnectionData.Address = ip;
             Debug.Log($"[JoinRoom] Connecting to {connectionAddress}");
 
             if (!NetworkManager.Singleton.StartClient())

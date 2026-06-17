@@ -276,7 +276,8 @@ namespace Multiplayer
             UpdateSetupWaitingText();
 
             float t = 0;
-            while (!TryResolveMapManager(mapName, mapNetworkObjectId, out _currentMapManager) && t < 20f)
+            // FIX: Đợi cả Map Manager VÀ LocalPlayer reference được thiết lập
+            while ((LocalPlayer == null || !TryResolveMapManager(mapName, mapNetworkObjectId, out _currentMapManager)) && t < 20f)
             {
                 if (!IsRoundGenerationCurrent(roundGeneration))
                 {
@@ -300,9 +301,9 @@ namespace Multiplayer
                 yield break;
             }
 
-            if (_currentMapManager == null)
+            if (_currentMapManager == null || LocalPlayer == null)
             {
-                Debug.LogError("[MultiplayerManager] Client map load timed out! Aborting SetupClientRoutine.");
+                Debug.LogError($"[MultiplayerManager] Setup timeout! Map: {_currentMapManager != null}, Player: {LocalPlayer != null}");
                 if (_localIsRoundParticipant)
                     HandleClientLoadTimeout(roundGeneration);
                 yield break;
