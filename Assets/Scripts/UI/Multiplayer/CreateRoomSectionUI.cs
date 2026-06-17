@@ -6,6 +6,7 @@ using System.Collections;
 using Core;
 using Core.Interfaces;
 using System.Linq;
+using Unity.Netcode.Transports.UTP;
 
 namespace UI
 {
@@ -142,6 +143,14 @@ namespace UI
             }
 
             // 2. Khởi động Host
+            var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+            if (transport != null)
+            {
+                // Thiết lập Host lắng nghe trên tất cả các card mạng (Wifi, Ethernet, Hotspot)
+                transport.ConnectionData.Address = "0.0.0.0";
+                transport.ConnectionData.ServerListenAddress = "0.0.0.0";
+            }
+
             if (NetworkManager.Singleton.StartHost())
             {
                 // Hiển thị loading screen khi bắt đầu chuyển scene

@@ -36,6 +36,8 @@ namespace Multiplayer{
         private int _localRoundButtonsPressed = 0;
         private float _localFinishTime = -1f;
 
+        public bool IsLocalParticipant => _localIsRoundParticipant;
+
         /// <summary>
         /// Hàm gộp để lấy thời gian thực tế từ lúc bắt đầu round đến hiện tại.
         /// Luôn chính xác bất kể trạng thái NetworkTime thay đổi.

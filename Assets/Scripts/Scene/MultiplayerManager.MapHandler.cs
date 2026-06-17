@@ -91,18 +91,12 @@ namespace Multiplayer
                     manager = FindMapManagerOn(netObj.gameObject);
                     if (manager != null) return true;
                 }
-
-                foreach (NetworkObject spawned in spawnManager.SpawnedObjects.Values)
-                {
-                    IMapManager candidate = FindMapManagerOn(spawned.gameObject);
-                    if (candidate != null && MapManagerMatchesName(candidate, mapName, expectedData))
-                    {
-                        manager = candidate;
-                        return true;
-                    }
-                }
             }
 
+            // FIX: Nếu có ID cụ thể, KHÔNG thực hiện fallback tìm theo tên để tránh lấy nhầm map cũ đang bị destroy.
+            if (mapNetworkObjectId != 0) return false;
+
+            // Chỉ thực hiện tìm kiếm diện rộng nếu ID = 0 (thường là mode Singleplayer hoặc map tĩnh)
             foreach (IMapManager candidate in Resources.FindObjectsOfTypeAll<MonoBehaviour>().OfType<IMapManager>())
             {
                 if (candidate is not MonoBehaviour mb) continue;
