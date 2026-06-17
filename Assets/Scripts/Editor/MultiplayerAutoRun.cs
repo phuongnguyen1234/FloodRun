@@ -40,7 +40,7 @@ public class MultiplayerAutoRun
         string buildFolder = Path.GetDirectoryName(BuildPath);
         if (!Directory.Exists(buildFolder)) Directory.CreateDirectory(buildFolder);
 
-        BuildPlayerOptions buildPlayerOptions = new BuildPlayerOptions
+        BuildPlayerOptions buildPlayerOptions = new()
         {
             scenes = GetEnabledScenePaths(),
             locationPathName = BuildPath,
@@ -79,10 +79,12 @@ public class MultiplayerAutoRun
         }
 
         UnityEngine.Debug.Log("[Multiplayer] Launching Standalone Client...");
-        ProcessStartInfo startInfo = new ProcessStartInfo(BuildPath);
-        // Thêm tham số để game nhận biết đây là bản build phụ dùng để test
-        startInfo.Arguments = "-isClientInstance";
-        startInfo.WindowStyle = ProcessWindowStyle.Normal;
+        ProcessStartInfo startInfo = new(BuildPath)
+        {
+            // Thêm tham số để game nhận biết đây là bản build phụ dùng để test
+            Arguments = "-isClientInstance",
+            WindowStyle = ProcessWindowStyle.Normal
+        };
         Process.Start(startInfo);
     }
 
