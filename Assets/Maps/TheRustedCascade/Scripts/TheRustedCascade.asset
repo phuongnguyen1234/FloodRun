@@ -15,10 +15,10 @@ MonoBehaviour:
   Name: The Rusted Cascade
   Author: NTDzVEKNY
   Description: 
-  Difficulty: 2
-  MapDuration: 120
+  Difficulty: 2.2
+  MapDuration: 75
   ButtonNumber: 5
   MapPreviewImage: {fileID: 617711773589951212, guid: 34d0667e861391b478b1c71cc43a7e58, type: 3}
   MapPrefab: {fileID: 2759769580059325146, guid: a5d2e92e5adfcac488e8245ab3a68db7, type: 3}
   BackgroundMusic: {fileID: 8300000, guid: 47f58486882872f4882b64d3964c9856, type: 3}
-  EnableDevTools: 1
+  EnableDevTools: 0

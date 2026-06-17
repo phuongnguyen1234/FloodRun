@@ -15,10 +15,10 @@ MonoBehaviour:
   Name: Whispering Field
   Author: PhamPhucDat
   Description: "Whispering field \u2014 A mystical field high above the ground"
-  Difficulty: 2
+  Difficulty: 2.3
   MapDuration: 100
   ButtonNumber: 5
   MapPreviewImage: {fileID: 8487885084202646721, guid: e2450d385f4a0a9428825145f30854f6, type: 3}
   MapPrefab: {fileID: 1637740676321180219, guid: db341218408e1ec448ce8a0071830169, type: 3}
   BackgroundMusic: {fileID: 8300000, guid: 9889d8440fcae2143ba68f9748b0e4a2, type: 3}
-  EnableDevTools: 1
+  EnableDevTools: 0
