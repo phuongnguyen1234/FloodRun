@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "FloodRun.slnx"
+    "dotnet.defaultSolution": "Flood Run.slnx"
 }

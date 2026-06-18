@@ -23,4 +23,4 @@ MonoBehaviour:
   MapPreviewImage: {fileID: 4088649926128961819, guid: 3518657932259c04d88356f80399638d, type: 3}
   MapPrefab: {fileID: 1637740676321180219, guid: f237bb838422d7b4fa8f502a4136a9d5, type: 3}
   BackgroundMusic: {fileID: 8300000, guid: 085be8bc03777bc49b5d96a4a75039e0, type: 3}
-  EnableDevTools: 1
+  EnableDevTools: 0
