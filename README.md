@@ -10,7 +10,7 @@ Màn hình chọn map (Singleplayer)
 <img width="947" height="555" alt="image" src="https://github.com/user-attachments/assets/3a149a36-1dcc-451a-b3ca-109637c7df6f" />
 
 Màn hình gameplay Singleplayer
-<img width="1282" height="752" alt="image" src="https://github.com/user-attachments/assets/761c9e8e-7d88-4075-9c91-4e668ee35286" />
+<img width="1282" height="752" alt="image" src="https://github.com/user-attachments/assets/04df7ea3-bfa2-4944-be25-9a0986ebf571" />
 
 Màn hình phòng chờ Multiplayer
 <img width="969" height="569" alt="image" src="https://github.com/user-attachments/assets/e5deb288-1889-47a8-ba51-e4ceea30e654" />
