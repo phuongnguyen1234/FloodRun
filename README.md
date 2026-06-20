@@ -12,6 +12,10 @@ Màn hình chọn map (Singleplayer)
 Màn hình gameplay Singleplayer
 <img width="1282" height="752" alt="image" src="https://github.com/user-attachments/assets/04df7ea3-bfa2-4944-be25-9a0986ebf571" />
 
+Bố cục map Lost Woods [Easy]. Màn chơi xây dựng theo layout dạng phòng, nước lũ sẽ từ từ lấp đầy từng phòng. Mỗi phòng đều có nút để
+mở cửa đi sang phòng tiếp theo
+<img width="915" height="350" alt="image" src="https://github.com/user-attachments/assets/00d0cb53-9628-465c-b51c-47c16d0d6212" />
+
 Màn hình phòng chờ Multiplayer
 <img width="969" height="569" alt="image" src="https://github.com/user-attachments/assets/e5deb288-1889-47a8-ba51-e4ceea30e654" />
 
