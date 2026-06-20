@@ -2,6 +2,7 @@
 - Sử dụng các cơ chế gameplay như chạy, nhảy, bơi, bám tường, ... và tương tác với môi trường để giải quyết thử thách dưới áp lực thời gian
 - Hỗ trợ chế độ chơi đơn và nhiều người chơi thông qua Unity Netcode for GameObjects.
 - Tích hợp các hệ thống phụ như thành tựu, thống kê và tiền tệ nhằm nâng cao trải nghiệm người chơi.
+- Video demo gameplay: https://drive.google.com/file/d/1Vmnc-Qx15ianMqdwEI7vTqaQHIk28FiE/view?usp=sharing
 
 Màn hình chính
 <img width="946" height="555" alt="image" src="https://github.com/user-attachments/assets/4888938e-e0aa-46e8-858a-92a4114a1808" />
